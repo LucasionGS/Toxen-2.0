@@ -1,0 +1,238 @@
+:root {
+  --bgcolor: #1b1b1b;
+  --panelcolor: #2b2b2b;
+  --innerpanelcolor: #4b4b4b;
+  --txtcolor: white;
+  --playingSong: #00c843;
+}
+
+body {
+  background-color: var(--bgcolor);
+  color: var(--txtcolor);
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+#storyboard {
+  z-index: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  /* width: 100%; */
+  /* max-width: 100%; */
+  height: 100%;
+  transition: all 0.2s ease-out;
+}
+
+#musicObject {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+}
+
+div.sidebar.left {
+  left: 0;
+}
+
+div.sidebar.right {
+  right: 0;
+}
+
+div.sidebar {
+  position: absolute;
+  top: 0;
+  background-color: var(--panelcolor);
+  height: 100vh;
+  max-height: 100vh;
+  min-width: 10%;
+  width: 10%;
+  opacity: 0;
+  overflow: hidden;
+  transition: width 1s ease-in-out;
+  transition-property: width, opacity;
+  z-index: 100;
+}
+
+div.sidebar:hover, div.sidebar[open] {
+  width: 35vw;
+  opacity: 0.9;
+  transition: width 0.1s ease-in-out;
+  transition-property: width, opacity;
+}
+
+#songselection {
+  background-color: var(--innerpanelcolor);
+  width: 100%;
+  min-height: 32px;
+  height: 60%;
+  max-height: 60%;
+  margin-top: 2%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+#songselection div.musicitem {
+  width: 35vw;
+  box-sizing: border-box;
+  min-height: 1em;
+  /* border: solid 1px white; */
+  background-color: var(--innerpanelcolor);
+}
+
+#songselection div.musicitem div.innermusicitem {
+  transition: transform 0.1s ease-in-out;
+  border: solid 1px white;
+  box-sizing: border-box;
+}
+
+#songselection div.musicitem[playing] {
+  background-color: var(--playingSong);
+}
+
+#songselection div.musicitem:hover[playing] {
+  background-color: var(--playingSong);
+  filter: invert();
+}
+
+#songselection div.musicitem:hover div.innermusicitem {
+  min-height: 1em;
+  border: solid 1px white;
+  box-sizing: border-box;
+  transform: translate(1%, -4px);
+  width: 100%;
+  box-shadow: 4px 4px 10px 10px var(--bgcolor);
+  background-color: var(--bgcolor);
+  cursor: pointer;
+}
+
+#songselection div.musicitem:hover + div.musicitem div.innermusicitem{
+  min-height: 1em;
+  border: solid 1px white;
+  box-sizing: border-box;
+  transform: translate(0.5%, -2px);
+}
+
+#songselection div.musicitem p {
+  font-size: 16px;
+  box-sizing: border-box;
+  padding: 4px;
+  user-select: none;
+}
+
+p#subtitles {
+  position: absolute;
+  display: inline-block;
+  top: 16px;
+  font-size: 24px;
+  text-align: center;
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  background-color: rgba(0, 0, 0, 0.25);
+  text-shadow: 0px 0px 5px #000;
+  margin: auto;
+}
+
+div#progress {
+  width: 100%;
+}
+
+/* div#progress label#progresstext {
+  
+} */
+
+div#progress progress#progressbar {
+  width: 100%;
+}
+
+div.flex {
+  display: flex;
+  box-sizing: border-box;
+  /* padding-left: 8px; */
+  padding-right: 16px;
+}
+
+div.flex button{
+  display: block;
+  width: 100%;
+}
+
+button.fancybutton.color-red {
+  background-color: red;
+}
+
+button.fancybutton.color-green {
+  background-color: green;
+}
+
+button.fancybutton.color-blue {
+  background-color: blue;
+}
+
+button.fancybutton {
+  border-radius: 4px;
+  font-size: 16px;
+  padding: 8px;
+  background-color: var(--innerpanelcolor);
+  color: var(--txtcolor);
+  border-color: var(--panelcolor);
+}
+
+button.fancybutton:hover {
+  cursor: pointer;
+  filter: brightness(0.9);
+}
+
+button:active, button:focus {
+  outline: none;
+}
+
+input#search {
+  min-width: 64px;
+  width: 75%;
+}
+
+div#lockPanel {
+  position: absolute;
+  right: 0;
+  user-select: none;
+  font-size: 20px;
+  transition: all 0.25s ease-in-out;
+}
+
+div#lockPanel:hover {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+input + label {
+  cursor: pointer;
+  user-select: none;
+}
+
+input#advancedToggle + label + div#advancedoptions {
+  transition: 0.5s ease-in-out;
+  width: 95%;
+  height: 0px;
+  background-color: var(--bgcolor);
+  margin: auto;
+  border: 0px solid var(--txtcolor);
+  overflow: hidden;
+}
+
+input#advancedToggle:checked + label + div#advancedoptions {
+  height: 360px;
+  border-width: 1px;
+  overflow-y: auto;
+}
+
+input#advancedToggle:checked + label + div#advancedoptions::-webkit-scrollbar {
+  visibility: hidden;
+}
+

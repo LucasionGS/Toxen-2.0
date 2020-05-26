@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="toxen.css">
+  <script async src="toxen.js"></script>
+  <title>Toxen 2.0</title>
+</head>
+<body>
+  <canvas id="storyboard"></canvas>
+  <video id="musicObject"></video>
+  <div class="sidebar left" id="songmenusidebar" open>
+    <div id="progress">
+      <label id="progresstext"></label>
+      <br>
+      <progress id="progressbar"></progress>
+    </div>
+    <hr>
+    <div id="lockPanel" onclick="SongManager.toggleSongPanelLock()" title="Toggle lock Panel">🔓</div>
+    <label for="search">Search</label>
+    <br>
+    <input type="text" id="search" oninput="SongManager.search(this.value)">
+    <div id="songselection"></div>
+    <hr>
+	<div class="flex">
+      <button class="fancybutton color-red" id="toggleShuffle" onclick="SongManager.toggleShuffle()">Shuffle</button>
+      <button class="fancybutton color-red" id="toggleRepeat" onclick="SongManager.toggleRepeat()">Repeat</button>
+    </div>
+    <div class="flex">
+      <button class="fancybutton color-blue" onclick="SongManager.playPrev()">Previous Song</button>
+      <button class="fancybutton color-blue" onclick="SongManager.playNext()">Next Song</button>
+    </div>
+    <hr>
+    <div class="flex">
+      <button class="fancybutton" onclick="SongManager.scanDirectory();" title="Refresh the music library">Update Music Library</button>
+      <button class="fancybutton" onclick="SongManager.addSong()" title="Add a new song to your library">Add Song</button>
+      <button class="fancybutton" onclick="SongManager.setSongBackground()" title="Set the background for the currently playing song">Set Background</button>
+    </div>
+  </div>
+  <div class="sidebar right" id="settingsmenusidebar">
+    <h2>Settings</h2>
+    <hr>
+    <label>Visualizer Style</label>
+    <br>
+    <input type="radio" name="avstyle" id="visualizerstyle=0" value="0" onclick="settings.visualizerStyle = 0; settings.saveToFile();">
+    <label for="visualizerstyle=0">Bottom</label><br>
+    <input type="radio" name="avstyle" id="visualizerstyle=1" value="1" onclick="settings.visualizerStyle = 1; settings.saveToFile();">
+    <label for="visualizerstyle=1">Top</label><br>
+    <input type="radio" name="avstyle" id="visualizerstyle=2" value="2" onclick="settings.visualizerStyle = 2; settings.saveToFile();">
+    <label for="visualizerstyle=2">Top and bottom (Identical)</label><br>
+    <input type="radio" name="avstyle" id="visualizerstyle=3" value="3" onclick="settings.visualizerStyle = 3; settings.saveToFile();">
+    <label for="visualizerstyle=3">Center</label><br>
+    <input type="radio" name="avstyle" id="visualizerstyle=4" value="4" onclick="settings.visualizerStyle = 4; settings.saveToFile();">
+    <label for="visualizerstyle=4">Top and bottom (Alternating)</label>
+    <hr>
+    <input type="checkbox" name="avtoggle" id="visualizerToggle" onclick="settings.visualizer = this.checked; settings.saveToFile();">
+    <label for="visualizerToggle">Visualizer</label><br>
+    <input type="checkbox" name="sbtoggle" id="storyboardToggle" onclick="settings.storyboard = this.checked; settings.saveToFile();">
+    <label for="storyboardToggle">Storyboard</label>
+    <hr>
+    <input type="checkbox" name="advtoggle" id="advancedToggle" onclick="settings.advanced = this.checked">
+    <label for="advancedToggle">Advanced Settings</label>
+    <div id="advancedoptions">
+      fuck
+    </div>
+    <hr>
+  </div>
+  <p id="subtitles"></p>
+</body>
+</html>
