@@ -8,7 +8,7 @@ let hueApi = null;
 const Imd = require("./ionMarkDown").Imd;
 const electron = require("electron");
 const { remote, shell } = electron;
-const { Menu } = remote;
+const { Menu, dialog } = remote;
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 
@@ -77,16 +77,20 @@ class Settings {
       if (this.hasOwnProperty(key)) {
         const value = this[key];
         if (typeof value == "string" || typeof value == "number") {
-          let element = document.getElementById(key.toLowerCase()+"="+value);          
+          let element = document.getElementById(key.toLowerCase()+"="+value);
           if (element != null && element instanceof HTMLInputElement) {
-            console.log("Found one!");
-            console.log(element);
             if (element.type == "radio") {
               element.checked = true;
             }
             else {
               element.value = value;
             }
+            return;
+          }
+          element = document.getElementById(key.toLowerCase()+"Value");
+          if (element != null && element instanceof HTMLInputElement) {
+            element.value = value;
+            return;
           }
         }
 
@@ -105,6 +109,30 @@ class Settings {
         }
       }
     }
+  }
+
+  async selectSongFolder() {
+    dialog.showOpenDialog(remote.getCurrentWindow(), {
+      "buttonLabel": "Select Folder",
+      "properties": [
+        "openDirectory"
+      ],
+      "message": "Select your song folder"
+    })
+    .then(value => {
+      if (value.filePaths.length == 0) {
+        return;
+      }
+      document.querySelector("input#songfolderValue").value = value.filePaths[0];
+      Settings.current.songFolder = value.filePaths[0];
+      if (fs.existsSync(Settings.current.songFolder + "/db.json")) {
+        SongManager.loadFromFile();
+      }
+      else {
+        SongManager.scanDirectory();
+      }
+      Settings.current.saveToFile();
+    });
   }
 
   // 

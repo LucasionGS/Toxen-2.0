@@ -211,18 +211,34 @@ div#lockPanel:hover {
   cursor: pointer;
 }
 
-input + label {
+input[type="checkbox"] + label, input[type="radio"] + label {
   cursor: pointer;
   user-select: none;
+}
+
+label[title] {
+  text-decoration: underline;
+}
+
+input[type="text"] {
+  display: block;
+}
+
+sup {
+  display: block;
+  color: var(--txtcolor);
+  filter: brightness(0.6);
+  margin-left: 4px;
 }
 
 input#advancedToggle + label + div#advancedoptions {
   transition: 0.5s ease-in-out;
   width: 95%;
   height: 0px;
-  background-color: var(--bgcolor);
+  /* background-color: var(--bgcolor); */
   margin: auto;
-  border: 0px solid var(--txtcolor);
+  border-left: 0px solid var(--txtcolor);
+  padding-left: 4px;
   overflow: hidden;
 }
 

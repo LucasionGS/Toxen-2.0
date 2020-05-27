@@ -41,8 +41,12 @@
   <div class="sidebar right" id="settingsmenusidebar">
     <h2>Settings</h2>
     <hr>
+    <label>Song Folder</label>
+    <input type="text" name="songFolder" id="songfolderValue" readonly>
+    <button class="fancybutton" onclick="Settings.current.selectSongFolder();">Select</button>
+    <hr>
     <label>Visualizer Style</label>
-    <br>
+    <sup>Customize how the visualizer is shown.</sup>
     <input type="radio" name="avstyle" id="visualizerstyle=0" value="0" onclick="settings.visualizerStyle = 0; settings.saveToFile();">
     <label for="visualizerstyle=0">Bottom</label><br>
     <input type="radio" name="avstyle" id="visualizerstyle=1" value="1" onclick="settings.visualizerStyle = 1; settings.saveToFile();">
@@ -55,14 +59,28 @@
     <label for="visualizerstyle=4">Top and bottom (Alternating)</label>
     <hr>
     <input type="checkbox" name="avtoggle" id="visualizerToggle" onclick="settings.visualizer = this.checked; settings.saveToFile();">
-    <label for="visualizerToggle">Visualizer</label><br>
+    <label for="visualizerToggle">Visualizer</label>
+    <sup>
+      Display audio visualizer.
+    </sup>
     <input type="checkbox" name="sbtoggle" id="storyboardToggle" onclick="settings.storyboard = this.checked; settings.saveToFile();">
     <label for="storyboardToggle">Storyboard</label>
+    <sup>
+      Display ToxenScript storyboards.<br>
+      If you're experiencing low performance, try to disable this.
+    </sup>
+    <hr>
+    <input type="checkbox" name="tntoggle" id="thumbnailsToggle" onclick="settings.thumbnails = this.checked; SongManager.refreshList(); settings.saveToFile();">
+    <label for="thumbnailsToggle">Thumbnails</label>
+    <sup>
+      Display background image next to the song name in the song list.<br>
+      If you're experiencing low performance, try to disable this.
+    </sup>
     <hr>
     <input type="checkbox" name="advtoggle" id="advancedToggle" onclick="settings.advanced = this.checked">
     <label for="advancedToggle">Advanced Settings</label>
     <div id="advancedoptions">
-      fuck
+      hm
     </div>
     <hr>
   </div>
