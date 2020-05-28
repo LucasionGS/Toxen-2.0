@@ -344,7 +344,7 @@ function initializeVisualizer() {
     ctx.fillStyle = "rgba(0, 0, 0, "+(dim/100)+")";
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    var intensity = settings.visualizerIntensity/10;
+    var intensity = Storyboard.visualizerIntensity/10;
     if (settings.visualizer) {
       avg = 0;
       dataArray = dataArray.reverse();

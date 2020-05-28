@@ -491,12 +491,7 @@ class Song {
       const _d = document.createElement("div");
       _d.innerHTML = Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
       document.title = _d.innerText;
-      if (this.txnScript) {
-        ToxenScriptManager.reloadCurrentScript();
-      }
-      else {
-        ToxenScriptManager.events = [];
-      }
+      ToxenScriptManager.reloadCurrentScript();
       if (this.subtitlePath) {
         Subtitles.renderSubtitles(this.getFullPath("subtitlePath"));
         // Maybe await
@@ -623,15 +618,65 @@ class SongManager {
    */
   static playableSongs = [];
 
-  static refreshList() {
+  /**
+   * Refresh the list with optional sorting.
+   * @param {Settings["sortBy"]} sortBy Optional Sorting
+   */
+  static refreshList(sortBy = null) {
+    if (typeof sortBy == "string") {
+      Settings.current.sortBy = sortBy;
+    }
     if (this.songListElement) {
-      let nList = this.songList;
-      this.songListElement.innerHTML = "";
+      /**
+       * @param {Song} a 
+       * @param {Song} b 
+       */
+      let sortFunc = (a, b) => { return true; };
+      switch (Settings.current.sortBy) {
+        case "title":
+          sortFunc = (a, b) => {
+            if (a.details.title > b.details.title) {
+              return 1;
+            }
+            if (a.details.title < b.details.title) {
+              return -1;
+            }
+            return 0;
+          };
+          
+          break;
+          
+          case "artist": // Fall-through
+          default:
+            sortFunc = (a, b) => {
+              if (a.details.artist > b.details.artist) {
+                return 1;
+              }
+              if (a.details.artist < b.details.artist) {
+                return -1;
+              }
+              return 0;
+            };
+          break;
+      }
+      /**
+       * @param {Song} a 
+       * @param {Song} b 
+       */
+      function _sort(a, b) {
+        // Make order reversable
+        return sortFunc(a, b);
+      }
+      SongManager.songList.sort(_sort);
+
+      let nList = SongManager.songList;
+      SongManager.songListElement.innerHTML = "";
       for (let i = 0; i < nList.length; i++) {
         const song = nList[i];
         song.refreshElement();
-        this.songListElement.appendChild(song.element);
+        SongManager.songListElement.appendChild(song.element);
       }
+      SongManager.search();
     }
     else {
       console.error("No div element applied to SongManager.songListElement",
@@ -890,11 +935,11 @@ class SongManager {
    * @param {number} id Song ID
    */
   static getSong(id) {
-    return SongManager.songList[id];
+    return SongManager.songList.find((s, i) => s.songId == id);
   }
 
   static getCurrentlyPlayingSong() {
-    return SongManager.getSong(SongManager.player.getAttribute("songid"));
+    return SongManager.getSong(+SongManager.player.getAttribute("songid"));
   }
 
   /**
@@ -940,6 +985,10 @@ class SongManager {
       SongManager.playRandom();
     }
     else {
+      // if (!song) {
+      //   // SongManager.playRandom();
+      //   return;
+      // }
       if (SongManager.playableSongs.length > id + 1) {
         SongManager.getSong(id + 1).play();
       }
@@ -1099,6 +1148,8 @@ class Storyboard {
   static toRed = 25;
   static toGreen = 0;
   static toBlue = 250;
+
+  static visualizerIntensity = 15;
   /**
    * Fade into a RGB color.
    * @param {number} red 
@@ -1106,6 +1157,16 @@ class Storyboard {
    * @param {number} blue 
    */
   static rgb(red = Storyboard.red, green = Storyboard.green, blue = Storyboard.blue) {
+    if (red === null) {
+      Storyboard.red;
+    }
+    if (green === null) {
+      Storyboard.green;
+    }
+    if (blue === null) {
+      Storyboard.blue;
+    }
+
     Storyboard.toRed = red;
     Storyboard.toGreen = green;
     Storyboard.toBlue = blue;
@@ -1182,7 +1243,7 @@ class Storyboard {
    * @param {number} value 
    */
   static setIntensity(value) {
-    Settings.current.visualizerIntensity = value;
+    Storyboard.visualizerIntensity = value;
   }
 
   static _fadingEnabled = false;
@@ -1346,7 +1407,7 @@ class Pulse {
 
   interval = setInterval(() => {
     if (this.width > 0) {
-      this.width -= Math.max(Math.min(this.width, 1), (this.width / Settings.current.visualizerIntensity) * 2);
+      this.width -= Math.max(Math.min(this.width, 1), (this.width / Storyboard.visualizerIntensity) * 2);
       let opacity = (this.width / this.lastPulse);
       this.left.style.opacity = opacity;
       this.right.style.opacity = opacity;
@@ -1380,7 +1441,7 @@ class ToxenScriptManager {
     ToxenScriptManager.events = [];
 
     // Prevent the intensity from going mayham on smooth setters, which it does for some unknown reason.
-    Storyboard.setIntensity(15);
+    Storyboard.setIntensity(Settings.current.visualizerIntensity);
     Storyboard.rgb(
       Settings.current.visualizerColor.red,
       Settings.current.visualizerColor.green,
@@ -1682,15 +1743,15 @@ class ToxenScriptManager {
     },
     visualizerintensity: function (args) {
       if (args[1] && args[1].toLowerCase() == "smooth") {
-        if (+args[0] < settings.visualizerIntensity) {
-          settings.visualizerIntensity -= 0.1;
+        if (+args[0] < Storyboard.visualizerIntensity) {
+          Storyboard.visualizerIntensity -= 0.1;
         }
-        else if (+args[0] > settings.visualizerIntensity) {
-          settings.visualizerIntensity += 0.1;
+        else if (+args[0] > Storyboard.visualizerIntensity) {
+          Storyboard.visualizerIntensity += 0.1;
         }
 
-        if (Math.round(+args[0] - settings.visualizerIntensity) == 0) {
-          settings.visualizerIntensity = +args[0];
+        if (Math.round(+args[0] - Storyboard.visualizerIntensity) == 0) {
+          Storyboard.visualizerIntensity = +args[0];
         }
       }
       else {

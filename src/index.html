@@ -22,8 +22,12 @@
     <br>
     <input type="text" id="search" oninput="SongManager.search(this.value)">
     <div id="songselection"></div>
+    <div class="flex">
+      <button class="fancybutton" title="Sort by Artist" id="sortByArtist" onclick="SongManager.refreshList('artist');">Artist</button>
+      <button class="fancybutton" title="Sort by Title" id="sortByTitle" onclick="SongManager.refreshList('title');">Title</button>
+    </div>
     <hr>
-	<div class="flex">
+	  <div class="flex">
       <button class="fancybutton color-red" id="toggleShuffle" onclick="SongManager.toggleShuffle()">Shuffle</button>
       <button class="fancybutton color-red" id="toggleRepeat" onclick="SongManager.toggleRepeat()">Repeat</button>
     </div>
