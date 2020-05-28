@@ -52,6 +52,7 @@ div.sidebar {
   width: 10%;
   opacity: 0;
   overflow: hidden;
+  overflow-y: auto;
   transition: width 1s ease-in-out;
   transition-property: width, opacity;
   z-index: 100;
@@ -184,9 +185,17 @@ button.fancybutton {
   border-color: var(--panelcolor);
 }
 
+button.fancybutton:disabled {
+  filter: brightness(0.7);
+}
+
 button.fancybutton:hover {
   cursor: pointer;
   filter: brightness(0.9);
+}
+button.fancybutton:hover:disabled {
+  cursor: no-drop;
+  filter: brightness(0.7);
 }
 
 button:active, button:focus {
@@ -267,4 +276,35 @@ div#changenotes p {
 
 div#settingsmenusidebar {
   overflow-y: auto;
+}
+
+div.pinput {
+  position: relative;
+  margin-left: 8px;
+  width: 100%;
+}
+
+div.pinput > input{
+  width: 100%;
+  font-size: large;
+  opacity: 0.0;
+}
+
+div.pinput > input + p{
+  width: 100%;
+  font-size: large;
+  opacity: 1;
+  position: absolute;
+  top: 0;
+  margin: 1px;
+  user-select: none;
+  pointer-events: none;
+}
+
+div.pinput > input:focus-within{
+  opacity: 1;
+}
+
+div.pinput > input:focus-within + p{
+  opacity: 0;
 }

@@ -60,7 +60,7 @@ class Settings {
   }
 
   saveToFile(fileLocation = "./data/settings.json") {
-    fs.writeFileSync(fileLocation, JSON.stringify(this));
+    fs.writeFileSync(fileLocation, JSON.stringify(this, null, 2));
   }
 
   /**
@@ -160,7 +160,7 @@ class Settings {
     }
     
     document.getElementById("songmenusidebar").toggleAttribute("open", this.songMenuLocked);
-    // this.saveToFile();
+    this.saveToFile();
     return this.songMenuLocked;
   }
 
@@ -192,7 +192,7 @@ class Settings {
    * Percentage to dim the background.
    * @type {number}
    */
-  backgroundDim = 0;
+  backgroundDim = 50;
   /**
    * Audio volume.
    * @type {number}
@@ -302,7 +302,16 @@ class Song {
     });
     this.element.addEventListener("contextmenu", function(e) {
       e.preventDefault();
-      menus.songMenu.items.find(i => i.label === "Open song folder").songObject = self;
+      menus.songMenu.items.filter(i => {
+        switch (i.label) {
+          case "Display info": return true;
+          case "Open song folder": return true;
+
+          default: return false;
+        }
+      }).forEach(i => {
+        i.songObject = self;
+      });
       menus.songMenu.popup({
         "x": e.clientX,
         "y": e.clientY
@@ -536,6 +545,69 @@ class Song {
     else fp = path.resolve(Settings.current.songFolder, this[itemToFind]);    
     return fp;
   }
+
+  displayInfo() {
+    let self = this;
+    /**
+     * @type {HTMLDivElement}
+     */
+    let panel = document.querySelector("div#songinfo");
+    
+    // Title
+    /**
+     * @type {HTMLParagraphElement}
+     */
+    let pTitle = panel.querySelector('p[name="title"]');
+    /**
+     * @type {HTMLInputElement}
+     */
+    let inputTitle = panel.querySelector('input[name="title"]');
+    pTitle.innerHTML = "Title: ".bold() + Imd.MarkDownToHTML(this.details.title);
+    inputTitle.value = this.details.title;
+    inputTitle.onsearch = function(e) {
+      e.preventDefault();
+      self.details.title = inputTitle.value;
+      self.saveDetails();
+      inputTitle.blur();
+      pTitle.innerHTML = "Title: ".bold() + Imd.MarkDownToHTML(inputTitle.value);
+      self.refreshElement();
+    }
+
+    // Artist
+    /**
+     * @type {HTMLParagraphElement}
+     */
+    let pArtist = panel.querySelector('p[name="artist"]');
+    /**
+     * @type {HTMLInputElement}
+     */
+    let inputArtist = panel.querySelector('input[name="artist"]');
+    pArtist.innerHTML = "Artist: ".bold() + Imd.MarkDownToHTML(this.details.artist);
+    inputArtist.value = this.details.artist;
+    inputArtist.onsearch = function(e) {
+      e.preventDefault();
+      self.details.artist = inputArtist.value;
+      self.saveDetails();
+      inputArtist.blur();
+      pArtist.innerHTML = "Artist: ".bold() + Imd.MarkDownToHTML(inputArtist.value);
+      self.refreshElement();
+    }
+  }
+
+  saveDetails() {
+    try {
+      fs.writeFileSync(this.getFullPath("path") + "/details.json", JSON.stringify(this.details, null, 2));
+      SongManager.saveToFile();
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  }
+
+  setBackground() {
+
+  }
 }
 
 class SongManager {
@@ -719,6 +791,14 @@ class SongManager {
         Settings.current.songFolder = location;
       }
       SongManager.songList = songs;
+      for (let i = 0; i < SongManager.songList.length; i++) {
+        const song = SongManager.songList[i];
+        if ("file:/" + song.getFullPath("songPath").replace(/\\+|\/\/+/g, "/") == decodeURIComponent(SongManager.player.src.replace(/\\+|\/\/+/g, "/"))) {
+          song.element.toggleAttribute("playing", true);
+          song.element.scrollIntoViewIfNeeded();
+          break;
+        }
+      }
       SongManager.refreshList();
       SongManager.saveToFile();
       return songs;
@@ -941,6 +1021,35 @@ class SongManager {
     p.addButtons(ok, "fancybutton");
   }
 
+  static selectBackground(song = SongManager.getCurrentlyPlayingSong()) {
+    dialog.showOpenDialog(remote.getCurrentWindow(), {
+      "buttonLabel": "Select Image",
+      "filters": [
+        {
+          "extensions": [
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        }
+      ]
+    })
+    .then(pathObject => {
+      // TODO: Drag and Drop backgrounds directly
+      if (pathObject.filePaths.length == 0) {
+        return;
+      }
+      if (song.background) {
+        fs.unlinkSync(song.getFullPath("background"));
+      }
+      let newPath = song.getFullPath("path") + "/" + pathObject.filePaths[0].replace(/\\+/g, "/").split("/").pop();
+      fs.copyFileSync(pathObject.filePaths[0], newPath);
+      song.background = song.path + "/" + path.relative(song.getFullPath("path"), newPath);
+      Storyboard.setBackground(song.getFullPath("background"));
+      SongManager.saveToFile();
+    });
+  }
+
   /**
    * This should be set bby the client.
    * @param {Song} song 
@@ -952,14 +1061,26 @@ const menus = {
   "songMenu": Menu.buildFromTemplate(
     [
       {
-        label: "Open song folder",
-        click: (menuItem, bw) => {
+        label: "Display info",
+        click: (menuItem) => {
           /**
            * @type {Song}
            */
           const song = menuItem.songObject;
           if (song instanceof Song) {
-            let path = song.getFullPath("path")            
+            song.displayInfo();
+          }
+        }
+      },
+      {
+        label: "Open song folder",
+        click: (menuItem) => {
+          /**
+           * @type {Song}
+           */
+          const song = menuItem.songObject;
+          if (song instanceof Song) {
+            let path = song.getFullPath("path");
             if (!shell.openItem(path)) {
               console.error("Unable to open directory", path);
             }

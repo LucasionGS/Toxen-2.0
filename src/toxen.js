@@ -12,6 +12,7 @@ const {
 } = require("./toxenCore");
 const process = require("process");
 const rpc = require("discord-rpc");
+const Imd = require("./ionMarkDown").Imd;
 
 // Discord RPC
 const discord = new rpc.Client({"transport": "ipc"});
@@ -57,11 +58,23 @@ window.addEventListener("load", initialize);
 async function initialize() {
   settings.loadFromFile();
   if (settings.songFolder == null) {
-    settings.songFolder = process.env.HOMEDRIVE + process.env.HOMEPATH + "/Music/";
+    switch(process.platform) {
+      case "win32":
+        settings.songFolder = process.env.HOMEDRIVE + process.env.HOMEPATH + "/Music/";
+        break;
+      case "linux":
+      case "darwin":
+        settings.songFolder = process.env.HOME + "/Music/";
+        break;
+    }
   }
 
   // Initialize Discord RPC
   SongManager.onplay = async function(song) {
+    // Song Info
+    song.displayInfo();
+
+    // Discord Rich Presence
     let attemptCount = 0;
     while(true) {
       if (attemptCount > 3) {
