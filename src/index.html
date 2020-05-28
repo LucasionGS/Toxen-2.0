@@ -17,7 +17,7 @@
       <progress id="progressbar"></progress>
     </div>
     <hr>
-    <div id="lockPanel" onclick="SongManager.toggleSongPanelLock()" title="Toggle lock Panel">🔓</div>
+    <div id="lockPanel" onclick="Settings.current.toggleSongPanelLock()" title="Toggle lock Panel">🔓</div>
     <label for="search">Search</label>
     <br>
     <input type="text" id="search" oninput="SongManager.search(this.value)">
@@ -40,6 +40,9 @@
   </div>
   <div class="sidebar right" id="settingsmenusidebar">
     <h2>Settings</h2>
+    <hr>
+    <label for="volumeValue">Volume</label>
+    <input type="range" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.setVolume(this.value);">
     <hr>
     <label>Song Folder</label>
     <input type="text" name="songFolder" id="songfolderValue" readonly>
@@ -70,6 +73,13 @@
       If you're experiencing low performance, try to disable this.
     </sup>
     <hr>
+    <input type="checkbox" name="sptrtoggle" id="songmenutorightToggle" onclick="settings.toggleSongPanelToRight(this.checked); settings.saveToFile();">
+    <label for="songmenutorightToggle">Right-hand Song Menu</label>
+    <sup>
+      Display ToxenScript storyboards.<br>
+      If you're experiencing low performance, try to disable this.
+    </sup>
+    <hr>
     <input type="checkbox" name="tntoggle" id="thumbnailsToggle" onclick="settings.thumbnails = this.checked; SongManager.refreshList(); settings.saveToFile();">
     <label for="thumbnailsToggle">Thumbnails</label>
     <sup>
@@ -83,6 +93,24 @@
       hm
     </div>
     <hr>
+    <div id="changenotes">
+      <label>Change Notes</label>
+      <sup>
+        Version ID format: YYYYMMDDHHMM<br>
+        Newest Update First, descending.
+      </sup>
+      <p>202005280316</p>
+      <ul>
+        <li>Added Change notes under <code>Settings</code></li>
+        <li>Added multiple new settings along with descriptions
+          <ul>
+            <li>Volume Bar</li>
+            <li>Song Folder Selector</li>
+            <li>Right-hand Song Menu</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
   </div>
   <p id="subtitles"></p>
 </body>

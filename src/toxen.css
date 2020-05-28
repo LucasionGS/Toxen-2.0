@@ -252,3 +252,19 @@ input#advancedToggle:checked + label + div#advancedoptions::-webkit-scrollbar {
   visibility: hidden;
 }
 
+input[type="range"][orient="vertical"]
+{
+  display: block;
+  -webkit-appearance: slider-vertical;
+  width: 8px;
+  height: 100px;
+  padding: 0 16px;
+}
+
+div#changenotes p {
+  color: rgb(238, 193, 96);
+}
+
+div#settingsmenusidebar {
+  overflow-y: auto;
+}

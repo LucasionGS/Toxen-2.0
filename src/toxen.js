@@ -86,7 +86,7 @@ async function initialize() {
 
   SongManager.toggleShuffle(settings.shuffle);
   SongManager.toggleRepeat(settings.repeat);
-  SongManager.toggleSongPanelLock(settings.songMenuLocked);
+  settings.toggleSongPanelLock(settings.songMenuLocked);
   Storyboard.rgb(settings.visualizerColor.red, settings.visualizerColor.green, settings.visualizerColor.blue);
 
   // Applying everything
@@ -104,10 +104,7 @@ async function initialize() {
 
   SongManager.playableSongs = SongManager.songList;
 
-  if (settings.songMenuToRight) {
-    document.querySelector("#songmenusidebar").classList.replace("left", "right");
-    document.querySelector("#settingsmenusidebar").classList.replace("right", "left");
-  }
+  settings.toggleSongPanelToRight(settings.songMenuToRight);
 
   SongManager.player.addEventListener("ended", function() {
     if (settings.repeat) {
@@ -206,7 +203,7 @@ async function initialize() {
     }
     
     if (ctrl && !shift && key == "l") {
-      SongManager.toggleSongPanelLock();
+      settings.toggleSongPanelLock();
     }
   });
 

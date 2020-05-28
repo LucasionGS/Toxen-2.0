@@ -85,12 +85,12 @@ class Settings {
             else {
               element.value = value;
             }
-            return;
+            continue;
           }
           element = document.getElementById(key.toLowerCase()+"Value");
           if (element != null && element instanceof HTMLInputElement) {
             element.value = value;
-            return;
+            continue;
           }
         }
 
@@ -112,6 +112,7 @@ class Settings {
   }
 
   async selectSongFolder() {
+    let self = this;
     dialog.showOpenDialog(remote.getCurrentWindow(), {
       "buttonLabel": "Select Folder",
       "properties": [
@@ -124,15 +125,64 @@ class Settings {
         return;
       }
       document.querySelector("input#songfolderValue").value = value.filePaths[0];
-      Settings.current.songFolder = value.filePaths[0];
-      if (fs.existsSync(Settings.current.songFolder + "/db.json")) {
+      self.songFolder = value.filePaths[0];
+      if (fs.existsSync(self.songFolder + "/db.json")) {
         SongManager.loadFromFile();
       }
       else {
         SongManager.scanDirectory();
       }
-      Settings.current.saveToFile();
+      self.saveToFile();
     });
+  }
+
+  /**
+   * @param {boolean} force
+   */
+  toggleSongPanelLock(force) {
+    /**
+     * @type {HTMLButtonElement}
+     */
+    const element = document.getElementById("lockPanel");
+    if (typeof force == "boolean") {
+      this.songMenuLocked = !force;
+    }
+
+    if (this.songMenuLocked == false) {
+      element.innerText = "🔒";
+      element.style.opacity = 1;
+      this.songMenuLocked = true;
+    }
+    else {
+      element.innerText = "🔓";
+      element.style.opacity = 0.5;
+      this.songMenuLocked = false;
+    }
+    
+    document.getElementById("songmenusidebar").toggleAttribute("open", this.songMenuLocked);
+    // this.saveToFile();
+    return this.songMenuLocked;
+  }
+
+  /**
+   * @param {boolean} force
+   */
+  toggleSongPanelToRight(force) {
+    if (typeof force == "boolean") {
+      this.songMenuToRight = force;
+    }
+
+    if (this.songMenuToRight) {
+      document.querySelector("#songmenusidebar").classList.replace("left", "right");
+      document.querySelector("#settingsmenusidebar").classList.replace("right", "left");
+    }
+    else {
+      document.querySelector("#songmenusidebar").classList.replace("right", "left");
+      document.querySelector("#settingsmenusidebar").classList.replace("left", "right");
+    }
+    
+    this.saveToFile();
+    return this.songMenuToRight;
   }
 
   // 
@@ -877,34 +927,6 @@ class SongManager {
 
     Settings.current.saveToFile();
     return Settings.current.repeat;
-  }
-
-  /**
-   * @param {boolean} force
-   */
-  static toggleSongPanelLock(force) {
-    /**
-     * @type {HTMLButtonElement}
-     */
-    const element = document.getElementById("lockPanel");
-    if (typeof force == "boolean") {
-      Settings.current.songMenuLocked = !force;
-    }
-
-    if (Settings.current.songMenuLocked == false) {
-      element.innerText = "🔒";
-      element.style.opacity = 1;
-      Settings.current.songMenuLocked = true;
-    }
-    else {
-      element.innerText = "🔓";
-      element.style.opacity = 0.5;
-      Settings.current.songMenuLocked = false;
-    }
-    
-    document.getElementById("songmenusidebar").toggleAttribute("open", Settings.current.songMenuLocked);
-    Settings.current.saveToFile();
-    return Settings.current.songMenuLocked;
   }
 
   static addSong() {
