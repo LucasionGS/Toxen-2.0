@@ -28,6 +28,9 @@ class Settings {
     let newSettings = new Settings();
     try {
       if (!fs.existsSync(fileLocation)) {
+        if (!fs.existsSync(path.dirname(fileLocation))) {
+          fs.mkdirSync(path.dirname(fileLocation), { recursive: true });
+        }
         fs.writeFileSync(fileLocation, "{}");
       }
       let stgs = JSON.parse(fs.readFileSync(fileLocation, "utf8"));
