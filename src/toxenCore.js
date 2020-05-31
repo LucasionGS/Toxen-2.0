@@ -410,6 +410,12 @@ class Song {
     title: null,
 
     /**
+     * Album this song belongs to, if any.
+     * @type {string}
+     */
+    album: null,
+
+    /**
      * Source for this song. If it's from a game, series, or sites, state them here.
      * @type {string}
      */
@@ -617,6 +623,29 @@ class Song {
       self.refreshElement();
     }
     
+    // Album
+    /**
+     * @type {HTMLParagraphElement}
+     */
+    let pAlbum = panel.querySelector('p[name="album"]');
+    /**
+     * @type {HTMLInputElement}
+     */
+    let inputAlbum = panel.querySelector('input[name="album"]');
+    if (this.details.album == null) {
+      this.details.album = "";
+    }
+    pAlbum.innerHTML = "Album: ".bold() + Imd.MarkDownToHTML(this.details.album);
+    inputAlbum.value = this.details.album;
+    inputAlbum.onsearch = function(e) {
+      e.preventDefault();
+      self.details.album = inputAlbum.value;
+      self.saveDetails();
+      inputAlbum.blur();
+      pAlbum.innerHTML = "Album: ".bold() + Imd.MarkDownToHTML(inputAlbum.value);
+      self.refreshElement();
+    }
+    
     // Source
     /**
      * @type {HTMLParagraphElement}
@@ -807,6 +836,9 @@ class SongManager {
       let searchTags = [
         s.details.artist,
         s.details.title,
+        s.details.album,
+        s.details.source,
+        s.isVideo ? "$video" : "$audio"
       ].concat(s.details.tags);
 
       if (match(searchTags)) {
@@ -1434,6 +1466,7 @@ const menus = {
           const song = menuItem.songObject;
           if (song instanceof Song) {
             song.displayInfo();
+            document.getElementById("songinfo").scrollIntoView();
           }
         }
       },

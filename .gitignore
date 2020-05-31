@@ -1,3 +1,4 @@
 node_modules
 Toxen Workspace.code-workspace
 data
+package-lock.json
