@@ -14,13 +14,13 @@
     <div id="progress">
       <label id="progresstext"></label>
       <br>
-      <progress id="progressbar"></progress>
+      <progress id="progressbar" class="fancyprogress"></progress>
     </div>
     <hr>
     <div id="lockPanel" onclick="Settings.current.toggleSongPanelLock()" title="Toggle lock Panel">🔓</div>
     <label for="search">Search</label>
     <br>
-    <input type="text" id="search" oninput="SongManager.search(this.value)">
+    <input type="text" id="search" oninput="SongManager.search(this.value)" class="fancyinput">
     <div id="songselection"></div>
     <div class="flex">
       <button class="fancybutton" title="Sort by Artist" id="sortByArtist" onclick="SongManager.refreshList('artist');">Artist</button>
@@ -38,7 +38,7 @@
     <hr>
     <div class="flex">
       <button class="fancybutton" onclick="SongManager.scanDirectory();" title="Refresh the music library">Update Music Library</button>
-      <button class="fancybutton" onclick="SongManager.addSong()" title="Add a new song to your library" disabled>Add Song</button>
+      <button class="fancybutton" onclick="SongManager.addSong()" title="Add a new song to your library">Add Song</button>
       <button class="fancybutton" onclick="SongManager.selectBackground()" title="Set the background for the currently playing song">Set Background</button>
     </div>
     <div id="songinfo">
@@ -47,10 +47,25 @@
         <input type="search" name="title">
         <p name="title"></p>
       </div>
-
+      <br>
       <div class="pinput" title="Click to edit">
         <input type="search" name="artist">
         <p name="artist"></p>
+      </div>
+      <br>
+      <div class="pinput" title="Click to edit">
+        <input type="search" name="source">
+        <p name="source"></p>
+      </div>
+      <br>
+      <div class="pinput" title="Click to edit">
+        <input type="search" name="sourceLink">
+        <p name="sourceLink"></p>
+      </div>
+      <br>
+      <div class="pinput" title="Click to edit">
+        <input type="search" name="tags">
+        <p name="tags"></p>
       </div>
 
       <!-- <div class="pinput">
@@ -66,9 +81,10 @@
     <input type="range" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.setVolume(this.value);">
     <hr>
     <label>Song Folder</label>
-    <input type="text" name="songFolder" id="songfolderValue" readonly>
+    <input type="text" name="songFolder" id="songfolderValue" readonly class="fancyinput">
     <button class="fancybutton" onclick="Settings.current.selectSongFolder();">Select</button>
     <hr>
+    <h3>Visual Settings</h3>
     <label>Visualizer Style</label>
     <sup>Customize how the visualizer is shown.</sup>
     <input type="radio" name="avstyle" id="visualizerstyle=0" value="0" onclick="settings.visualizerStyle = 0; settings.saveToFile();">
@@ -81,12 +97,15 @@
     <label for="visualizerstyle=3">Center</label><br>
     <input type="radio" name="avstyle" id="visualizerstyle=4" value="4" onclick="settings.visualizerStyle = 4; settings.saveToFile();">
     <label for="visualizerstyle=4">Top and bottom (Alternating)</label>
-    <hr>
+    <!-- <hr> -->
+    <br>
+    <br>
     <input type="checkbox" name="avtoggle" id="visualizerToggle" onclick="settings.visualizer = this.checked; settings.saveToFile();">
     <label for="visualizerToggle">Visualizer</label>
     <sup>
       Display audio visualizer.
     </sup>
+    <br>
     <input type="checkbox" name="sbtoggle" id="storyboardToggle" onclick="settings.storyboard = this.checked; settings.saveToFile();">
     <label for="storyboardToggle">Storyboard</label>
     <sup>
@@ -97,8 +116,7 @@
     <input type="checkbox" name="sptrtoggle" id="songmenutorightToggle" onclick="settings.toggleSongPanelToRight(this.checked); settings.saveToFile();">
     <label for="songmenutorightToggle">Right-hand Song Menu</label>
     <sup>
-      Display ToxenScript storyboards.<br>
-      If you're experiencing low performance, try to disable this.
+      Display the song menu to the right side of the screen and settings to the left.
     </sup>
     <hr>
     <input type="checkbox" name="tntoggle" id="thumbnailsToggle" onclick="settings.thumbnails = this.checked; SongManager.refreshList(); settings.saveToFile();">
@@ -111,7 +129,12 @@
     <input type="checkbox" name="advtoggle" id="advancedToggle" onclick="settings.advanced = this.checked">
     <label for="advancedToggle">Advanced Settings</label>
     <div id="advancedoptions">
-      hm
+      <input type="checkbox" name="tntoggle" id="discordpresenceshowdetailsToggle" onclick="settings.discordPresenceShowDetails = this.checked; updateDiscordPresence(); settings.saveToFile();">
+      <label for="discordpresenceshowdetailsToggle">Discord Presence: Show Details</label>
+      <sup>
+        Display the details of the current song playing in Discord Presence.
+        Details include Artist, Title, and current time.
+      </sup>
     </div>
     <hr>
     <div id="changenotes">
@@ -120,6 +143,21 @@
         Version ID format: YYYYMMDDHHMM<br>
         Newest Update First, descending.
       </sup>
+
+      <p>202005310640</p>
+      <ul>
+        <li>Added YouTube Download feature
+          <ul>
+            <li>
+              Press on the <code>Add Song</code> button and press <code>Download YouTube Audio</code> when the prompt appears.<br>
+              Insert the required information such as URL and title. The required fields are marked with <code>*</code> in the placeholders.
+            </li>
+          </ul>
+        </li>
+        <li>Added <code>Discord Presense: Show Details</code> setting in <code>Advanced Settings</code></li>
+        <li>Added <code>Delete song</code> to the song context menu</li>
+        <li>Re-styled the text fields and progress bars, including the <code>Song Progress</code> bar</li>
+      </ul>
 
       <p>202005281449</p>
       <ul>

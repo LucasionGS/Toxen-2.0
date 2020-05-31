@@ -37,7 +37,21 @@ async function wait(ms) {
   }));
 }
 
-discord.login({ clientId }).catch(reason => console.error(reason));
+discordApplicationLogin();
+function discordApplicationLogin(attempts = 3) {
+  let tries = 0;
+  _login();
+  function _login() {
+    discord.login({ clientId }).catch(reason => {
+      console.error(reason);
+      tries++;
+      if (tries < attempts) {
+        console.error(`Login attempt ${tries + 1}...`);
+        _login();
+      }
+    });
+  }
+}
 
 /**
  * Global Settings Object
@@ -75,26 +89,7 @@ async function initialize() {
     song.displayInfo();
 
     // Discord Rich Presence
-    let attemptCount = 0;
-    while(true) {
-      if (attemptCount > 3) {
-        break;
-      }
-      if (isNaN(SongManager.player.duration) || !discordReady) {
-        attemptCount++;
-        await wait(1000);
-      }
-      else {
-        discord.setActivity({
-          "startTimestamp": Date.now(),
-          "endTimestamp": Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000,
-          "details": `${song.isVideo ? "Watching a video" : "Listening to a song"}`,
-          "state": `${song.details.artist} - ${song.details.title}`,
-          "largeImageKey": "toxen"
-        });
-        break;
-      }
-    }
+    updateDiscordPresence(song);
   }
 
   SongManager.toggleShuffle(settings.shuffle);
@@ -231,7 +226,10 @@ async function initialize() {
   });
   
   window.addEventListener("mouseup", function(e) {
-    if (e.button == 0) document.getElementById("progressbar").clicking = false;
+    if (e.button == 0 && document.getElementById("progressbar").clicking == true) {
+      document.getElementById("progressbar").clicking = false;
+      updateDiscordPresence();
+    }
   });
   document.getElementById("progressbar").addEventListener("click", function(e) {
     /**
@@ -276,6 +274,39 @@ async function initialize() {
 
   // Load Settings
   settings.applySettingsToPanel();
+}
+
+/**
+ * 
+ * @param {Song} song 
+ */
+async function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
+  let attemptCount = 0;
+  while(true) {
+    if (attemptCount > 3) {
+      break;
+    }
+    if (isNaN(SongManager.player.duration) || !discordReady) {
+      attemptCount++;
+      await wait(1000);
+    }
+    else {
+      /**
+       * @type {import("discord-rpc").Presence]}
+       */
+      let options = {
+        "details": `${song.isVideo ? "Watching a video" : "Listening to a song"}`,
+        "largeImageKey": "toxen"
+      };
+      if (settings.discordPresenceShowDetails) {
+        options["startTimestamp"] = Date.now();
+        options["endTimestamp"] = Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000;
+        options["state"] = `${song.details.artist} - ${song.details.title}`;
+      }
+      discord.setActivity(options);
+      break;
+    }
+  }
 }
 
 /**

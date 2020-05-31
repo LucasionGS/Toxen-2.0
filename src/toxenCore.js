@@ -8,9 +8,11 @@ let hueApi = null;
 const Imd = require("./ionMarkDown").Imd;
 const electron = require("electron");
 const { remote, shell } = electron;
-const { Menu, dialog } = remote;
+const { Menu, dialog, Notification } = remote;
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
+const ytdl = require("ytdl-core");
+const ion = require("ionodelib");
 
 class Settings {
   /**
@@ -274,6 +276,11 @@ class Settings {
    * `false` Doesn't show thumbnails.
    */
   thumbnails = true;
+  /**
+   * Display the details of the current song playing in Discord Presence.
+   * Details include Artist, Title, and current time.
+   */
+  discordPresenceShowDetails = true;
 }
 
 /**
@@ -309,6 +316,7 @@ class Song {
         switch (i.label) {
           case "Display info": return true;
           case "Open song folder": return true;
+          case "Delete song": return true;
 
           default: return false;
         }
@@ -400,6 +408,18 @@ class Song {
      * @type {string}
      */
     title: null,
+
+    /**
+     * Source for this song. If it's from a game, series, or sites, state them here.
+     * @type {string}
+     */
+    source: null,
+
+    /**
+     * Source link for this song. If you got this from somewhere online originally, you can link it here.
+     * @type {string}
+     */
+    sourceLink: null,
     
     /**
      * List of tags to better help find this song in searches.
@@ -560,6 +580,9 @@ class Song {
      * @type {HTMLInputElement}
      */
     let inputTitle = panel.querySelector('input[name="title"]');
+    if (this.details.title == null) {
+      this.details.title = "";
+    }
     pTitle.innerHTML = "Title: ".bold() + Imd.MarkDownToHTML(this.details.title);
     inputTitle.value = this.details.title;
     inputTitle.onsearch = function(e) {
@@ -570,7 +593,7 @@ class Song {
       pTitle.innerHTML = "Title: ".bold() + Imd.MarkDownToHTML(inputTitle.value);
       self.refreshElement();
     }
-
+    
     // Artist
     /**
      * @type {HTMLParagraphElement}
@@ -580,6 +603,9 @@ class Song {
      * @type {HTMLInputElement}
      */
     let inputArtist = panel.querySelector('input[name="artist"]');
+    if (this.details.artist == null) {
+      this.details.artist = "";
+    }
     pArtist.innerHTML = "Artist: ".bold() + Imd.MarkDownToHTML(this.details.artist);
     inputArtist.value = this.details.artist;
     inputArtist.onsearch = function(e) {
@@ -588,6 +614,76 @@ class Song {
       self.saveDetails();
       inputArtist.blur();
       pArtist.innerHTML = "Artist: ".bold() + Imd.MarkDownToHTML(inputArtist.value);
+      self.refreshElement();
+    }
+    
+    // Source
+    /**
+     * @type {HTMLParagraphElement}
+     */
+    let pSource = panel.querySelector('p[name="source"]');
+    /**
+     * @type {HTMLInputElement}
+     */
+    let inputSource = panel.querySelector('input[name="source"]');
+    if (this.details.source == null) {
+      this.details.source = "";
+    }
+    pSource.innerHTML = "Source: ".bold() + Imd.MarkDownToHTML(this.details.source);
+    inputSource.value = this.details.source;
+    inputSource.onsearch = function(e) {
+      e.preventDefault();
+      self.details.source = inputSource.value;
+      self.saveDetails();
+      inputSource.blur();
+      pSource.innerHTML = "Source: ".bold() + Imd.MarkDownToHTML(inputSource.value);
+      self.refreshElement();
+    }
+
+    // Source Link
+    /**
+     * @type {HTMLParagraphElement}
+     */
+    let pSourceLink = panel.querySelector('p[name="sourceLink"]');
+    /**
+     * @type {HTMLInputElement}
+     */
+    let inputSourceLink = panel.querySelector('input[name="sourceLink"]');
+    if (this.details.sourceLink == null) {
+      this.details.sourceLink = "";
+    }
+    pSourceLink.innerHTML = "Source Link: ".bold() + Imd.MarkDownToHTML(this.details.sourceLink);
+    inputSourceLink.value = this.details.sourceLink;
+    inputSourceLink.onsearch = function(e) {
+      e.preventDefault();
+      self.details.sourceLink = inputSourceLink.value;
+      self.saveDetails();
+      inputSourceLink.blur();
+      pSourceLink.innerHTML = "Source Link: ".bold() + Imd.MarkDownToHTML(inputSourceLink.value);
+      self.refreshElement();
+    }
+
+    // Tags
+    /**
+     * @type {HTMLParagraphElement}
+     */
+    let pTags = panel.querySelector('p[name="tags"]');
+    /**
+     * @type {HTMLInputElement}
+     */
+    let inputTags = panel.querySelector('input[name="tags"]');
+    if (this.details.tags == null) {
+      this.details.tags = [];
+    }
+    pTags.innerHTML = "Tags: ".bold() + self.details.tags.join(", ");
+    inputTags.value = self.details.tags.join(", ");
+    inputTags.onsearch = function(e) {
+      e.preventDefault();
+      self.details.tags = inputTags.value.split(",").map(v => v = v.trim());
+      self.saveDetails();
+      inputTags.blur();
+      pTags.innerHTML = "Tags: ".bold() + self.details.tags.join(", ");
+      inputTags.value = self.details.tags.join(", ");
       self.refreshElement();
     }
   }
@@ -689,7 +785,7 @@ class SongManager {
   /**
    * @param {string} search Search for a string
    */
-  static search(search = "") {
+  static search(search = document.getElementById("search").value) {
     search = search.toLowerCase();
     /** @param {string | string[]} string */
     function match(string) {
@@ -853,17 +949,17 @@ class SongManager {
     }
   }
 
-  /**
-   * @param {Settings["sortBy"]} sortName
-   */
-  static sortBy(sortName) {
-    SongManager.songList.sort((a, b) => {
-      if (sortName == "artist") {
-        // TODO: Fix
-      }
-    });
-    SongManager.refreshList();
-  }
+  // /**
+  //  * @param {Settings["sortBy"]} sortName
+  //  */
+  // static sortBy(sortName) {
+  //   SongManager.songList.sort((a, b) => {
+  //     if (sortName == "artist") {
+  //       // TODO: Fix
+  //     }
+  //   });
+  //   SongManager.refreshList();
+  // }
 
   static async loadFromFile(fileLocation = Settings.current.songFolder + "/db.json") {
     if (!Settings.current.remote) {
@@ -974,7 +1070,11 @@ class SongManager {
   }
 
   static playRandom() {
-    SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)].play();
+    let song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
+    while (song.songId === SongManager.getCurrentlyPlayingSong().songId && SongManager.songList.length > 1) {
+      song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
+    }
+    song.play();
   }
 
   static playNext() {
@@ -1062,15 +1162,228 @@ class SongManager {
   }
 
   static addSong() {
-    let p = new Prompt("This is test");
-    p.addContent("lol");
-    let ok = document.createElement("button");
-    ok.innerText = "Cancel";
-    ok.classList.add("color-red");
-    ok.onclick = function() {
+    let p = new Prompt("Add song");
+    p.addContent("Add a song to your library");
+    let youtubeBtn = document.createElement("button");
+    youtubeBtn.innerText = "Download YouTube Audio";
+    youtubeBtn.onclick = function() {
+      p.close();
+      SongManager.addSongYouTube();
+    };
+    let close = document.createElement("button");
+    close.innerText = "Close";
+    close.classList.add("color-red");
+    close.onclick = function() {
       p.close();
     };
-    p.addButtons(ok, "fancybutton");
+    p.addButtons([youtubeBtn, close], "fancybutton");
+  }
+
+  static addSongYouTube() {
+    /**
+     * @param {string} str 
+     */
+    function isValid(str) {
+      // var orgStr = str;
+      let reg = /[\\\/\:\*\?\"\<\>\|]/g;
+      if (reg.test(str)) {
+        str = str.replace(reg, "");
+      }
+      return str;
+    }
+
+    let p = new Prompt("Download YouTube Audio");
+    let ytInput = document.createElement("input");
+    ytInput.classList.add("fancyinput");
+    ytInput.style.display = "block";
+    ytInput.style.width = "90%";
+    ytInput.style.margin = "auto";
+    ytInput.placeholder = "YouTube URL*";
+
+    let ytInputArtist = document.createElement("input");
+    ytInputArtist.classList.add("fancyinput");
+    ytInputArtist.style.display = "block";
+    ytInputArtist.style.width = "90%";
+    ytInputArtist.style.margin = "auto";
+    ytInputArtist.placeholder = "Artist";
+    
+    let ytInputTitle = document.createElement("input");
+    ytInputTitle.classList.add("fancyinput");
+    ytInputTitle.style.display = "block";
+    ytInputTitle.style.width = "90%";
+    ytInputTitle.style.margin = "auto";
+    ytInputTitle.placeholder = "Title*";
+    
+    let ytProgressBar = document.createElement("progress");
+    ytProgressBar.classList.add("fancyprogress");
+    ytProgressBar.style.width = "93%";
+    ytProgressBar.style.display = "block";
+    ytProgressBar.style.margin = "auto";
+
+    p.addContent(ytInput);
+    p.addContent(ytInputArtist);
+    p.addContent(ytInputTitle);
+    p.addContent(ytProgressBar);
+    let downloadYouTube = document.createElement("button");
+    downloadYouTube.innerText = "Download";
+    downloadYouTube.classList.add("color-green");
+    downloadYouTube.onclick = async function() {
+      // Start Downloading...
+      p.headerText = "Downloading...";
+
+      ytInput.disabled = true;
+      ytInputArtist.disabled = true;
+      ytInputTitle.disabled = true;
+      downloadYouTube.disabled = true;
+
+      let url = ytInput.value.trim();
+      let artist = ytInputArtist.value.trim();
+      let title = ytInputTitle.value.trim();
+      let error = false;
+      if (url == "" || !ytdl.validateURL(url)) {
+        dialog.showErrorBox("Invalid URL", "Please enter a valid YouTube URL");
+        ytInput.disabled = false;
+        ytInputArtist.disabled = false;
+        ytInputTitle.disabled = false;
+        downloadYouTube.disabled = false;
+        p.headerText = "Download YouTube Audio";
+        ytInput.focus();
+        return;
+      }
+      if (title == "") {
+        dialog.showErrorBox("Invalid Title", "Please enter a title for the audio");
+        ytInput.disabled = false;
+        ytInputArtist.disabled = false;
+        ytInputTitle.disabled = false;
+        downloadYouTube.disabled = false;
+        p.headerText = "Download YouTube Audio";
+        ytInputTitle.focus();
+        return;
+      }
+      let audio = ytdl(url, {
+        "filter": "audioonly"
+      });
+
+      const song = new Song();
+      song.songId = SongManager.songList.length;
+      song.path = isValid(artist) == "" ? isValid(title) : isValid(artist) + " - " + isValid(title);
+      song.songPath = song.getFullPath("path") + "/audio.mp3";
+      song.background = song.getFullPath("path") + "/maxresdefault.jpg";
+      song.details.artist = artist === "" ? null : artist;
+      song.details.title = title;
+      song.details.source = "YouTube";
+      song.details.sourceLink = url;
+      
+      let surfix = 0;
+      while (fs.existsSync(song.getFullPath("path"))) {
+        let len = surfix.toString().length + 3;
+        if (surfix == 0) {
+          song.path += ` (${surfix.toString()})`;
+        }
+        else {
+          song.path = song.path.substring(0, song.path.length - len) + ` (${surfix.toString()})`;
+        }
+        surfix++;
+      }
+
+      fs.mkdirSync(song.getFullPath("path"));
+      if (error || audio == null) {
+        dialog.showErrorBox("Invalid URL", "Please enter a valid YouTube URL");
+        ytInput.disabled = false;
+        ytInputArtist.disabled = false;
+        ytInputTitle.disabled = false;
+        downloadYouTube.disabled = false;
+        ytInput.focus();
+        return;
+      }
+      let dl = new ion.Download(
+        "https://i.ytimg.com/vi/" + ytdl.getURLVideoID(url) + "/maxresdefault.jpg",
+        song.getFullPath("background")
+      );
+      dl.start(); // Download BG image
+      let ws = new fs.WriteStream(song.getFullPath("songPath"));
+      new Notification({
+        "title": song.path + " started downloading..."
+      }).show();
+
+      let cancelledByUser = false;
+
+      audio.pipe(ws)
+      .on("finish", () => {
+        if (cancelledByUser == true) {
+          return;
+        }
+        console.log("Finshed");
+        SongManager.songList.push(song);
+        SongManager.refreshList();
+        song.play();
+        song.saveDetails();
+        p.close();
+        ws.close();
+        new Notification({
+          "title": song.path + " finished downloading."
+        }).show();
+      })
+      .on("error", (err) => {
+        ws.close();
+        console.error(err);
+        dialog.showErrorBox("Unexpected Error", err.message);
+        ytInput.disabled = false;
+        ytInputArtist.disabled = false;
+        ytInputTitle.disabled = false;
+        downloadYouTube.disabled = false;
+        p.headerText = "Download YouTube Audio";
+      })
+
+      audio.on("progress", (chunk, downloaded, total) => {
+        const percent = downloaded / total;
+        // console.log(`${(percent * 100).toFixed(2)}% downloaded `);
+        // let percentText = (percent * 100).toFixed(2);
+        ytProgressBar.max = total;
+        ytProgressBar.value = downloaded;
+      });
+
+      audio.on("error", (err) => {
+        ws.close();
+        console.error(err);
+        dialog.showErrorBox("Unexpected Error", err.message);
+        ytInput.disabled = false;
+        ytInputArtist.disabled = false;
+        ytInputTitle.disabled = false;
+        downloadYouTube.disabled = false;
+        p.headerText = "Download YouTube Audio";
+      });
+
+      ytProgressBar.min = 0;
+      
+      if (p.buttonsElement.children.length < 3) {
+        let cancel = document.createElement("button");
+        cancel.innerText = "Cancel Download";
+        cancel.classList.add("color-red");
+        cancel.onclick = function() {
+          cancelledByUser = true;
+          audio.destroy("Cancelled by user.");
+          ws.close();
+          ytInput.disabled = false;
+          ytInputArtist.disabled = false;
+          ytInputTitle.disabled = false;
+          downloadYouTube.disabled = false;
+          p.headerText = "Download YouTube Audio";
+          p.buttonsElement.removeChild(p.buttonsElement.children[2]);
+          setTimeout(() => {
+            fs.rmdirSync(song.getFullPath("path"), { recursive: true });
+          }, 10);
+        };
+        p.addButtons(cancel, "fancybutton");
+      }
+    };
+    let close = document.createElement("button");
+    close.innerText = "Close";
+    close.classList.add("color-red");
+    close.onclick = function() {
+      p.close();
+    };
+    p.addButtons([downloadYouTube, close], "fancybutton");
   }
 
   static selectBackground(song = SongManager.getCurrentlyPlayingSong()) {
@@ -1136,6 +1449,39 @@ const menus = {
             if (!shell.openItem(path)) {
               console.error("Unable to open directory", path);
             }
+          }
+        }
+      },
+      {
+        label: "Delete song",
+        click: (menuItem) => {
+          /**
+           * @type {Song}
+           */
+          const song = menuItem.songObject;
+          if (song instanceof Song) {
+            let path = song.getFullPath("path");
+            let ans = dialog.showMessageBoxSync(remote.getCurrentWindow(),
+            {
+              "buttons": [
+                "Delete song",
+                "Cancel"
+              ],
+              "message": "Delete the song:\n" + `"${song.details.artist} - ${song.details.title}"?`
+            });
+
+            if (ans !== 0) {
+              return;
+            }
+            while(SongManager.getCurrentlyPlayingSong().songId === song.songId && SongManager.songList.length > 1) {
+              SongManager.playNext();
+            }
+            SongManager.songList = SongManager.songList.filter(s => s.songId !== song.songId);
+            fs.rmdirSync(path, {
+              "recursive": true
+            });
+            SongManager.saveToFile();
+            SongManager.refreshList();
           }
         }
       }

@@ -252,7 +252,7 @@ input#advancedToggle + label + div#advancedoptions {
 }
 
 input#advancedToggle:checked + label + div#advancedoptions {
-  height: 360px;
+  height: auto;
   border-width: 1px;
   overflow-y: auto;
 }
@@ -268,6 +268,30 @@ input[type="range"][orient="vertical"]
   width: 8px;
   height: 100px;
   padding: 0 16px;
+}
+
+input.fancyinput,
+input.fancyinput {
+  border-radius: 4px;
+  font-size: 16px;
+  padding: 4px;
+  background-color: var(--bgcolor);
+  color: var(--txtcolor);
+  border-color: var(--txtcolor);
+}
+
+input.fancyinput:disabled,
+input.fancyinput:disabled {
+  filter: brightness(0.7);
+}
+
+progress.fancyprogress {
+  display: block;
+  height: 20px;
+  padding: 1px;
+  background-color: var(--txtcolor);
+  color: var(--txtcolor);
+  border-color: var(--bgcolor);
 }
 
 div#changenotes p {
