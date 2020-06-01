@@ -83,11 +83,27 @@
     <h2>Settings</h2>
     <hr>
     <label for="volumeValue">Volume</label>
-    <input type="range" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.setVolume(this.value);">
+    <input type="range" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.setVolume(this.value);" onmouseup="settings.saveToFile();">
     <hr>
     <label>Song Folder</label>
     <input type="text" name="songFolder" id="songfolderValue" readonly class="fancyinput">
     <button class="fancybutton" onclick="Settings.current.selectSongFolder();">Select</button>
+    <hr>
+    <!-- <h3>Song Grouping</h3> -->
+    <label>Song Grouping</label>
+    <sup>Group songs into smaller folders in the song menu.</sup>
+    <input type="radio" name="sgstyle" id="songGrouping=0" value="0" onclick="settings.songGrouping = 0; settings.saveToFile();">
+    <label for="songGrouping=0">No grouping</label><br>
+    <input type="radio" name="sgstyle" id="songGrouping=1" value="1" onclick="settings.songGrouping = 1; settings.saveToFile();">
+    <label for="songGrouping=1">By Artist</label><br>
+    <input type="radio" name="sgstyle" id="songGrouping=2" value="2" onclick="settings.songGrouping = 2; settings.saveToFile();">
+    <label for="songGrouping=2">By Album</label><br>
+    <input type="radio" name="sgstyle" id="songGrouping=3" value="3" onclick="settings.songGrouping = 3; settings.saveToFile();">
+    <label for="songGrouping=3">By Source</label><br>
+    <input type="radio" name="sgstyle" id="songGrouping=4" value="4" onclick="settings.songGrouping = 4; settings.saveToFile();">
+    <label for="songGrouping=4">Alphabetically (Artist)</label>
+    <input type="radio" name="sgstyle" id="songGrouping=5" value="5" onclick="settings.songGrouping = 5; settings.saveToFile();">
+    <label for="songGrouping=5">Alphabetically (Title)</label>
     <hr>
     <h3>Visual Settings</h3>
     <label>Visualizer Style</label>

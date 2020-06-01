@@ -64,15 +64,11 @@ class Settings {
     }
   }
 
-  saveToFile(fileLocation = "./data/settings.json") {
+  async saveToFile(fileLocation = "./data/settings.json") {
     if (!fs.existsSync(path.dirname(fileLocation))) {
       fs.mkdirSync(path.dirname(fileLocation), { recursive: true });
     } 
-    fs.writeFile(fileLocation, JSON.stringify(this, null, 2), (err) => {
-      if (err) {
-        console.error(err);
-      }
-    });
+    fs.writeFileSync(fileLocation, JSON.stringify(this, null, 2));
   }
 
   /**
@@ -225,7 +221,7 @@ class Settings {
    * List of full paths to the song folders.
    * @type {string[]}
    */
-  songFolderList = [ ];
+  songFolderList = [];
   /**
    * Intensity of the audio visualizer.
    * @type {number}
@@ -254,7 +250,14 @@ class Settings {
     green: 255,
     blue: 100
   };
+  /**
+   * Visualizer Style ID
+   */
   visualizerStyle = 3;
+  /**
+   * Which style the songs should be grouped in.
+   */
+  songGrouping = 0;
   /**
    * Repeat the same song.
    */
@@ -298,7 +301,7 @@ class HTMLSongElement extends HTMLDivElement {
   /**
    * @type {Song}
    */
-  songObject;
+  song;
 }
 
 class Song {
@@ -451,7 +454,7 @@ class Song {
    */
   setElement(elm) {
     this.element = elm;
-    this.element.songObject = this;
+    this.element.song = this;
   }
 
   /**
@@ -1099,7 +1102,7 @@ class SongManager {
     fs.writeFileSync(fileLocation, JSON.stringify(list));
     for (let i = 0; i < elementList.length; i++) {
       const element = elementList[i];
-      element.songObject.element = element;
+      element.song.element = element;
     }
   }
 
@@ -1493,6 +1496,63 @@ class SongManager {
    * @param {Song} song 
    */
   static onplay = function(song) { };
+}
+
+/**
+ * Custom HTML Song Container Element that extends div.  
+ * Every `songContainer` is this.
+ */
+class HTMLSongGroupElement extends HTMLDivElement {
+  /**
+   * @type {SongGroup}
+   */
+  songGroup;
+}
+
+class SongGroup {
+  /**
+   * @type {SongGroup[]}
+   */
+  static songGroups = [];
+
+  /**
+   * @param {string} name Name for this container.
+   */
+  constructor(name) {
+    this.element = document.createElement("div");
+    this.element.songGroup = this;
+    // Styling
+    this.element.classList.add("songgroup");
+  }
+  /**
+   * @type {Song[]}
+   */
+  songList = [];
+
+  refreshList() {
+
+  }
+
+  /**
+   * @type {string}
+   */
+  name = null;
+  /**
+   * @type {HTMLSongGroupElement}
+   */
+  element = null;
+  set collapsed(value) {
+    this.element.toggleAttribute("collapsed", value);
+  } 
+  get collapsed() {
+    return this.element.hasAttribute("collapsed");
+  }
+  /**
+   * Toggle collapse on this container.
+   */
+  collapse() {
+    this.element.toggleAttribute("collapsed");
+  }
 }
 
 const menus = {
@@ -2599,6 +2659,7 @@ exports.Settings = Settings;
 exports.HTMLSongElement = HTMLSongElement;
 exports.Song = Song;
 exports.SongManager = SongManager;
+exports.SongGroup = SongGroup;
 exports.Storyboard = Storyboard;
 exports.ToxenScriptManager = ToxenScriptManager;
 exports.Debug = Debug;
