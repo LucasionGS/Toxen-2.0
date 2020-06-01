@@ -65,7 +65,14 @@ class Settings {
   }
 
   saveToFile(fileLocation = "./data/settings.json") {
-    fs.writeFileSync(fileLocation, JSON.stringify(this, null, 2));
+    if (!fs.existsSync(path.dirname(fileLocation))) {
+      fs.mkdirSync(path.dirname(fileLocation), { recursive: true });
+    } 
+    fs.writeFile(fileLocation, JSON.stringify(this, null, 2), (err) => {
+      if (err) {
+        console.error(err);
+      }
+    });
   }
 
   /**
@@ -494,22 +501,46 @@ class Song {
             SongManager.player.src = newSrc;
           }
           else {
+
+            // if (ffmpeg) {
+              
+            // }
+
             const format = fp.split(".")[fp.split(".").length - 1];
             /**
              * @type {ffmpeg.FfmpegCommand}
              */
-            let src = new ffmpeg(fp);
+            let src;
+            try {
+              src = new ffmpeg(fp);
+            } catch (error) {
+              console.error(error);
+              return;
+            }
             let newName = fp.substring(0, fp.length - format.length) + "mp3";
             console.log("Converting the file...");
-            let p = new Popup("First Time Convertion", "This song is in a different format than supported, "
+            let p = new Prompt("First Time Convertion", "This song is in a different format than supported, "
             + "so it is being converted to a usable format.<br>Please allow a moment until it has been converted...");
-            p.setButtonText(false);
+            p.addButtons(
+              (function() {
+                let _b = document.createElement("button");
+                _b.innerText = "Close";
+                _b.addEventListener("click", () => {
+                  p.close();
+                });
+                return _b;
+              })(),
+              "fancybutton"
+            );
             src.toFormat("mp3").saveToFile(newName).on("end", () => {
               console.log("Finished!");
               SongManager.player.src = newName;
               p.close();
-              new Popup("Convertion Completed.", [], 2000);
+              new Prompt("Convertion Completed.");
               this.play();
+            })
+            .on("error", (err) => {
+              console.error(err);
             });
             return;
           }
@@ -763,10 +794,10 @@ class SongManager {
       switch (Settings.current.sortBy) {
         case "title":
           sortFunc = (a, b) => {
-            if (a.details.title > b.details.title) {
+            if (a.details.title.toLowerCase() > b.details.title.toLowerCase()) {
               return 1;
             }
-            if (a.details.title < b.details.title) {
+            if (a.details.title.toLowerCase() < b.details.title.toLowerCase()) {
               return -1;
             }
             return 0;
@@ -777,10 +808,10 @@ class SongManager {
           case "artist": // Fall-through
           default:
             sortFunc = (a, b) => {
-              if (a.details.artist > b.details.artist) {
+              if (a.details.artist.toLowerCase() > b.details.artist.toLowerCase()) {
                 return 1;
               }
-              if (a.details.artist < b.details.artist) {
+              if (a.details.artist.toLowerCase() < b.details.artist.toLowerCase()) {
                 return -1;
               }
               return 0;
@@ -829,8 +860,16 @@ class SongManager {
         }
       }
       return true;
-      
     }
+
+    /**
+     * Escape the required characters in a RegExp string
+     * @param {string} str 
+     */
+    function escapeRegex(str) {
+      return str.replace(/[\[\\\^\$\.\|\?\*\+\(\)\]]/g, "\\$&");
+    }
+
     let nSearch = [];
     this.songList.forEach(s => {
       let searchTags = [
@@ -838,7 +877,9 @@ class SongManager {
         s.details.title,
         s.details.album,
         s.details.source,
-        s.isVideo ? "$video" : "$audio"
+        // s.isVideo ? "$video" : "$audio",
+        // s.background == null ? "$!background" : "$background",
+        // s.txnScript == null ? "$!storyboard" : "$storyboard",
       ].concat(s.details.tags);
 
       if (match(searchTags)) {
@@ -2176,7 +2217,7 @@ class ToxenScriptManager {
     pulse: function (args) {
       if (!SongManager.player.paused) {
         let [intensity] = args;
-        testPulse.pulse(settings.visualizerIntensity * 32 * intensity);
+        testPulse.pulse(Storyboard.visualizerIntensity * 32 * intensity);
       }
     },
     /**
@@ -2375,7 +2416,7 @@ class Prompt {
    * @param {string} title 
    * @param {HTMLElement | HTMLElement[] | string} description 
    */
-  constructor(title = null, description = null, ) {
+  constructor(title = null, description = null) {
     this.main = document.createElement("div");
     this.headerElement = document.createElement("h1");
     this.contentElement = document.createElement("div");
@@ -2469,23 +2510,37 @@ class Prompt {
 
   /**
    * 
-   * @param {HTMLButtonElement | HTMLButtonElement[]} button 
+   * @param {string | HTMLButtonElement | (string | HTMLButtonElement)[]} button 
    * @param {string} btnClass 
+   * @returns {HTMLButtonElement | HTMLButtonElement[]}
    */
   addButtons(button, btnClass = null) {
     if (Array.isArray(button)) {
-      button.forEach(b => {
+      button.forEach((b, i) => {
+        if (typeof b == "string") {
+          let _t = document.createElement("button");
+          _t.innerText = b;
+          b = _t;
+        }
         if (btnClass != null && typeof btnClass == "string") {
           b.classList.add(btnClass.split(" "));
         }
         this.buttonsElement.appendChild(b);
+        button[i] = b;
       });
     }
     else {
+      if (typeof button == "string") {
+        let _t = document.createElement("button");
+        _t.innerText = button;
+        button = _t;
+      }
       if (btnClass != null && typeof btnClass == "string") {
         button.classList.add(btnClass.split(" "));
       }
       this.buttonsElement.appendChild(button);
+      
+      return button;
     }
   }
 
@@ -2528,7 +2583,9 @@ class Prompt {
   }
 
   close() {
-    this.main.parentElement.removeChild(this.main);
+    if (typeof this.main == "object") {
+      this.main.parentElement.removeChild(this.main);
+    }
   }
 }
 

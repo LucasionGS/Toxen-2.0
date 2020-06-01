@@ -11,6 +11,18 @@
 			"problemMatcher": [],
 			"label": "npm: test",
 			"detail": "electron ."
-		}
+		},
+    {
+      "type": "shell",
+      "label": "Build Electron for Windows",
+      "command": "electron-packager ./ \"${workspaceFolderBasename}\" --out=\"E:/Dev/.distributions/toxen/win32\" --platform=win32 --overwrite --icon=./icon.ico",
+      "problemMatcher": []
+    },
+    {
+      "type": "shell",
+      "label": "Build Electron for Linux",
+      "command": "electron-packager ./ \"${workspaceFolderBasename}\" --out=\"E:/Dev/.distributions/toxen/linux-armv7l\"--arch=armv7l --platform=linux --overwrite --icon=./icon.ico",
+      "problemMatcher": []
+    }
 	]
 }
