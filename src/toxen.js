@@ -207,7 +207,8 @@ async function initialize() {
     }
 
     if (ctrl && shift && key == "f") {
-      SongManager.getCurrentlyPlayingSong().element.scrollIntoViewIfNeeded();
+      let cp = SongManager.getCurrentlyPlayingSong();
+      cp.focus();
     }
     
     if (ctrl && !shift && key == "l") {

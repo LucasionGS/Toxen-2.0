@@ -282,10 +282,11 @@ class Settings {
    */
   songMenuLocked = false;
   /**
-   * `true` Shows backgrounds as a thumbnail for the songs with a custom background.  
-   * `false` Doesn't show thumbnails.
+   * `0` Doesn't show thumbnails.
+   * `1` Shows backgrounds as a thumbnail for the songs with a custom background.  
+   * `2` Shows backgrounds as a background on the music panel for the songs with a custom background.  
    */
-  thumbnails = true;
+  thumbnails = 1;
   /**
    * Display the details of the current song playing in Discord Presence.
    * Details include Artist, Title, and current time.
@@ -343,25 +344,39 @@ class Song {
   refreshElement() {
     this.element.children[0].innerHTML = "<p>" + Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title) + "</p>";
     this.element.children[0].style.position = "relative";
-    if (this.background != null && Settings.current.thumbnails) {
+    if (this.background != null && Settings.current.thumbnails == 1) {
+      this.element.style.background = "";
       this.element.children[0].children[0].style.width = "calc(100% - 96px)";
       const thumbnail = document.createElement("div");
       const img = document.createElement("img");
       thumbnail.appendChild(img).src = this.getFullPath("background");
       thumbnail.style.overflow = "hidden";
       thumbnail.style.width = "96px";
+      // thumbnail.style.height = "100%";
       thumbnail.style.position = "absolute";
       thumbnail.style.right = "0";
       thumbnail.style.top = "0";
       img.setAttribute("loading", "lazy");
-      // img.style.display = "block";
-      // img.style.margin = "auto";
       this.element.children[0].appendChild(thumbnail);
-      thumbnail.addEventListener("load", () => {
-        thumbnail.style.height = this.element.clientHeight+"px";
-        img.style.maxHeight = this.element.clientHeight+"px";
-        // img.style.maxWidth = "100%";
-      }, 10);
+      img.style.maxWidth = "100%";
+      // thumbnail.addEventListener("load", () => {
+      //   thumbnail.style.height = this.element.offsetHeight+"px";
+      //   img.style.maxHeight = this.element.offsetHeight+"px";
+      // }, 10);
+    }
+    if (this.background != null && Settings.current.thumbnails == 2) {
+      let _path = this.getFullPath("background");
+      if (process.platform == "win32") {
+        _path = _path.replace(/\\+/g, "/");
+      }
+      // console.log(`url("${_path}")`);
+      
+      // this.element.style.backgroundImage = `url("${_path}")`;
+      this.element.style.background = "linear-gradient(to right,  rgba(0, 0, 0, 1), rgba(0, 0, 0, 0) ), "
+      +`url("${_path}"),` + "center center / cover no-repeat fixed";
+    }
+    else {
+      this.element.style.background = "";
     }
 
     this.click = function() {
@@ -472,7 +487,7 @@ class Song {
     let cur = SongManager.getCurrentlyPlayingSong();
     if (cur != null) cur.element.toggleAttribute("playing", false);
     this.element.toggleAttribute("playing", true);
-    this.element.scrollIntoViewIfNeeded();
+    this.focus();
 
     if (SongManager.player.getAttribute("songid") != id) {
       SongManager.player.setAttribute("songid", id);
@@ -763,7 +778,30 @@ class Song {
   }
 
   setBackground() {
+    // Not yet implemented
+    throw "Not yet implemented";
+  }
 
+  /**
+   * Get the parent group if it belongs to one. Returns `null` if not grouped.
+   */
+  getGroup() {
+    /**
+     * @type {HTMLSongGroupElement}
+     */
+    const p = this.element.parentElement;
+    return p != null && p.classList.contains("songgroup") ? p.songGroup : null;
+  }
+
+  /**
+   * Scroll to the element and reveal it.
+   */
+  focus() {
+    let cpp = this.getGroup();
+    if (cpp != null) {
+      cpp.collapsed = false;
+    }
+    this.element.scrollIntoViewIfNeeded();
   }
 }
 
@@ -805,9 +843,7 @@ class SongManager {
             }
             return 0;
           };
-          
           break;
-          
           case "artist": // Fall-through
           default:
             sortFunc = (a, b) => {
@@ -832,12 +868,80 @@ class SongManager {
       SongManager.songList.sort(_sort);
 
       let nList = SongManager.songList;
+      let opened = SongGroup.getAllGroupNames(false);
+      opened = [...new Set(opened)];
       SongManager.songListElement.innerHTML = "";
-      for (let i = 0; i < nList.length; i++) {
-        const song = nList[i];
-        song.refreshElement();
-        SongManager.songListElement.appendChild(song.element);
+      let noGrouping = false;
+      // Group Songs
+      if (typeof Settings.current.songGrouping == "number" && Settings.current.songGrouping > 0 && Settings.current.songGrouping < 5) {
+        /**
+         * @type {{[key: string]: Song[]}}
+         */
+        let groups = {};
+        /**
+         * @param {string} name 
+         * @param {Song} song 
+         */
+        function addToGroup(name, song, missingText = "!Missing Group!") {
+          if (name == null || (typeof name == "string" && name.trim() == "")) {
+            name = missingText;
+          }
+          if (groups.hasOwnProperty(name)) {
+            groups[name].push(song);
+          }
+          else {
+            groups[name] = [song];
+          }
+        }
+        switch (Settings.current.songGrouping) {
+          case 1:
+            SongManager.songList.forEach(s => {
+              addToGroup(s.details.artist, s, "!Missing artist!");
+            });
+            break;
+          case 2:
+            SongManager.songList.forEach(s => {
+              addToGroup(s.details.album, s, "!Missing album!");
+            });
+            break;
+          case 3:
+            SongManager.songList.forEach(s => {
+              addToGroup(s.details.source, s, "!Missing source!");
+            });
+            break;
+        
+          default:
+            noGrouping = true;
+            break;
+        }
+        if (noGrouping == false) {          
+          for (const key in groups) {
+            if (groups.hasOwnProperty(key)) {
+              const sg = new SongGroup(key);
+              sg.songList = groups[key];
+              if (opened.includes(sg.name)) {
+                sg.collapsed = false;
+              }
+              else {
+                sg.collapsed = true;
+              }
+              sg.refreshList();
+            }
+          }
+        }
       }
+      // Don't Group Songs
+      else {
+        noGrouping = true;
+      }
+      if (noGrouping == true) {
+        for (let i = 0; i < nList.length; i++) {
+          const song = nList[i];
+          song.refreshElement();
+          SongManager.songListElement.appendChild(song.element);
+        }
+      }
+
       SongManager.search();
     }
     else {
@@ -898,6 +1002,25 @@ class SongManager {
     }
     else {
       SongManager.playableSongs = SongManager.songList;
+    }
+
+    if (Settings.current.songGrouping > 0) {
+      let gs = SongGroup.getAllGroups();
+      for (let i = 0; i < gs.length; i++) {
+        const g = gs[i];
+        let len = g.songList.length;
+        let hiddenElements = 0;
+        for (let i2 = 0; i2 < g.songList.length; i2++) {
+          const song = g.songList[i2];
+          if (song.element.hidden == true) {
+            hiddenElements++;
+          }
+        }
+        g.element.hidden = (len == hiddenElements);
+        if (search != "" && len - 1 == hiddenElements) {
+          g.collapsed = false;
+        }
+      }
     }
   }
 
@@ -1015,7 +1138,7 @@ class SongManager {
         const song = SongManager.songList[i];
         if ("file:/" + song.getFullPath("songPath").replace(/\\+|\/\/+/g, "/") == decodeURIComponent(SongManager.player.src.replace(/\\+|\/\/+/g, "/"))) {
           song.element.toggleAttribute("playing", true);
-          song.element.scrollIntoViewIfNeeded();
+          song.focus();
           break;
         }
       }
@@ -1516,13 +1639,23 @@ class SongGroup {
   static songGroups = [];
 
   /**
-   * @param {string} name Name for this container.
+   * @param {string} name Name for this group container.
    */
   constructor(name) {
+    this.name = name;
     this.element = document.createElement("div");
     this.element.songGroup = this;
-    // Styling
     this.element.classList.add("songgroup");
+    this.element.toggleAttribute("collapsed", true);
+    this.element.addEventListener("click", (e) => {
+      /**
+       * @type {HTMLElement}
+       */
+      let t = e.target;
+      if (t && t.classList.contains("songgrouphead")) {
+        this.collapse();
+      }
+    });
   }
   /**
    * @type {Song[]}
@@ -1530,7 +1663,23 @@ class SongGroup {
   songList = [];
 
   refreshList() {
+    this.element.innerHTML = "";
+    let inner = document.createElement("div");
+    inner.classList.add("songgrouphead");
+    inner.innerHTML = (() => {
+      let p = document.createElement("p");
+      p.classList.add("songgrouphead");
+      p.innerHTML = Imd.MarkDownToHTML(this.name) + " (Folded)";
+      return p.outerHTML;
+    })();
+    this.element.appendChild(inner);
+    SongManager.songListElement.appendChild(this.element);
 
+    for (let i = 0; i < this.songList.length; i++) {
+      const song = this.songList[i];
+      song.refreshElement();
+      this.element.appendChild(song.element);
+    }
   }
 
   /**
@@ -1542,7 +1691,15 @@ class SongGroup {
    */
   element = null;
   set collapsed(value) {
-    this.element.toggleAttribute("collapsed", value);
+    let res = this.element.toggleAttribute("collapsed", value);
+    try {
+      if (res) {
+        this.element.firstChild.firstChild.innerHTML = Imd.MarkDownToHTML(this.name) + " (Folded)";
+      }
+      else {
+        this.element.firstChild.firstChild.innerHTML = Imd.MarkDownToHTML(this.name);
+      }
+    } catch {}
   } 
   get collapsed() {
     return this.element.hasAttribute("collapsed");
@@ -1551,7 +1708,63 @@ class SongGroup {
    * Toggle collapse on this container.
    */
   collapse() {
-    this.element.toggleAttribute("collapsed");
+    this.collapsed = !this.collapsed;
+  }
+
+  /**
+   * @param {boolean} collapsedCondition Omit to ignore and return all
+   */
+  static getAllGroups(collapsedCondition = null) {
+    let _a = [...document.querySelectorAll(".songgroup")].map((e) => {
+      /**
+       * @type {HTMLSongGroupElement}
+       */
+      const item = e;
+      if (typeof collapsedCondition == "boolean") {
+        if ((collapsedCondition && item.hasAttribute("collapsed")) || (!collapsedCondition && !item.hasAttribute("collapsed"))) {
+          return item.songGroup;
+        }
+      }
+      else {
+        return item.songGroup;
+      }
+    });
+    _a = [...new Set(_a)];
+    for (let i = 0; i < _a.length; i++) {
+      const _b = _a[i];
+      if (typeof _b == "undefined") {
+        _a.splice(i--, 1);
+      }
+    }
+    return _a;
+  }
+
+  /**
+   * @param {boolean} collapsedCondition Omit to ignore and return all
+   */
+  static getAllGroupNames(collapsedCondition = null) {
+    let _a = [...document.querySelectorAll(".songgroup")].map((e) => {
+      /**
+       * @type {HTMLSongGroupElement}
+       */
+      const item = e;
+      if (typeof collapsedCondition == "boolean") {
+        if ((collapsedCondition && item.hasAttribute("collapsed")) || (!collapsedCondition && !item.hasAttribute("collapsed"))) {
+          return item.songGroup.name;
+        }
+      }
+      else {
+        return item.songGroup.name;
+      }
+    });
+    _a = [...new Set(_a)];
+    for (let i = 0; i < _a.length; i++) {
+      const _b = _a[i];
+      if (typeof _b == "undefined") {
+        _a.splice(i--, 1);
+      }
+    }
+    return _a;
   }
 }
 

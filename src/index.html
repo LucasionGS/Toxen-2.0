@@ -92,18 +92,18 @@
     <!-- <h3>Song Grouping</h3> -->
     <label>Song Grouping</label>
     <sup>Group songs into smaller folders in the song menu.</sup>
-    <input type="radio" name="sgstyle" id="songGrouping=0" value="0" onclick="settings.songGrouping = 0; settings.saveToFile();">
-    <label for="songGrouping=0">No grouping</label><br>
-    <input type="radio" name="sgstyle" id="songGrouping=1" value="1" onclick="settings.songGrouping = 1; settings.saveToFile();">
-    <label for="songGrouping=1">By Artist</label><br>
-    <input type="radio" name="sgstyle" id="songGrouping=2" value="2" onclick="settings.songGrouping = 2; settings.saveToFile();">
-    <label for="songGrouping=2">By Album</label><br>
-    <input type="radio" name="sgstyle" id="songGrouping=3" value="3" onclick="settings.songGrouping = 3; settings.saveToFile();">
-    <label for="songGrouping=3">By Source</label><br>
-    <input type="radio" name="sgstyle" id="songGrouping=4" value="4" onclick="settings.songGrouping = 4; settings.saveToFile();">
-    <label for="songGrouping=4">Alphabetically (Artist)</label>
-    <input type="radio" name="sgstyle" id="songGrouping=5" value="5" onclick="settings.songGrouping = 5; settings.saveToFile();">
-    <label for="songGrouping=5">Alphabetically (Title)</label>
+    <input type="radio" name="sgstyle" id="songgrouping=0" value="0" onclick="settings.songGrouping = 0; settings.saveToFile(); SongManager.refreshList();">
+    <label for="songgrouping=0">No grouping</label><br>
+    <input type="radio" name="sgstyle" id="songgrouping=1" value="1" onclick="settings.songGrouping = 1; settings.saveToFile(); SongManager.refreshList();">
+    <label for="songgrouping=1">By Artist</label><br>
+    <input type="radio" name="sgstyle" id="songgrouping=2" value="2" onclick="settings.songGrouping = 2; settings.saveToFile(); SongManager.refreshList();">
+    <label for="songgrouping=2">By Album</label><br>
+    <input type="radio" name="sgstyle" id="songgrouping=3" value="3" onclick="settings.songGrouping = 3; settings.saveToFile(); SongManager.refreshList();">
+    <label for="songgrouping=3">By Source</label><br>
+    <input type="radio" name="sgstyle" id="songgrouping=4" value="4" onclick="settings.songGrouping = 4; settings.saveToFile(); SongManager.refreshList();">
+    <label for="songgrouping=4">Alphabetically (Artist)</label><br>
+    <input type="radio" name="sgstyle" id="songgrouping=5" value="5" onclick="settings.songGrouping = 5; settings.saveToFile(); SongManager.refreshList();">
+    <label for="songgrouping=5">Alphabetically (Title)</label>
     <hr>
     <h3>Visual Settings</h3>
     <label>Visualizer Style</label>
@@ -140,10 +140,19 @@
       Display the song menu to the right side of the screen and settings to the left.
     </sup>
     <hr>
-    <input type="checkbox" name="tntoggle" id="thumbnailsToggle" onclick="settings.thumbnails = this.checked; SongManager.refreshList(); settings.saveToFile();">
-    <label for="thumbnailsToggle">Thumbnails</label>
+    <label>Song Thumbnail Style</label><br>
+    <input type="radio" name="tnstyle" id="thumbnails=0" onclick="settings.thumbnails = 0; SongManager.refreshList(); settings.saveToFile();">
+    <label for="thumbnails=0">No Images</label><br>
+    <input type="radio" name="tnstyle" id="thumbnails=1" onclick="settings.thumbnails = 1; SongManager.refreshList(); settings.saveToFile();">
+    <label for="thumbnails=1">Thumbnails</label><br>
     <sup>
       Display background image next to the song name in the song list.<br>
+      If you're experiencing low performance, try to disable this.
+    </sup>
+    <input type="radio" name="tnstyle" id="thumbnails=2" onclick="settings.thumbnails = 2; SongManager.refreshList(); settings.saveToFile();">
+    <label for="thumbnails=2">Background Images</label>
+    <sup>
+      Display background image as the background behind the song name in the song list.<br>
       If you're experiencing low performance, try to disable this.
     </sup>
     <hr>

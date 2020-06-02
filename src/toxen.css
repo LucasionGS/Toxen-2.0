@@ -86,13 +86,45 @@ div.sidebar:hover, div.sidebar[open] {
   background-color: var(--innerpanelcolor);
 }
 
+#songselection div.songgroup[collapsed] {
+  filter: brightness(0.8);
+}
+
+#songselection div.songgroup[collapsed] div.musicitem {
+  display: none;
+}
+
+#songselection div.songgroup div.songgrouphead {
+  /* min-height: 64px; */
+  width: 100%;
+  background-color: var(--bgcolor);
+  border-top: solid white 1px;
+}
+
+#songselection div.songgroup div.songgrouphead:hover {
+  background-color: var(--panelcolor);
+  cursor: pointer;
+}
+
+#songselection div.songgroup div.songgrouphead p {
+  padding-top: calc(32px - 1em);
+  padding-bottom: calc(32px - 1em);
+  margin: 0;
+  user-select: none;
+  transition: all 0.2s ease-in-out;
+}
+
+#songselection div.songgroup div.songgrouphead:hover p {
+  margin-left: 16px;
+}
+
 #songselection div.musicitem div.innermusicitem {
   transition: transform 0.1s ease-in-out;
   border: solid 1px white;
   box-sizing: border-box;
 }
 
-#songselection div.musicitem[playing] {
+#songselection div.musicitem[playing] div.innermusicitem {
   background-color: var(--playingSong);
 }
 
