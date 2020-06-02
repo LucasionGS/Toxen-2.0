@@ -14,6 +14,8 @@ const path = require("path");
 const ytdl = require("ytdl-core");
 const ion = require("ionodelib");
 const unzipper = require("unzipper");
+const http = require("http");
+// const http = require("http");
 
 class Settings {
   /**
@@ -2902,19 +2904,37 @@ class Update {
   }
 
   static async downloadLatest() {
-    let toxenURL = "https://software.lucasion.xyz/downloads/toxen/";
-    let dl = new ion.Download(toxenURL + "latest.php", "./latest.zip");
+    let toxenGetLatestURL = "https://software.lucasion.xyz/downloads/toxen/latest.php?get=url";
+    let toxenLatestURL = await fetch(toxenGetLatestURL).then(res => res.text());
+    let dl = new ion.Download("http://"+toxenLatestURL, "./latest.zip");
+    console.log("http://"+toxenLatestURL);
+    
+    
     let dlText = document.createElement("p");
+    dlText.innerText = "If it doesn't show any progress here for more than a minute, please restart the program and try again.";
     let p = new Prompt("Started downloading...", dlText);
     p.addButtons("Close", "fancybutton color-red").addEventListener("click", () => {
       p.close();
     });
     dl.start();
+    // let int = setInterval(function() {
+    //   let pr = dl.downloadPercent();
+    //   dlText.innerText = pr + "% / ";
+    //   if (pr == 100) {
+    //     clearInterval(int);
+    //   }
+    // }, 10);
     dl.onData = function() {
-      dlText.innerText = this.downloadPercent() + "%";
+      let pr = +dl.downloadPercent().toFixed(2);
+      dlText.innerText = pr + "%";
     };
+    dl
     dl.onEnd = function() {
+      p.close();
       new Prompt("Finished Downloading").close(2000).addButtons("Close", "fancybutton color-red");
+    };
+    dl.onError = function(err) {
+      console.error(err);
     };
   }
 }
