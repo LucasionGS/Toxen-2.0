@@ -1,6 +1,6 @@
 let debugMode = true;
 const fs = require("fs");
-const {Popup} = require("ionlib");
+// const {Popup} = require("ionlib");
 const {
   Settings,
   Song,
@@ -8,11 +8,13 @@ const {
   Storyboard,
   ToxenScriptManager,
   Debug,
-  Prompt
+  Prompt,
+  Update
 } = require("./toxenCore");
 const process = require("process");
 const rpc = require("discord-rpc");
-const Imd = require("./ionMarkDown").Imd;
+// const Imd = require("./ionMarkDown").Imd;
+const version = require("./version.json");
 
 // Discord RPC
 const discord = new rpc.Client({"transport": "ipc"});

@@ -14,6 +14,7 @@
   "author": "Lucasion",
   "license": "ISC",
   "dependencies": {
+    "directory-tree": "^2.2.4",
     "discord-rpc": "^3.1.1",
     "electron": "^8.2.3",
     "fluent-ffmpeg": "^2.1.2",
@@ -24,6 +25,7 @@
     "node-fetch": "^2.6.0",
     "node-hue-api": "^4.0.5",
     "npm": "^6.14.4",
+    "unzipper": "^0.10.11",
     "ytdl-core": "^2.1.5"
   }
 }

@@ -13,6 +13,7 @@ const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const ytdl = require("ytdl-core");
 const ion = require("ionodelib");
+const unzipper = require("unzipper");
 
 class Settings {
   /**
@@ -1669,7 +1670,7 @@ class SongGroup {
     inner.innerHTML = (() => {
       let p = document.createElement("p");
       p.classList.add("songgrouphead");
-      p.innerHTML = Imd.MarkDownToHTML(this.name) + " (Folded)";
+      p.innerHTML = "►" + Imd.MarkDownToHTML(this.name);
       return p.outerHTML;
     })();
     this.element.appendChild(inner);
@@ -1694,10 +1695,10 @@ class SongGroup {
     let res = this.element.toggleAttribute("collapsed", value);
     try {
       if (res) {
-        this.element.firstChild.firstChild.innerHTML = Imd.MarkDownToHTML(this.name) + " (Folded)";
+        this.element.firstChild.firstChild.innerHTML = "►" + Imd.MarkDownToHTML(this.name);
       }
       else {
-        this.element.firstChild.firstChild.innerHTML = Imd.MarkDownToHTML(this.name);
+        this.element.firstChild.firstChild.innerHTML = "▼" + Imd.MarkDownToHTML(this.name);
       }
     } catch {}
   } 
@@ -2855,16 +2856,66 @@ class Prompt {
     this.headerElement.innerText = value;
   }
 
-  close() {
-    if (typeof this.main == "object") {
-      this.main.parentElement.removeChild(this.main);
+  /**
+   * Close the prompt.
+   * @param {number} ms Optionally, close in `ms` milliseconds.
+   */
+  close(ms = 0) {
+    if (typeof ms == "number" && ms > 0) {
+      setTimeout(() => {
+        if (typeof this.main == "object") {
+          this.main.parentElement.removeChild(this.main);
+        }
+      }, ms);
     }
+    else {
+      if (typeof this.main == "object") {
+        this.main.parentElement.removeChild(this.main);
+      }
+    }
+    return this;
   }
 }
 
 class DropFile {
   constructor() {
 
+  }
+}
+
+class Update {
+  /**
+   * 
+   * @param {number} currentVersion Current version number.  
+   * It is formatted as a 12 digit timestamp, starting from the year and onwards to the minute.  
+   * `M` is Month and `m` is minute  
+   * `YYYYMMDDHHmm`
+   */
+  static async check(currentVersion) {
+    let toxenURL = "https://software.lucasion.xyz/downloads/toxen/";
+    /**
+     * @type {string[]}
+     */
+    let vers = await fetch(toxenURL + "versions.php").then(res => res.json());
+    let verCheck = /Toxen (\d+)\.zip/;
+    
+  }
+
+  static async downloadLatest() {
+    let toxenURL = "https://software.lucasion.xyz/downloads/toxen/";
+    let dl = new ion.Download(toxenURL + "latest.php", "./latest.zip");
+    let dlText = document.createElement("p");
+    let p = new Prompt("Started downloading...", dlText);
+    p.addButtons("Close", "fancybutton color-red").addEventListener("click", () => {
+      p.close();
+    });
+    dl.start();
+    dl.onData = function() {
+      dlText.innerText = this.downloadPercent() + "%";
+    };
+    dl.onEnd = function() {
+      new Prompt("Finished Downloading").close(2000).addButtons("Close", "fancybutton color-red");
+    };
   }
 }
 
@@ -2877,3 +2928,4 @@ exports.Storyboard = Storyboard;
 exports.ToxenScriptManager = ToxenScriptManager;
 exports.Debug = Debug;
 exports.Prompt = Prompt;
+exports.Update = Update;
