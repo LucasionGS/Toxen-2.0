@@ -85,6 +85,9 @@ async function initialize() {
     }
   }
 
+  // Check for update
+  Update.check(version);
+
   // Initialize Discord RPC
   SongManager.onplay = async function(song) {
     // Song Info

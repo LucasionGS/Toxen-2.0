@@ -13,8 +13,8 @@ const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const ytdl = require("ytdl-core");
 const ion = require("ionodelib");
-const unzipper = require("unzipper");
 const http = require("http");
+const Zip = require("adm-zip");
 // const http = require("http");
 
 class Settings {
@@ -2894,20 +2894,39 @@ class Update {
    * `YYYYMMDDHHmm`
    */
   static async check(currentVersion) {
-    let toxenURL = "https://software.lucasion.xyz/downloads/toxen/";
+    document.getElementById("currentversion").innerText = currentVersion;
     /**
-     * @type {string[]}
+     * @type {HTMLButtonElement}
      */
-    let vers = await fetch(toxenURL + "versions.php").then(res => res.json());
-    let verCheck = /Toxen (\d+)\.zip/;
-    
+    let btn = document.getElementById("updatetoxen");
+    btn.innerText = "Checking for updates...";
+    let toxenGetLatestURL = "https://software.lucasion.xyz/downloads/toxen/latest.php?get=version";
+    fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
+      if (latest > currentVersion) {
+        btn.innerText = "Download Latest Release";
+        btn.onclick = function() {
+          Update.downloadLatest();
+          btn.disabled = true;
+          btn.innerText = "Downloading latest...";
+        }
+      }
+      else {
+        btn.innerText = "Latest Release";
+        btn.onclick = function() {
+          Update.check(currentVersion);
+        }
+      }
+    });
   }
-
+  
   static async downloadLatest() {
+    /**
+     * @type {HTMLButtonElement}
+     */
+    let btn = document.getElementById("updatetoxen");
     let toxenGetLatestURL = "https://software.lucasion.xyz/downloads/toxen/latest.php?get=url";
     let toxenLatestURL = await fetch(toxenGetLatestURL).then(res => res.text());
     let dl = new ion.Download("http://"+toxenLatestURL, "./latest.zip");
-    console.log("http://"+toxenLatestURL);
     
     
     let dlText = document.createElement("p");
@@ -2915,27 +2934,47 @@ class Update {
     let p = new Prompt("Started downloading...", dlText);
     p.addButtons("Close", "fancybutton color-red").addEventListener("click", () => {
       p.close();
+      
     });
     dl.start();
-    // let int = setInterval(function() {
-    //   let pr = dl.downloadPercent();
-    //   dlText.innerText = pr + "% / ";
-    //   if (pr == 100) {
-    //     clearInterval(int);
-    //   }
-    // }, 10);
     dl.onData = function() {
       let pr = +dl.downloadPercent().toFixed(2);
       dlText.innerText = pr + "%";
     };
     dl
     dl.onEnd = function() {
-      p.close();
-      new Prompt("Finished Downloading").close(2000).addButtons("Close", "fancybutton color-red");
-    };
-    dl.onError = function(err) {
-      console.error(err);
-    };
+      // p.close();
+      dlText.innerText = "Extracting update...";
+      
+      setTimeout(() => {
+        let file = new Zip(path.resolve("./latest.zip"));
+        try {
+          file.getEntries().forEach((e) => {
+            try {
+              if (!e.isDirectory) {
+                file.extractEntryTo(e, e.entryName, true);
+              }
+            } catch (error) {
+              console.log(e.entryName + " ignored");
+            }
+          });
+        } catch (err) {
+          console.error(err);
+          new Prompt("An error happened and was unable to update!", err.toString());
+          return;
+        }
+        p.close();
+        new Prompt("Update finished!", "The program will restart in 5 seconds...")
+        setTimeout(() => {
+          remote.app.relaunch();
+          remote.app.quit();
+        }, 5000);
+      }, 10);
+
+      dl.onError = function(err) {
+        console.error(err);
+      };
+    }
   }
 }
 
