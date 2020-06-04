@@ -1,4 +1,3 @@
-let debugMode = true;
 const fs = require("fs");
 // const {Popup} = require("ionlib");
 const {
@@ -15,6 +14,8 @@ const process = require("process");
 const rpc = require("discord-rpc");
 // const Imd = require("./ionMarkDown").Imd;
 const version = require("./version.json");
+const { remote } = require("electron");
+let debugMode = !remote.app.isPackaged;
 
 // Discord RPC
 const discord = new rpc.Client({"transport": "ipc"});

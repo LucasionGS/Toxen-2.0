@@ -355,6 +355,7 @@ div.pinput > input + p{
   margin: 1px;
   user-select: none;
   pointer-events: none;
+  white-space: nowrap;
 }
 
 div.pinput > input:focus-within{

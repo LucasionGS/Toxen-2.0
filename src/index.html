@@ -69,6 +69,11 @@
       </div>
       <br>
       <div class="pinput" title="Click to edit">
+        <input type="search" name="language">
+        <p name="language"></p>
+      </div>
+      <br>
+      <div class="pinput" title="Click to edit">
         <input type="search" name="tags">
         <p name="tags"></p>
       </div>
@@ -103,9 +108,11 @@
     <input type="radio" name="sgstyle" id="songgrouping=3" value="3" onclick="settings.songGrouping = 3; settings.saveToFile(); SongManager.refreshList();">
     <label for="songgrouping=3">By Source</label><br>
     <input type="radio" name="sgstyle" id="songgrouping=4" value="4" onclick="settings.songGrouping = 4; settings.saveToFile(); SongManager.refreshList();">
-    <label for="songgrouping=4">Alphabetically (Artist)</label><br>
+    <label for="songgrouping=4">By Language</label><br>
     <input type="radio" name="sgstyle" id="songgrouping=5" value="5" onclick="settings.songGrouping = 5; settings.saveToFile(); SongManager.refreshList();">
-    <label for="songgrouping=5">Alphabetically (Title)</label>
+    <label for="songgrouping=5">Alphabetically (Artist)</label><br>
+    <input type="radio" name="sgstyle" id="songgrouping=6" value="6" onclick="settings.songGrouping = 6; settings.saveToFile(); SongManager.refreshList();">
+    <label for="songgrouping=6">Alphabetically (Title)</label>
     <hr>
     <h3>Visual Settings</h3>
     <label>Visualizer Style</label>
@@ -177,6 +184,15 @@
         Version ID format: YYYYMMDDHHMM<br>
         Newest Update First, descending.
       </sup>
+
+      <p>202006040235</p>
+      <ul>
+        <li>Auto Updator!</li>
+        <li>Song Grouping</li>
+        <li>In-app editable Song Details: Artist, Title, Album, Source, Source Link, Language, and other Tags</li>
+        <li>Background Dim adjustments</li>
+        <li>New thumbnail option: Background Image</li>
+      </ul>
 
       <p>202005310640</p>
       <ul>

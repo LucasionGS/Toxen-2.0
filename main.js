@@ -1,11 +1,14 @@
-const { app, BrowserWindow, Menu, Tray } = require('electron');
+const { app, BrowserWindow, Menu, Tray, shell } = require('electron');
 const cp = require('child_process');
-const process = require('process');
-const fs = require('fs');
+// const process = require('process');
+// const fs = require('fs');
 const winWidth = 1280;
 const winHeight = 768;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
+/**
+ * @type {Electron.BrowserWindow}
+ */
 let win;
 app.allowRendererProcessReuse = true; // Electron mad if i don't :(
 
@@ -36,17 +39,26 @@ function createWindow () {
 
   var menu = Menu.buildFromTemplate([
     {
-      label:"Music Player",
+      label:"Restart Toxen",
       click(){
-        win.loadFile('./src/index.html');
+        // win.loadFile('./src/index.html');
         //console.log("Open Music Player");
+        app.relaunch();
+        app.quit();
       },
       accelerator: "F1"
     },
     {
-      label:"Dev",
+      label:"Reload Window",
+      click() {
+        win.reload();
+      },
+      accelerator: "F1"
+    },
+    {
+      label:"Developer Tools",
       click(){
-        win.webContents.openDevTools();
+        win.webContents.toggleDevTools();
       },
       accelerator: "F12"
     },
@@ -54,7 +66,7 @@ function createWindow () {
       label:"Usage",
       click(){
         //Open github page
-        cp.exec('start "" "https://github.com/LucasionGS/Toxen/blob/alpha/README.md"');
+        shell.openExternal("https://github.com/LucasionGS/Toxen-2.0/blob/master/README.md");
       }
     },
     {

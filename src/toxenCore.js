@@ -456,6 +456,11 @@ class Song {
     sourceLink: null,
     
     /**
+     * Main language for this song.
+     * @type {string}
+     */
+    language: null,
+    /**
      * List of tags to better help find this song in searches.
      * @type {string[]}
      */
@@ -628,145 +633,65 @@ class Song {
      * @type {HTMLDivElement}
      */
     let panel = document.querySelector("div#songinfo");
-    
-    // Title
-    /**
-     * @type {HTMLParagraphElement}
-     */
-    let pTitle = panel.querySelector('p[name="title"]');
-    /**
-     * @type {HTMLInputElement}
-     */
-    let inputTitle = panel.querySelector('input[name="title"]');
-    if (this.details.title == null) {
-      this.details.title = "";
-    }
-    pTitle.innerHTML = "Title: ".bold() + Imd.MarkDownToHTML(this.details.title);
-    inputTitle.value = this.details.title;
-    inputTitle.onsearch = function(e) {
-      e.preventDefault();
-      self.details.title = inputTitle.value;
-      self.saveDetails();
-      inputTitle.blur();
-      pTitle.innerHTML = "Title: ".bold() + Imd.MarkDownToHTML(inputTitle.value);
-      self.refreshElement();
-    }
-    
-    // Artist
-    /**
-     * @type {HTMLParagraphElement}
-     */
-    let pArtist = panel.querySelector('p[name="artist"]');
-    /**
-     * @type {HTMLInputElement}
-     */
-    let inputArtist = panel.querySelector('input[name="artist"]');
-    if (this.details.artist == null) {
-      this.details.artist = "";
-    }
-    pArtist.innerHTML = "Artist: ".bold() + Imd.MarkDownToHTML(this.details.artist);
-    inputArtist.value = this.details.artist;
-    inputArtist.onsearch = function(e) {
-      e.preventDefault();
-      self.details.artist = inputArtist.value;
-      self.saveDetails();
-      inputArtist.blur();
-      pArtist.innerHTML = "Artist: ".bold() + Imd.MarkDownToHTML(inputArtist.value);
-      self.refreshElement();
-    }
-    
-    // Album
-    /**
-     * @type {HTMLParagraphElement}
-     */
-    let pAlbum = panel.querySelector('p[name="album"]');
-    /**
-     * @type {HTMLInputElement}
-     */
-    let inputAlbum = panel.querySelector('input[name="album"]');
-    if (this.details.album == null) {
-      this.details.album = "";
-    }
-    pAlbum.innerHTML = "Album: ".bold() + Imd.MarkDownToHTML(this.details.album);
-    inputAlbum.value = this.details.album;
-    inputAlbum.onsearch = function(e) {
-      e.preventDefault();
-      self.details.album = inputAlbum.value;
-      self.saveDetails();
-      inputAlbum.blur();
-      pAlbum.innerHTML = "Album: ".bold() + Imd.MarkDownToHTML(inputAlbum.value);
-      self.refreshElement();
-    }
-    
-    // Source
-    /**
-     * @type {HTMLParagraphElement}
-     */
-    let pSource = panel.querySelector('p[name="source"]');
-    /**
-     * @type {HTMLInputElement}
-     */
-    let inputSource = panel.querySelector('input[name="source"]');
-    if (this.details.source == null) {
-      this.details.source = "";
-    }
-    pSource.innerHTML = "Source: ".bold() + Imd.MarkDownToHTML(this.details.source);
-    inputSource.value = this.details.source;
-    inputSource.onsearch = function(e) {
-      e.preventDefault();
-      self.details.source = inputSource.value;
-      self.saveDetails();
-      inputSource.blur();
-      pSource.innerHTML = "Source: ".bold() + Imd.MarkDownToHTML(inputSource.value);
-      self.refreshElement();
-    }
 
-    // Source Link
     /**
-     * @type {HTMLParagraphElement}
+     * 
+     * @param {string} name 
+     * @param {string} title 
+     * @param {string} detailsItemName 
+     * @param {string} isArraySeparatedBy If this is set, the value is an array.
      */
-    let pSourceLink = panel.querySelector('p[name="sourceLink"]');
-    /**
-     * @type {HTMLInputElement}
-     */
-    let inputSourceLink = panel.querySelector('input[name="sourceLink"]');
-    if (this.details.sourceLink == null) {
-      this.details.sourceLink = "";
+    function makeElement(name, title, detailsItemName, isArraySeparatedBy = null) {
+      // any
+      /**
+       * @type {HTMLParagraphElement}
+       */
+      let p = panel.querySelector('p[name="'+name+'"]');
+      /**
+       * @type {HTMLInputElement}
+       */
+      let input = panel.querySelector('input[name="'+name+'"]');
+      if (self.details[detailsItemName] == null) {
+        if (typeof isArraySeparatedBy === "string") {
+          self.details[detailsItemName] = [];
+        }
+        else {
+          self.details[detailsItemName] = "";
+        }
+      }
+      input.value = self.details[detailsItemName];
+      if (typeof isArraySeparatedBy === "string") {
+        p.innerHTML = `${title}: `.bold() + Imd.MarkDownToHTML(self.details[detailsItemName].join(", "));
+        input.onsearch = function(e) {
+          e.preventDefault();
+          self.details[detailsItemName] = input.value.split(`${isArraySeparatedBy}`).map(v => v = v.trim());
+          self.saveDetails();
+          input.blur();
+          p.innerHTML = "Tags: ".bold() + self.details[detailsItemName].join(`${isArraySeparatedBy} `);
+          input.value = self.details[detailsItemName].join(`${isArraySeparatedBy} `);
+          self.refreshElement();
+        }
+      }
+      else {
+        p.innerHTML = `${title}: `.bold() + Imd.MarkDownToHTML(self.details[detailsItemName]);
+        input.onsearch = function(e) {
+          e.preventDefault();
+          self.details[detailsItemName] = input.value;
+          self.saveDetails();
+          input.blur();
+          p.innerHTML = `${title}: `.bold() + Imd.MarkDownToHTML(input.value);
+          self.refreshElement();
+        }
+      }
     }
-    pSourceLink.innerHTML = "Source Link: ".bold() + Imd.MarkDownToHTML(this.details.sourceLink);
-    inputSourceLink.value = this.details.sourceLink;
-    inputSourceLink.onsearch = function(e) {
-      e.preventDefault();
-      self.details.sourceLink = inputSourceLink.value;
-      self.saveDetails();
-      inputSourceLink.blur();
-      pSourceLink.innerHTML = "Source Link: ".bold() + Imd.MarkDownToHTML(inputSourceLink.value);
-      self.refreshElement();
-    }
-
-    // Tags
-    /**
-     * @type {HTMLParagraphElement}
-     */
-    let pTags = panel.querySelector('p[name="tags"]');
-    /**
-     * @type {HTMLInputElement}
-     */
-    let inputTags = panel.querySelector('input[name="tags"]');
-    if (this.details.tags == null) {
-      this.details.tags = [];
-    }
-    pTags.innerHTML = "Tags: ".bold() + self.details.tags.join(", ");
-    inputTags.value = self.details.tags.join(", ");
-    inputTags.onsearch = function(e) {
-      e.preventDefault();
-      self.details.tags = inputTags.value.split(",").map(v => v = v.trim());
-      self.saveDetails();
-      inputTags.blur();
-      pTags.innerHTML = "Tags: ".bold() + self.details.tags.join(", ");
-      inputTags.value = self.details.tags.join(", ");
-      self.refreshElement();
-    }
+    
+    makeElement("title", "Title", "title");
+    makeElement("artist", "Artist", "artist");
+    makeElement("album", "Album", "album");
+    makeElement("source", "Source", "source");
+    makeElement("sourceLink", "Source Link", "sourceLink");
+    makeElement("language", "Language", "language");
+    makeElement("tags", "Tags", "tags", ",");
   }
 
   saveDetails() {
@@ -912,6 +837,11 @@ class SongManager {
               addToGroup(s.details.source, s, "!Missing source!");
             });
             break;
+          case 4:
+            SongManager.songList.forEach(s => {
+              addToGroup(s.details.language, s, "!Missing Language!");
+            });
+            break;
         
           default:
             noGrouping = true;
@@ -987,6 +917,7 @@ class SongManager {
         s.details.title,
         s.details.album,
         s.details.source,
+        s.details.language,
         // s.isVideo ? "$video" : "$audio",
         // s.background == null ? "$!background" : "$background",
         // s.txnScript == null ? "$!storyboard" : "$storyboard",
@@ -2903,15 +2834,21 @@ class Update {
     let toxenGetLatestURL = "https://software.lucasion.xyz/downloads/toxen/latest.php?get=version";
     fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
       if (latest > currentVersion) {
-        btn.innerText = "Download Latest Release";
+        btn.innerText = "Download Latest Update";
         btn.onclick = function() {
           Update.downloadLatest();
           btn.disabled = true;
           btn.innerText = "Downloading latest...";
+          btn.classList.add("color-blue");
+          new Notification({
+            "title": "New Toxen Update is available",
+            "body": "Go to settings and press Download Latest Update to update."
+          }).show();
         }
       }
       else {
-        btn.innerText = "Latest Release";
+        btn.classList.remove("color-blue");
+        btn.innerText = "Check for updates";
         btn.onclick = function() {
           Update.check(currentVersion);
         }
@@ -2920,10 +2857,6 @@ class Update {
   }
   
   static async downloadLatest() {
-    /**
-     * @type {HTMLButtonElement}
-     */
-    let btn = document.getElementById("updatetoxen");
     let toxenGetLatestURL = "https://software.lucasion.xyz/downloads/toxen/latest.php?get=url";
     let toxenLatestURL = await fetch(toxenGetLatestURL).then(res => res.text());
     let dl = new ion.Download("http://"+toxenLatestURL, "./latest.zip");
@@ -2941,21 +2874,23 @@ class Update {
       let pr = +dl.downloadPercent().toFixed(2);
       dlText.innerText = pr + "%";
     };
-    dl
+
     dl.onEnd = function() {
       // p.close();
-      dlText.innerText = "Extracting update...";
+      p.headerText = "Extracting update...";
+      p.contentElement.innerText = "Toxen will be frozen for a bit and restart automatically when finished.";
       
-      setTimeout(() => {
+      setTimeout(async () => {
         let file = new Zip(path.resolve("./latest.zip"));
         try {
           file.getEntries().forEach((e) => {
             try {
               if (!e.isDirectory) {
-                file.extractEntryTo(e, e.entryName, true);
+                file.extractEntryTo(e, "./", true, true);
+                console.log(e.entryName);
               }
             } catch (error) {
-              console.log(e.entryName + " ignored");
+              // console.log(e.entryName + " ignored");
             }
           });
         } catch (err) {
@@ -2964,17 +2899,17 @@ class Update {
           return;
         }
         p.close();
-        new Prompt("Update finished!", "The program will restart in 5 seconds...")
+        new Prompt("Update finished!", ["The program will restart in 5 seconds..."]);
+        fs.unlinkSync("./latest.zip");
         setTimeout(() => {
           remote.app.relaunch();
           remote.app.quit();
         }, 5000);
       }, 10);
-
-      dl.onError = function(err) {
-        console.error(err);
-      };
     }
+    dl.onError = function(err) {
+      console.error(err);
+    };
   }
 }
 
