@@ -63,10 +63,10 @@ function createWindow () {
       accelerator: "F12"
     },
     {
-      label:"Usage",
+      label:"Website",
       click(){
         //Open github page
-        shell.openExternal("https://github.com/LucasionGS/Toxen-2.0/blob/master/README.md");
+        shell.openExternal("https://toxen.net/");
       }
     },
     {

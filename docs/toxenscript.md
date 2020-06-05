@@ -2,6 +2,12 @@
 ## What is this?
 Toxen supports custom storyboards to spice up the background of your song. It understands a custom scripting language, creatively called `ToxenScript`.
 
+## How do I get started making a storyboard?
+ToxenScript files are files ending with `.txn` as the extension. To get started you should navigate to the song you want to add a storyboard to
+(You can right-click on a song in Toxen and press `Open song folder`) and create a file called `storyboard.txn`.
+
+
+
 ## Syntax/How the code should be written
 Most of the commands in the script have the same structure, namely these `3 parts` to create a command.  
 *(Full list of commands can be found at the bottom of the page)*  
@@ -20,6 +26,11 @@ Examples
 `125` would be `2` minutes and `5` seconds  
 `2:05` would also be `2` minutes and `5` seconds  
 `1:05:00` would be `1` hour, `5` minutes and `0` seconds
+
+
+It is possible to write decimal points on `seconds`.  
+This means that if you write `2:30.5` it would be `2` minutes and `30 and a half` seconds.  
+You can be specific down to quite a few decimals.
 
 #### `EventName`
 The `EventName` is the name of the event to execute (obviously). It cannot include any spaces.  

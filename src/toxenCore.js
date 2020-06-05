@@ -17,6 +17,24 @@ const http = require("http");
 const Zip = require("adm-zip");
 // const http = require("http");
 
+var updatePlatform;
+switch (process.platform) {
+  case "win32":
+    updatePlatform = "win";
+    break;
+  case "linux":
+    updatePlatform = "linux";
+    break;
+
+  case "darwin":
+    updatePlatform = "mac";
+    break;
+
+  default:
+    updatePlatform = null;
+    break;
+}
+
 class Settings {
   /**
    * @type {Settings}
@@ -2825,13 +2843,18 @@ class Update {
    * `YYYYMMDDHHmm`
    */
   static async check(currentVersion) {
-    document.getElementById("currentversion").innerText = currentVersion;
+    document.getElementById("currentversion").innerText = "vers. " + currentVersion + `${updatePlatform != null ? ` (${updatePlatform})` : ""}`;
     /**
      * @type {HTMLButtonElement}
      */
     let btn = document.getElementById("updatetoxen");
+    if (updatePlatform == null) {
+      btn.disabled = true;
+      btn.innerText = "Undeterminable release";
+      return;
+    }
     btn.innerText = "Checking for updates...";
-    let toxenGetLatestURL = "https://software.lucasion.xyz/downloads/toxen/latest.php?get=version";
+    let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${updatePlatform}&get=version`;
     fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
       if (latest > currentVersion) {
         btn.innerText = "Download Latest Update";
@@ -2857,7 +2880,11 @@ class Update {
   }
   
   static async downloadLatest() {
-    let toxenGetLatestURL = "https://software.lucasion.xyz/downloads/toxen/latest.php?get=url";
+    if (updatePlatform == null) {
+      dialog.showErrorBox("Unidentified release", "No release found for your current operating system (" + process.platform + ")");
+      return;
+    }
+    let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${updatePlatform}&get=url`;
     let toxenLatestURL = await fetch(toxenGetLatestURL).then(res => res.text());
     let dl = new ion.Download("http://"+toxenLatestURL, "./latest.zip");
     
