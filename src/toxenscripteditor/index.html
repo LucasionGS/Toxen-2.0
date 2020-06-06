@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="./editor.js"></script>
+  <link rel="stylesheet" href="../toxen.css">
+  <title>ToxenScript Editor</title>
+  <style>
+    body {
+      position: relative;
+      overflow-x: hidden;
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    #overlay {
+      word-break: break-all;
+    }
+    /* Values */
+    .number {
+      color: #78ff4a;
+    }
+    .string {
+      color: #f77300;
+    }
+    .event {
+      color: #fccf03;
+    }
+    .timing {
+      color: #78ff4a;
+    }
+    .comment {
+      color: #248f00;
+    }
+    .limiter {
+      color: #b600ad;
+    }
+  </style>
+</head>
+<body>
+  <p id="info"></p>
+  <button class="fancybutton" onclick="editor.save();">Save (Ctrl + S)</button>
+  <!-- <button class="fancybutton" onclick="browserWindow.webContents.toggleDevTools();">DevTools</button> -->
+  <textarea id="editor"
+  style="display: block;
+  /* width: 99%;
+  min-width: 99%;
+  max-width: 99%; */
+  font-size: 18px;
+  background-color: #2b2b2b;
+  color: #2b2b2b;
+  font-family: 'Courier New', Courier, monospace;
+  caret-color: white;
+  overflow: hidden;
+  resize: none;" rows="10" disabled>Receiving data...</textarea>
+</body>
+</html>

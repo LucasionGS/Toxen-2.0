@@ -7,15 +7,14 @@ const hue = require("node-hue-api").v3;
 let hueApi = null;
 const Imd = require("./ionMarkDown").Imd;
 const electron = require("electron");
-const { remote, shell } = electron;
+const { remote, shell, ipcRenderer } = electron;
 const { Menu, dialog, Notification } = remote;
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const ytdl = require("ytdl-core");
 const ion = require("ionodelib");
-const http = require("http");
 const Zip = require("adm-zip");
-// const http = require("http");
+const browserWindow = remote.getCurrentWindow();
 
 var updatePlatform;
 switch (process.platform) {
@@ -276,6 +275,10 @@ class Settings {
    */
   visualizerStyle = 3;
   /**
+   * If the visualizer should freeze while the song is paused.
+   */
+  freezeVisualizer = false;
+  /**
    * Which style the songs should be grouped in.
    */
   songGrouping = 0;
@@ -344,15 +347,7 @@ class Song {
     });
     this.element.addEventListener("contextmenu", function(e) {
       e.preventDefault();
-      menus.songMenu.items.filter(i => {
-        switch (i.label) {
-          case "Display info": return true;
-          case "Open song folder": return true;
-          case "Delete song": return true;
-
-          default: return false;
-        }
-      }).forEach(i => {
+      menus.songMenu.items.forEach(i => {
         i.songObject = self;
       });
       menus.songMenu.popup({
@@ -1222,9 +1217,9 @@ class SongManager {
 
   static playRandom() {
     let song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
-    while (song.songId === SongManager.getCurrentlyPlayingSong().songId && SongManager.songList.length > 1) {
-      song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
-    }
+    // while (song.songId === SongManager.getCurrentlyPlayingSong().songId && SongManager.songList.length > 1) {
+    //   song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
+    // }
     song.play();
   }
 
@@ -1752,6 +1747,24 @@ const menus = {
         }
       },
       {
+        label: "Edit Storyboard Script",
+        click: (menuItem) => {
+          /**
+           * @type {Song}
+           */
+          const song = menuItem.songObject;
+          if (song instanceof Song) {
+            if (song.txnScript != null && fs.existsSync(song.getFullPath("txnScript"))) {
+              
+            }
+            ScriptEditor.open(song);
+          }
+        }
+      },
+      {
+        type: "separator"
+      },
+      {
         label: "Delete song",
         click: (menuItem) => {
           /**
@@ -1763,10 +1776,12 @@ const menus = {
             let ans = dialog.showMessageBoxSync(remote.getCurrentWindow(),
             {
               "buttons": [
-                "Delete song",
+                "Delete",
                 "Cancel"
               ],
-              "message": "Delete the song:\n" + `"${song.details.artist} - ${song.details.title}"?`
+              "message": "Delete the song:\n" + `"${song.details.artist} - ${song.details.title}"?`,
+              "defaultId": 1,
+              "noLink": true
             });
 
             if (ans !== 0) {
@@ -2151,13 +2166,15 @@ class ToxenScriptManager {
         // Failures
         if (typeof fb == "string") {
           setTimeout(() => {
-            new Popup("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1), fb]);
+            new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1), fb])
+            .addButtons("Close", null, true);
           }, 100);
           throw "Failed parsing script. Error at line " + (i + 1) + "\n" + fb;
         }
         if (fb.success == false) {
           setTimeout(() => {
-            new Popup("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1)]);
+            new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1)])
+            .addButtons("Close", null, true);
           }, 100);
           throw "Failed parsing script. Error at line " + (i + 1) + "\n" + fb.error;
         }
@@ -2737,31 +2754,71 @@ class Prompt {
    * 
    * @param {string | HTMLButtonElement | (string | HTMLButtonElement)[]} button 
    * @param {string} btnClass 
+   * @param {boolean} useDefault Attempts to use default buttons for certain strings
    * @returns {HTMLButtonElement | HTMLButtonElement[]}
    */
-  addButtons(button, btnClass = null) {
+  addButtons(button, btnClass = null, useDefault = false) {
+    let self = this;
+    /**
+     * Checks for a default button type.
+     * @param {string} text 
+     */
+    function isDefault(text) {
+      var _t;
+      switch (text) {
+        // Green buttons
+        case "Done":
+        case "Okay":
+        case "OK":
+          _t = document.createElement("button");
+          _t.innerText = text;
+          _t.classList.add("fancybutton", "color-green");
+          return _t;
+        // Red buttons
+        case "Cancel":
+          _t = document.createElement("button");
+          _t.innerText = text;
+          _t.classList.add("fancybutton", "color-red");
+          return _t;
+
+        // Close (Closes the prompt)
+        case "Close":
+          _t = document.createElement("button");
+          _t.innerText = text;
+          _t.classList.add("fancybutton", "color-red");
+          _t.addEventListener("click", () => {
+            self.close();
+          });
+          return _t;
+      
+        default:
+          return text;
+      }
+    }
     if (Array.isArray(button)) {
       button.forEach((b, i) => {
+        useDefault && typeof b == "string" ? b = isDefault(b) : null;
         if (typeof b == "string") {
           let _t = document.createElement("button");
           _t.innerText = b;
           b = _t;
         }
         if (btnClass != null && typeof btnClass == "string") {
-          b.classList.add(btnClass.split(" "));
+          b.classList.add.apply(b, btnClass.split(" "));
         }
         this.buttonsElement.appendChild(b);
         button[i] = b;
       });
     }
     else {
+      useDefault && typeof button == "string" ? button = isDefault(button) : null;
       if (typeof button == "string") {
         let _t = document.createElement("button");
         _t.innerText = button;
         button = _t;
       }
       if (btnClass != null && typeof btnClass == "string") {
-        button.classList.add(btnClass.split(" "));
+        button.classList.add.apply(button, btnClass.split(" "));
       }
       this.buttonsElement.appendChild(button);
       
@@ -2940,6 +2997,90 @@ class Update {
   }
 }
 
+ipcRenderer.on("editor.save", () => {
+  ToxenScriptManager.reloadCurrentScript();
+});
+
+ipcRenderer.on("editor.request.data", () => {
+  let element = ScriptEditor.currentSong.element;
+  let txnScript = ScriptEditor.currentSong.txnScript;
+  ScriptEditor.currentSong.txnScript = ScriptEditor.currentSong.getFullPath("txnScript");
+  ScriptEditor.currentSong.element = null;
+  ScriptEditor.window.webContents.send("editor.song", JSON.stringify(ScriptEditor.currentSong));
+  ScriptEditor.currentSong.txnScript = txnScript;
+  ScriptEditor.currentSong.element = element;
+});
+
+class ScriptEditor {
+  /**
+   * @param {Song} song 
+   */
+  static open(song) {
+    if (song.txnScript == null) {
+      song.txnScript = song.path + "/storyboard.txn";
+      SongManager.saveToFile();
+    }
+    if (!fs.existsSync(song.getFullPath("txnScript"))) {
+      fs.writeFileSync(song.getFullPath("txnScript"),
+        "# Start writting your storyboard code here!\n" + 
+        "# Go to https://github.com/LucasionGS/Toxen-2.0/blob/master/docs/toxenscript.md\n" +
+        "# for documentation on ToxenScript"
+      );
+    }
+    if (ScriptEditor.window == null) {
+      ScriptEditor.window = ScriptEditor.makeWindow();
+      ScriptEditor.window.once("closed", () => {
+        ScriptEditor.window = null;
+        console.log("Closed");
+      });
+      console.log("Made window");
+    }
+    if (ScriptEditor.window.isVisible()) {
+      dialog.showErrorBox("Cannot open editor", "Editor is already open. Close down the previous editor before opening a new one.");
+      ScriptEditor.window.show();
+      return ScriptEditor.window;
+    }
+    ScriptEditor.currentSong = song;
+    ScriptEditor.window.show();
+    ScriptEditor.window.loadFile("./src/toxenscripteditor/index.html");
+    return ScriptEditor.window;
+  }
+
+  static listening = false;
+
+  static sendCommand(value) {
+    ScriptEditor.window.webContents.send("editor.command", value);
+  }
+  // static sendJavaScript(value) {
+  //   ScriptEditor.window.webContents.send("editor.command", value);
+  // }
+
+  static command = null;
+
+  /**
+   * @type {import("electron").BrowserWindow}
+   */
+  static window;
+
+  static makeWindow() {
+    return new remote.BrowserWindow({
+      // "alwaysOnTop": true,
+      "width": 1280,
+      "height": 768,
+      "webPreferences": {
+        "nodeIntegration": true
+      },
+      "show": false,
+      "parent": browserWindow
+    });
+  }
+
+  /**
+   * @type {Song}
+   */
+  static currentSong = null;
+}
+
 exports.Settings = Settings;
 exports.HTMLSongElement = HTMLSongElement;
 exports.Song = Song;
@@ -2950,3 +3091,4 @@ exports.ToxenScriptManager = ToxenScriptManager;
 exports.Debug = Debug;
 exports.Prompt = Prompt;
 exports.Update = Update;
+exports.ScriptEditor = ScriptEditor;

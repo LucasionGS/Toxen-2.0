@@ -8,7 +8,8 @@ const {
   ToxenScriptManager,
   Debug,
   Prompt,
-  Update
+  Update,
+  ScriptEditor
 } = require("./toxenCore");
 const process = require("process");
 const rpc = require("discord-rpc");
@@ -346,7 +347,7 @@ function initializeVisualizer() {
   
   function renderFrame() {
     requestAnimationFrame(renderFrame);
-    if (SongManager.player.paused) {
+    if (settings.freezeVisualizer && SongManager.player.paused) {
       return;
     }
     var WIDTH = canvas.width;

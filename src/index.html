@@ -176,6 +176,11 @@
         Display the details of the current song playing in Discord Presence.
         Details include Artist, Title, and current time.
       </sup>
+      <input type="checkbox" name="avtoggle" id="frezevisualizerToggle" onclick="settings.freezeVisualizer = this.checked; settings.saveToFile();">
+      <label for="frezevisualizerToggle">Freeze Visualizer</label>
+      <sup>
+        Freeze the audio visualizer when the current song is paused.
+      </sup>
     </div>
     <hr>
     <div id="changenotes">
