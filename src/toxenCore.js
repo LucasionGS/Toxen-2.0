@@ -2,8 +2,11 @@
 // It is NOT relative to the HTML file or script file.
 const fs = require("fs");
 const { Popup } = require("ionlib");
-const fetch = require("node-fetch").default;
+// const fetch = require("node-fetch").default;
 const hue = require("node-hue-api").v3;
+/**
+ * type {import("node-hue-api")}
+ */
 let hueApi = null;
 const Imd = require("./ionMarkDown").Imd;
 const electron = require("electron");
@@ -24,7 +27,6 @@ switch (process.platform) {
   case "linux":
     updatePlatform = "linux";
     break;
-
   case "darwin":
     updatePlatform = "mac";
     break;
@@ -248,6 +250,11 @@ class Settings {
    */
   visualizerIntensity = 15;
   /**
+   * Direction of the audio visualizer.
+   * @type {number}
+   */
+  visualizerDirection = 0;
+  /**
    * Whether or not the visualizer is enabled.
    * @type {boolean}
    */
@@ -316,6 +323,21 @@ class Settings {
    * Details include Artist, Title, and current time.
    */
   discordPresenceShowDetails = true;
+  /**
+   * Hue Bridge: IP Address / Host
+   * @type {string}
+   */
+  hueBridgeIp = null;
+  /**
+   * Hue Bridge: Username
+   * @type {string}
+   */
+  hueBridgeUser = null;
+  /**
+   * Hue Bridge: Client Key
+   * @type {string}
+   */
+  hueBridgeClientKey = null;
 }
 
 /**
@@ -1813,6 +1835,8 @@ class Storyboard {
   static toBlue = 250;
 
   static visualizerIntensity = 15;
+  static visualizerStyle = 0;
+  static visualizerDirection = 0;
   /**
    * Fade into a RGB color.
    * @param {number} red 
@@ -1820,13 +1844,13 @@ class Storyboard {
    * @param {number} blue 
    */
   static rgb(red = Storyboard.red, green = Storyboard.green, blue = Storyboard.blue) {
-    if (red === null) {
+    if (typeof red != "number") {
       Storyboard.red;
     }
-    if (green === null) {
+    if (typeof green != "number") {
       Storyboard.green;
     }
-    if (blue === null) {
+    if (typeof blue != "number") {
       Storyboard.blue;
     }
 
@@ -2103,7 +2127,9 @@ class ToxenScriptManager {
   static async reloadCurrentScript() {
     ToxenScriptManager.events = [];
 
-    // Prevent the intensity from going mayham on smooth setters, which it does for some unknown reason.
+    // Resetting to the default values on reset.
+    Storyboard.visualizerDirection = 0;
+    Storyboard.visualizerStyle = Settings.current.visualizerStyle;
     Storyboard.setIntensity(Settings.current.visualizerIntensity);
     Storyboard.rgb(
       Settings.current.visualizerColor.red,
@@ -2262,7 +2288,7 @@ class ToxenScriptManager {
           return "Invalid type compatibility.\n"+type+" is required to use a limiter prefix.";
         }
 
-        // only compatible with "once"
+        // incompatible compatible with "once"
         if (maxPerSecond > 0 && /\b(bpmpulse)\b/g.test(type)) {
           console.warn("Irrelevant limiter.\n"+type+" cannot use a limiter prefix and has been ignored.");
         }
@@ -2347,7 +2373,7 @@ class ToxenScriptManager {
         }
         if (type == "pulse") {
           // Convert to pulses
-          maxPerSecond = 1;
+          maxPerSecond = 0.25;
         }
 
         ToxenScriptManager.events.push(new ToxenEvent(startPoint, endPoint, fn));
@@ -2387,8 +2413,19 @@ class ToxenScriptManager {
     }
   }
 
+  static getEventNames() {
+    let list = [];
+    for (const key in ToxenScriptManager.eventFunctions) {
+      if (ToxenScriptManager.eventFunctions.hasOwnProperty(key)) {
+        list.push(key);
+      }
+    }
+    return list;
+  }
+
   /**
-   * Function Types
+   * Function Types for ToxenScript
+   * @type {{[eventName: string]: (args: string[])}}
    */
   static eventFunctions = {
     /**
@@ -2404,8 +2441,15 @@ class ToxenScriptManager {
      * @param {[string | number, string | number, string | number]} args Arguments
      */
     visualizercolor: function (args) {
-      Storyboard.rgb(args[0], args[1], args[2]);
+      for (let i = 0; i < 3; i++) {
+        if (isNaN(args[i])) args[i] = 0;
+      }
+      Storyboard.rgb(+args[0], +args[1], +args[2]);
     },
+    /**
+     * Change the intensity of the visualizer
+     * @param {[string | number, string | number, string | number]} args Arguments
+     */
     visualizerintensity: function (args) {
       if (args[1] && args[1].toLowerCase() == "smooth") {
         if (+args[0] < Storyboard.visualizerIntensity) {
@@ -2422,6 +2466,56 @@ class ToxenScriptManager {
       else {
         Storyboard.setIntensity(+args[0]);
       }
+    },
+    /**
+     * Change the style of the visualizer
+     * @param {[string | number]} args Arguments
+     */
+    visualizerstyle: function ([style]) {
+      style = style + "";
+      switch (style.toLowerCase()) {
+        case "0":
+        case "bottom":
+          Storyboard.visualizerStyle = 0;
+          break;
+
+        case "1":
+        case "top":
+          Storyboard.visualizerStyle = 1;
+          break;
+
+        case "2":
+        case "top and bottom identical":
+        case "identical":
+          Storyboard.visualizerStyle = 2;
+          break;
+
+        case "3":
+        case "center":
+          Storyboard.visualizerStyle = 3;
+          break;
+
+        case "4":
+        case "top and bottom alternating":
+        case "alternating":
+          Storyboard.visualizerStyle = 4;
+          break;
+      }
+    },
+    /**
+     * Change the direction of the visualizer. (Default is `right`)
+     * @param {["left" | "right"]} args Arguments
+     */
+    visualizerdirection: function ([direction]) {
+      switch (direction) {
+        case "right":
+          Storyboard.visualizerDirection = 0;
+          break;
+        case "left":
+          Storyboard.visualizerDirection = 1;
+          break;
+      }
+      
     },
     /**
      * Change the color of a Hue Light.
@@ -2442,7 +2536,10 @@ class ToxenScriptManager {
      * @param {[string | number, string | number, string | number, string | number, string | number]} args Arguments
      */
     hueandvisualizercolor: function (args) {
-      Storyboard.rgb(args[1], args[2], args[3]);
+      for (let i = 1; i < 4; i++) {
+        if (isNaN(args[i])) args[i] = 0;
+      }
+      Storyboard.rgb(+args[1], +args[2], +args[3]);
       let brightness = 100;
       let lights = args[0].split(",");
       if (args[4] !== undefined) {
@@ -2456,9 +2553,8 @@ class ToxenScriptManager {
      * 
      * @param {[number]} args 
      */
-    pulse: function (args) {
+    pulse: function ([intensity]) {
       if (!SongManager.player.paused) {
-        let [intensity] = args;
         testPulse.pulse(Storyboard.visualizerIntensity * 32 * intensity);
       }
     },
@@ -2472,17 +2568,103 @@ class ToxenScriptManager {
     },
     // :Functions
     /**
-     * 
-     * @param {[string, string, string]} args 
+     * Connect to a hue bridge.
      */
-    ":hueconnect": async function(args) {
-      let ipAddress = args[0];
-      let hueUser = {
-        "username": args[1],
-        "clientkey": args[2]
-      };
-      hueApi = await hue.api.createInsecureLocal(ipAddress).connect(hueUser.username, hueUser.clientkey);
+    ":hueconnect": async function([type, ip, user, clientKey]) {
+      if (type == "local") {
+        var ipAddress = Settings.current.hueBridgeIp;
+        var hueUser = {
+          "username": Settings.current.hueBridgeUser,
+          "clientKey": Settings.current.hueBridgeClientKey
+        };
+      }
+      else if (type == "login") {
+        var ipAddress = ip;
+        var hueUser = {
+          "username": user,
+          "clientKey": clientKey
+        };
+      }
+      if (ipAddress && hueUser.username && hueUser.clientKey) {
+        hueApi = await hue.api.createInsecureLocal(ipAddress).connect(hueUser.username, hueUser.clientKey);
+        console.log("Hue is now connected.");
+        console.log(hueApi);
+      }
+      else {
+        console.error("Missing arguments. Please make sure all the data is correct.\n" +
+        `ipAddress: ${ipAddress}\nhueUser.username: ${hueUser.username}\nhueUser.clientkey: ${hueUser.clientKey}`)
+      }
     }
+  }
+
+  /**
+   * Parse ToxenScript into HTML Highlighting
+   * @param {string} code
+   */
+  static syntaxHighlightToxenScript(code, validEventNames = ToxenScriptManager.getEventNames()) {
+    /**
+     * @type {{[key: string]: {"expression": RegExp, "function": ($0: string, ...$n: string[]) => string}}}
+     */
+    const regex = {
+      "value": {
+        "expression": /"(.*?)"/g,
+        "function": function($0, $1) {
+          if (!/[^\s\d]/g.test($1)) {
+            return `<span class=toxenscript_number>${$0}</span>`;
+          }
+          return `<span class=toxenscript_string>${$0}</span>`;
+        }
+      },
+      "link": {
+        "expression": /https?:\/\/(.*\.)*.*\.\S*/g,
+        "function": function($0) {
+          return `<a class=toxenscript_number title='${$0}' onclick='shell.openExternal(this.title)' style='pointer-events: all;'>${$0}</a>`;
+        }
+      },
+      "comment": {
+        "expression": /#.*/g,
+        "function": function($0) {
+          return `<span class=toxenscript_comment>${$0}</span>`;
+        }
+      },
+      "limiter": {
+        "expression": /(?<=\s*)(once|twice)/gm,
+        "function": function($0) {
+          return `<span class=toxenscript_limiter>${$0}</span>`;
+        }
+      },
+      "event": {
+        "expression": /((?<=\[.*\]\s*)[A-z]+)|:[A-z]+/g,
+        "function": function($0) {
+          for (let i = 0; i < validEventNames.length; i++) {
+            const test = validEventNames[i];
+            if (test.toLowerCase() == $0.toLowerCase()) {
+              return `<span class=toxenscript_event>${$0}</span>`;
+            }
+          }
+          return `<span class=toxenscript_eventinvalid>${$0}</span>`;
+        }
+      },
+      "timing": {
+        "expression": /(?<=\[\s*)((?:\d+:)*(?:\d+)(?:\.\d+)*)\s*(?:-\s*((?:\d+:)*(?:\d+)(?:\.\d+)*))*(?=\s*\])/g,
+        "function": function($0, $1, $2) {
+          if ($2 && ToxenScriptManager.timeStampToSeconds($1) > ToxenScriptManager.timeStampToSeconds($2)) {
+            return `<span class=toxenscript_timinginvalid>${$0}</span>`;
+          }
+          return `<span class=toxenscript_timing>${$0}</span>`;
+        }
+      },
+    }
+
+    for (const key in regex) {
+      if (regex.hasOwnProperty(key)) {
+        const obj = regex[key];
+        code = code.replace(obj.expression, obj.function);
+        // console.log("Checking " + obj.expression.source);
+      }
+    }
+
+    return code;
   }
 
   /**
@@ -2804,7 +2986,7 @@ class Prompt {
           b = _t;
         }
         if (btnClass != null && typeof btnClass == "string") {
-          b.classList.add.apply(b, btnClass.split(" "));
+          b.classList.add(...btnClass.split(" "));
         }
         this.buttonsElement.appendChild(b);
         button[i] = b;
@@ -2818,7 +3000,7 @@ class Prompt {
         button = _t;
       }
       if (btnClass != null && typeof btnClass == "string") {
-        button.classList.add.apply(button, btnClass.split(" "));
+        button.classList.add(...btnClass.split(" "));
       }
       this.buttonsElement.appendChild(button);
       
@@ -3023,7 +3205,7 @@ class ScriptEditor {
     if (!fs.existsSync(song.getFullPath("txnScript"))) {
       fs.writeFileSync(song.getFullPath("txnScript"),
         "# Start writting your storyboard code here!\n" + 
-        "# Go to https://github.com/LucasionGS/Toxen-2.0/blob/master/docs/toxenscript.md\n" +
+        "# Go to https://www.toxen.net/toxenscript\n" +
         "# for documentation on ToxenScript"
       );
     }
@@ -3081,6 +3263,7 @@ class ScriptEditor {
   static currentSong = null;
 }
 
+// Export Classes
 exports.Settings = Settings;
 exports.HTMLSongElement = HTMLSongElement;
 exports.Song = Song;
@@ -3092,3 +3275,8 @@ exports.Debug = Debug;
 exports.Prompt = Prompt;
 exports.Update = Update;
 exports.ScriptEditor = ScriptEditor;
+
+// Export Functions
+exports.getHueApi = function getHueApi() {
+  return hueApi;
+}

@@ -261,7 +261,7 @@ label[title] {
   text-decoration: underline;
 }
 
-input[type="text"] {
+input[type="text"], input[type="password"] {
   display: block;
 }
 
@@ -364,4 +364,32 @@ div.pinput > input:focus-within{
 
 div.pinput > input:focus-within + p{
   opacity: 0;
+}
+
+/* ToxenScript Values */
+.toxenscript_number {
+  color: #78ff4a;
+}
+.toxenscript_string {
+  color: #f77300;
+}
+.toxenscript_event {
+  color: #fccf03;
+}
+.toxenscript_eventinvalid {
+  color: #f50;
+  background: url("./underline.gif") bottom repeat-x;
+}
+.toxenscript_timing {
+  color: #78ff4a;
+}
+.toxenscript_timinginvalid {
+  color: #e4ff4a;
+  background: url("./underline.gif") bottom repeat-x;
+}
+.toxenscript_comment {
+  color: #248f00;
+}
+.toxenscript_limiter {
+  color: #b600ad;
 }

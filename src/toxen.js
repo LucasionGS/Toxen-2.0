@@ -9,7 +9,8 @@ const {
   Debug,
   Prompt,
   Update,
-  ScriptEditor
+  ScriptEditor,
+  getHueApi
 } = require("./toxenCore");
 const process = require("process");
 const rpc = require("discord-rpc");
@@ -303,7 +304,7 @@ async function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong(
        * @type {import("discord-rpc").Presence]}
        */
       let options = {
-        "details": `${song.isVideo ? "Watching a video" : "Listening to a song"}`,
+        "details": `${song.isVideo ? "Watching a video" : "Listening to a song"} (vers. ${version})`,
         "largeImageKey": "toxen"
       };
       if (settings.discordPresenceShowDetails) {
@@ -386,7 +387,7 @@ function initializeVisualizer() {
     var intensity = Storyboard.visualizerIntensity/10;
     if (settings.visualizer) {
       avg = 0;
-      dataArray = dataArray.reverse();
+      if (Storyboard.visualizerDirection == 0) dataArray = dataArray.reverse();
       for (var i = 0; i < bufferLength; i++) {
         barHeight = (dataArray[i]*intensity-(10*intensity));
 
@@ -395,7 +396,7 @@ function initializeVisualizer() {
         var b = Storyboard.blue;
         
         ctx.fillStyle = "rgba(" + r + "," + g + "," + b + ", " + 0.3 + ")";
-        switch (settings.visualizerStyle) {
+        switch (Storyboard.visualizerStyle) {
           case 0:
             ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight); // Normal
             break;

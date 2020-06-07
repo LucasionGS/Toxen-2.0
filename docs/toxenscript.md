@@ -46,24 +46,33 @@ You don't need to add a `comma,` like in the examples, but it's recommended for 
 ```php
 # Change the color of the audio visualizer to a RGB value.
 # 0 is the least amount of color, and 255 is the highest.
-[x] VisualizerColor => "red (0 - 255)", "green (0 - 255)", "blue (0 - 255)"
+[ VisualizerColor => "red (0 - 255)", "green (0 - 255)", "blue (0 - 255)"
 
 # Change the intensity (height) of the audio visualizer.
 # 0 is the least intense, and 40 is the most intense.
 # Optionally, you can add a second parameter with "smooth" to make a smooth transition into the next intensity.
-[x] VisualizerIntensity => "Intensity (0 - 40)"
+VisualizerIntensity => "Intensity (0 - 40)"
+
+# Change the style of the audio visualizer.
+# This can either be a number or text. Here's a comma-separated list of valid values:
+# bottom, 0, top, 1, identical, 2, center, 3, alternating, 4
+VisualizerStyle => "Style (name or id)";
+
+# Change the direction of the audio visualizer.
+# Can be either "left" or "right". Default is "right"
+VisualizerDirection => "Direction (left or right)"
 
 # Change the background image of the song.
 # The only parameter should be the relative path to the image you want to change to.
 # This doesn't change the background permanently.
-[x] Background => "path/to/file/relative/to/songfolder/image.jpg"
+Background => "path/to/file/relative/to/songfolder/image.jpg"
 
 # Fire a pulse effect from the sides of the screen once on the timing point.
 # Intensity Multiplier is only recommended to only be around 1-3.
-[x] Pulse => "Intensity Multiplier"
+Pulse => "Intensity Multiplier"
 
 # Fire a pulse effect from the sides of the screen every beat, starting from the timing point.
 # Optionally, you can add a second parameter with Intensity Multiplier.
 # Intensity Multiplier, if included is only recommended to only be around 1-3.
-[x] BPMPulse => "BPM"
+BPMPulse => "BPM"
 ```

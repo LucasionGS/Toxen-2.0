@@ -3,7 +3,7 @@ const { Popup } = require("ionlib");
 const electron = require("electron");
 const { remote, shell, ipcRenderer } = electron;
 const { Menu, dialog, Notification } = remote;
-const { ScriptEditor, Song } = require("../toxenCore.js");
+const { ScriptEditor, Song, ToxenScriptManager } = require("../toxenCore.js");
 const browserWindow = remote.getCurrentWindow();
 
 /**
@@ -15,7 +15,6 @@ var song;
  * @type {Editor}
  */
 var editor;
-
 
 window.addEventListener("load", () => {
   browserWindow.getParentWindow().webContents.send("editor.request.data", true);
@@ -69,7 +68,7 @@ class Editor {
     let self = this;
 
     this.textarea.addEventListener("input", e => {
-      this.updateOverlay();
+      self.updateOverlay();
     });
     window.addEventListener("resize", () => {
       self.updateOverlay();
@@ -98,7 +97,7 @@ class Editor {
     this.overlay.style.height = this.textarea.clientHeight + "px";
     this.textarea.rows = this.lineCount + 1;
     this.textarea.cols = this.longestLong() + 1;
-    this.overlay.innerHTML = parse(this.text);
+    this.overlay.innerHTML = ToxenScriptManager.syntaxHighlightToxenScript(this.text);
   }
 
   save() {
@@ -127,65 +126,4 @@ class Editor {
     }
     return length;
   }
-}
-
-/**
- * Parse ToxenScript into HTML Highlighting
- * @param {string} code
- */
-function parse(code) {
-  /**
-   * @type {{[key: string]: {"expression": RegExp, "function": ($0: string, ...$n: string[]) => string}}}
-   */
-  const regex = {
-    "value": {
-      "expression": /"(.*?)"/g,
-      "function": function($0, $1) {
-        if (!/[^\s\d]/g.test($1)) {
-          return `<span class=number>${$0}</span>`;
-        }
-        return `<span class=string>${$0}</span>`;
-      }
-    },
-    "link": {
-      "expression": /https?:\/\/(.*\.)*.*\.\S*/g,
-      "function": function($0) {
-        return `<a class=number title='${$0}' onclick='shell.openExternal(this.title)' href='javascript:void' style='pointer-events: all;'>${$0}</a>`;
-      }
-    },
-    "comment": {
-      "expression": /#.*/g,
-      "function": function($0) {
-        return `<span class=comment>${$0}</span>`;
-      }
-    },
-    "limiter": {
-      "expression": /(?<=\s*)(once|twice)/gm,
-      "function": function($0) {
-        return `<span class=limiter>${$0}</span>`;
-      }
-    },
-    "event": {
-      "expression": /((?<=\[.*\]\s*)[A-z]+)|:[A-z]+/g,
-      "function": function($0) {
-        return `<span class=event>${$0}</span>`;
-      }
-    },
-    "timing": {
-      "expression": /(?<=\[\s*)(\d+:)*(\d+)(\.\d+)*\s*(-\s*(\d+:)*(\d+)(\.\d+)*)*(?=\s*\])/g,
-      "function": function($0) {
-        return `<span class=timing>${$0}</span>`;
-      }
-    },
-  }
-
-  for (const key in regex) {
-    if (regex.hasOwnProperty(key)) {
-      const obj = regex[key];
-      code = code.replace(obj.expression, obj.function);
-      // console.log("Checking " + obj.expression.source);
-    }
-  }
-
-  return code;
 }

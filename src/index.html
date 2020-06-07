@@ -117,15 +117,15 @@
     <h3>Visual Settings</h3>
     <label>Visualizer Style</label>
     <sup>Customize how the visualizer is shown.</sup>
-    <input type="radio" name="avstyle" id="visualizerstyle=0" value="0" onclick="settings.visualizerStyle = 0; settings.saveToFile();">
+    <input type="radio" name="avstyle" id="visualizerstyle=0" value="0" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 0; settings.saveToFile();">
     <label for="visualizerstyle=0">Bottom</label><br>
-    <input type="radio" name="avstyle" id="visualizerstyle=1" value="1" onclick="settings.visualizerStyle = 1; settings.saveToFile();">
+    <input type="radio" name="avstyle" id="visualizerstyle=1" value="1" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 1; settings.saveToFile();">
     <label for="visualizerstyle=1">Top</label><br>
-    <input type="radio" name="avstyle" id="visualizerstyle=2" value="2" onclick="settings.visualizerStyle = 2; settings.saveToFile();">
+    <input type="radio" name="avstyle" id="visualizerstyle=2" value="2" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 2; settings.saveToFile();">
     <label for="visualizerstyle=2">Top and bottom (Identical)</label><br>
-    <input type="radio" name="avstyle" id="visualizerstyle=3" value="3" onclick="settings.visualizerStyle = 3; settings.saveToFile();">
+    <input type="radio" name="avstyle" id="visualizerstyle=3" value="3" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 3; settings.saveToFile();">
     <label for="visualizerstyle=3">Center</label><br>
-    <input type="radio" name="avstyle" id="visualizerstyle=4" value="4" onclick="settings.visualizerStyle = 4; settings.saveToFile();">
+    <input type="radio" name="avstyle" id="visualizerstyle=4" value="4" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 4; settings.saveToFile();">
     <label for="visualizerstyle=4">Top and bottom (Alternating)</label>
     <!-- <hr> -->
     <br>
@@ -181,9 +181,29 @@
       <sup>
         Freeze the audio visualizer when the current song is paused.
       </sup>
+      <hr>
+      <h2>Hue Bridge</h2>
+      <sup>If you own a Philips Hue Bridge, you can allow connection to your lights to be used in the storyboard.</sup>
+      <label>Bridge IP / Hostname</label>
+      <input type="text" name="huebridgeip" id="huebridgeipValue" placeholder="Bridge IP / Hostname" class="fancyinput">
+      <br>
+      <label>Bridge Username</label>
+      <input type="text" name="huebridgeuser" id="huebridgeuserValue" placeholder="Bridge Username" class="fancyinput">
+      <br>
+      <label>Bridge Client Key</label>
+      <input type="password" name="huebridgeclientkey" id="huebridgeclientkeyValue" placeholder="Bridge Client Key" class="fancyinput">
+      <button class="fancybutton" onclick="local_saveHue();">Save Hue Settings</button>
+      <script>
+        function local_saveHue() {
+          Settings.current.hueBridgeIp = document.getElementById('huebridgeipValue').value;
+          Settings.current.hueBridgeUser = document.getElementById('huebridgeuserValue').value;
+          Settings.current.hueBridgeClientKey = document.getElementById('huebridgeclientkeyValue').value;
+          Settings.current.saveToFile();
+        }
+      </script>
     </div>
     <hr>
-    <div id="changenotes">
+    <!-- <div id="changenotes">
       <label>Change Notes</label>
       <sup>
         Version ID format: YYYYMMDDHHMM<br>
@@ -233,7 +253,7 @@
         </li>
       </ul>
       
-    </div>
+    </div> -->
   </div>
   <p id="subtitles"></p>
 </body>
