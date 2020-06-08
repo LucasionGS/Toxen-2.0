@@ -2121,7 +2121,7 @@ class Pulse {
  * This is temporary plz
  * @type {Pulse}
  */
-let testPulse;
+var testPulse;
 setTimeout(() => {
   testPulse = new Pulse();
 }, 10);
@@ -2173,12 +2173,27 @@ class ToxenScriptManager {
   }
 
   /**
+   * Default variable set.
    * @type {{[$name: string]: string}}
    */
   static defaultVariables = {
-    "$end": Number.MAX_SAFE_INTEGER
+    "$end": function() {
+      try {
+        let s = SongManager.getCurrentlyPlayingSong();
+        if (s.details.songLength > 0) {
+          return s.details.songLength.toString();
+        }
+        return "100000";
+      } catch (error) {
+        return "100000";
+      }
+    }
   }
 
+  /**
+   * Apply the variables to the text.
+   * @param {string} text 
+   */
   static applyVariables(text) {
     for (const key in ToxenScriptManager.variables) {
       if (ToxenScriptManager.variables.hasOwnProperty(key)) {
@@ -2191,7 +2206,7 @@ class ToxenScriptManager {
   }
 
   /**
-   * Parses Toxen script files for storyboard effects.
+   * Parses ToxenScript files for storyboard effects.
    * @param {string} scriptFile Path to script file.
    */
   static async scriptParser(scriptFile) {
@@ -2706,18 +2721,6 @@ class ToxenScriptManager {
           return `<span class=toxenscript_rawvar>${$0}</span>`;
         }
       },
-      "link": {
-        "expression": /https?:\/\/(.*\.)*.*\.\S*/g,
-        "function": function($0) {
-          return `<a class=toxenscript_number title='${$0}' onclick='shell.openExternal(this.title)' style='pointer-events: all;'>${$0}</a>`;
-        }
-      },
-      "comment": {
-        "expression": /#.*/g,
-        "function": function($0) {
-          return `<span class=toxenscript_comment>${$0}</span>`;
-        }
-      },
       "limiter": {
         "expression": /(?<=\s*)(once|twice)/gm,
         "function": function($0) {
@@ -2743,6 +2746,21 @@ class ToxenScriptManager {
             return `<span class=toxenscript_timinginvalid>${$0}</span>`;
           }
           return `<span class=toxenscript_timing>${$0}</span>`;
+        }
+      },
+      "comment": {
+        "expression": /#.*/g,
+        "function": function($0) {
+          let d = document.createElement("div");
+          d.innerHTML = $0;
+          $0 = d.innerText;
+          return `<span class=toxenscript_comment>${$0}</span>`;
+        }
+      },
+      "link": {
+        "expression": /https?:\/\/(.*\.)*.*\.\S*/g,
+        "function": function($0) {
+          return `<a class=toxenscript_number title='${$0}' onclick='shell.openExternal(this.title)' style='pointer-events: all;'>${$0}</a>`;
         }
       },
     }

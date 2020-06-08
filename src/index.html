@@ -33,7 +33,19 @@
     </div>
     <div class="flex">
       <button class="fancybutton color-blue" onclick="SongManager.playPrev()">Previous Song</button>
-      <button class="fancybutton color-blue" onclick="SongManager.playNext()">Next Song</button>
+      <button class="fancybutton color-blue" onclick="local_playNext()">Next Song</button>
+      <script>
+        function local_playNext() {
+          if (settings.repeat == true) {
+            settings.repeat = false;
+            SongManager.playNext()
+            settings.repeat = true;
+          }
+          else {
+            SongManager.playNext()
+          }
+        }
+      </script>
     </div>
     <hr>
     <div class="flex">

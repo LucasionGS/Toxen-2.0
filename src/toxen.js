@@ -372,11 +372,12 @@ function initializeVisualizer() {
     var x = 0;
     if (settings.storyboard) {
       dim = +dim;
+      
       if (avg > 65) {
-        if (dim > +settings.backgroundDim - (+avg - 70)) {
+        if (dim > +settings.backgroundDim - (+avg - (settings.backgroundDim / 2))) {
           dim -= 1;
         }
-        if (dim < +settings.backgroundDim - (+avg - 70)) {
+        if (dim < +settings.backgroundDim - (+avg - (settings.backgroundDim / 2))) {
           dim += 1;
         }
       }
@@ -389,11 +390,17 @@ function initializeVisualizer() {
         }
       } 
     }
+    else {
+      dim = settings.backgroundDim;
+    }
 
     analyser.getByteFrequencyData(dataArray);
     
-    dim = Math.max(dim, Math.min(0.2, 1 - (settings.backgroundDim/100)));
-    ctx.fillStyle = "rgba(0, 0, 0, "+(dim/100)+")";
+    // dim = Math.max(dim, Math.min(0.2, 1 - (settings.backgroundDim/100)));
+    // console.log("Avg: ", avg);
+    // console.log(dim);
+    
+    ctx.fillStyle = "rgba(0, 0, 0, "+(dim / 100)+")";
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
     var intensity = Storyboard.visualizerIntensity/10;
@@ -441,7 +448,7 @@ function initializeVisualizer() {
         x += barWidth + 1;
         avg += dataArray[i];
       }
-      avg /= bufferLength;
+      avg /= bufferLength * 2;
       avgSec += avg;
       // avg -= settings.volume;
     }

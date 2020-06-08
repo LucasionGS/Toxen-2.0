@@ -39,21 +39,49 @@ function createWindow () {
 
   var menu = Menu.buildFromTemplate([
     {
-      label:"Restart Toxen",
-      click(){
-        // win.loadFile('./src/index.html');
-        //console.log("Open Music Player");
-        app.relaunch();
-        app.quit();
-      },
-      accelerator: "F1"
+      label: "Toxen",
+      submenu: [
+        {
+          label:"Restart Toxen",
+          click(){
+            // win.loadFile('./src/index.html');
+            //console.log("Open Music Player");
+            app.relaunch();
+            app.quit();
+          },
+          accelerator: "CTRL + F5"
+        },
+        {
+          type: "separator"
+        },
+        {
+          label:"Exit",
+          click(){
+            app.quit();
+          }
+        }
+      ]
     },
     {
-      label:"Reload Window",
-      click() {
-        win.reload();
-      },
-      accelerator: "F1"
+      label: "Window",
+      submenu: [
+        {
+          label:"Reload Window",
+          click() {
+            win.reload();
+          },
+          accelerator: "F5"
+        },
+        {
+          label:"Toggle Fullscreen",
+          click() {
+            let mode = !win.isFullScreen();
+            win.setFullScreen(mode);
+            win.setMenuBarVisibility(!mode);
+          },
+          accelerator: "F11"
+        }
+      ]
     },
     {
       label:"Developer Tools",
@@ -67,12 +95,6 @@ function createWindow () {
       click(){
         //Open github page
         shell.openExternal("https://toxen.net/");
-      }
-    },
-    {
-      label:"Exit",
-      click(){
-        app.quit();
       }
     }
   ]);
