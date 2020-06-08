@@ -9,15 +9,16 @@
   <style>
     body {
       position: relative;
-      overflow-x: hidden;
-      width: 100vw;
-      height: 100vh;
+      overflow-x: auto;
+      overflow-y: auto;
+      /* width: 100vw;
+      height: 100vh; */
       margin: 0;
       padding: 0;
     }
-    textarea {
+    textarea#editor {
       outline: none;
-      min-width: 95%;
+      /* min-width: 95%; */
     }
     #overlay {
       word-break: break-all;
@@ -31,20 +32,32 @@
   </style>
 </head>
 <body>
-  <p id="info"></p>
+  <p id="info" style="width: 90%;"></p>
   <button class="fancybutton" onclick="editor.save();">Save (Ctrl + S)</button>
   <!-- <button class="fancybutton" onclick="browserWindow.webContents.toggleDevTools();">DevTools</button> -->
-  <textarea id="editor"
-  style="display: block;
-  /* width: 99%;
-  min-width: 99%;
-  max-width: 99%; */
-  font-size: 18px;
-  background-color: #2b2b2b;
-  color: #2b2b2b;
-  font-family: 'Courier New', Courier, monospace;
-  caret-color: white;
-  overflow: hidden;
-  resize: none;" rows="10" disabled>Receiving data...</textarea>
+  <div style="display: flex; width: 100%; resize: none;">
+    <textarea id="numline" cols="4" rows="1"
+    style="display: block;
+      font-size: 18px;
+      background-color: #2b2b2b;
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+      caret-color: white;
+      overflow: hidden;
+      resize: none;
+      direction: rtl;"
+    disabled></textarea>
+
+    <textarea id="editor" rows="10"
+    style="display: block;
+      font-size: 18px;
+      background-color: #2b2b2b;
+      color: #2b2b2b;
+      font-family: 'Courier New', Courier, monospace;
+      caret-color: white;
+      overflow: hidden;
+      resize: none;"
+    disabled>Receiving data...</textarea>
+  </div>
 </body>
 </html>

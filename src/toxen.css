@@ -370,6 +370,9 @@ div.pinput > input:focus-within + p{
 .toxenscript_number {
   color: #78ff4a;
 }
+.toxenscript_var, .toxenscript_rawvar{
+  color: #0094f7;
+}
 .toxenscript_string {
   color: #f77300;
 }

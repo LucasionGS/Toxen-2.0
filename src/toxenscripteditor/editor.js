@@ -1,9 +1,10 @@
 const fs = require("fs");
 const { Popup } = require("ionlib");
 const electron = require("electron");
+const { ScriptEditor, Song, ToxenScriptManager } = require("../toxenCore.js");
+const Imd = require("../ionMarkDown").Imd;
 const { remote, shell, ipcRenderer } = electron;
 const { Menu, dialog, Notification } = remote;
-const { ScriptEditor, Song, ToxenScriptManager } = require("../toxenCore.js");
 const browserWindow = remote.getCurrentWindow();
 
 /**
@@ -20,27 +21,86 @@ window.addEventListener("load", () => {
   browserWindow.getParentWindow().webContents.send("editor.request.data", true);
 });
 
+var saveOnQuit = true;
+
 ipcRenderer.on("editor.song",
 /**
  * @param {string} _song
  */
 (e, _song) => {
   song = JSON.parse(_song);
-  document.getElementById("info").innerHTML = song.details.artist + " - " + song.details.title + "<br>" + `<code>${song.txnScript}</code>`;
+  document.getElementById("info").innerHTML = Imd.MarkDownToHTML(song.details.artist + " - " + song.details.title) + "<br>" + `<code>${song.txnScript}</code>`;
   editor = new Editor(document.getElementById("editor"), song.txnScript);
   browserWindow.on("close", () => {
-    editor.save();
+    if (saveOnQuit) {
+      editor.save();
+    }
   });
   editor.text = fs.readFileSync(song.txnScript, "utf8");
   editor.textarea.disabled = false;
   editor.updateOverlay();
   editor.focus();
-});
 
-// ipcRenderer.on("editor.response.data", (e, data) => {
-//   editor.text = data;
-//   editor.textarea.disabled = false;
-// });
+  // Create Menu
+  browserWindow.setMenu(Menu.buildFromTemplate([
+    {
+      label: "File",
+      submenu: [
+        {
+          label: "Save script",
+          click: function() {
+            editor.save();
+          },
+          accelerator: "Ctrl + s",
+        },
+        {
+          label: "Show script in explorer",
+          click: function() {
+            shell.showItemInFolder(song.txnScript);
+          }
+        },
+        {type: "separator"},
+        {
+          label: "Save and Close Editor",
+          click: function() {
+            browserWindow.close();
+          },
+          accelerator: "Ctrl + w",
+        },
+        {
+          label: "Close Editor",
+          click: function() {
+            saveOnQuit = false;
+            browserWindow.close();
+          },
+          accelerator: "Ctrl + Shift + w",
+        },
+      ]
+    },
+    {
+      label: "Tools",
+      submenu: [
+        {
+          label: "Toggle Developer Tools",
+          click: function() {
+            browserWindow.webContents.toggleDevTools();
+          }
+        }
+      ]
+    },
+    {
+      label: "Help",
+      submenu: [
+        {
+          label: "ToxenScript Documentation",
+          click: function() {
+            shell.openExternal("https://toxen.net/toxenscript");
+          }
+        },
+      ]
+    },
+  ]));
+});
 
 class Editor {
   /**
@@ -49,6 +109,10 @@ class Editor {
    */
   constructor(input, saveLocation) {
     this.textarea = input;
+    /**
+     * @type {HTMLTextAreaElement}
+     */
+    this.numline = input.previousElementSibling && input.previousElementSibling.tagName == "TEXTAREA" ? input.previousElementSibling : null;
     this.saveLocation = saveLocation;
     this.overlay = document.getElementById("overlay") ? document.getElementById("overlay"): document.createElement("div");
     this.overlay.id = "overlay";
@@ -74,16 +138,16 @@ class Editor {
       self.updateOverlay();
     });
 
-    this.textarea.addEventListener("keydown", e => {
-      if (e.ctrlKey && e.key.toLowerCase() == "s") {
-        e.preventDefault();
-        this.save();
-      }
-      if (e.ctrlKey && e.key.toLowerCase() == "w") {
-        e.preventDefault();
-        browserWindow.close();
-      }
-    });
+    // this.textarea.addEventListener("keydown", e => {
+    //   if (e.ctrlKey && e.key.toLowerCase() == "s") {
+    //     e.preventDefault();
+    //     this.save();
+    //   }
+    //   if (e.ctrlKey && e.key.toLowerCase() == "w") {
+    //     e.preventDefault();
+    //     browserWindow.close();
+    //   }
+    // });
   }
 
   focus() {
@@ -95,7 +159,15 @@ class Editor {
     this.overlay.style.top = this.textarea.offsetTop + "px";
     this.overlay.style.width = this.textarea.clientWidth + "px";
     this.overlay.style.height = this.textarea.clientHeight + "px";
-    this.textarea.rows = this.lineCount + 1;
+    let lc = this.lineCount;
+    this.textarea.rows = lc + 1;
+    if (this.numline != null) {
+      if (this.numline.rows != this.textarea.rows) {
+        this.numline.rows = this.textarea.rows;
+        const txt = [...Array(this.numline.rows).keys()].slice(1);
+        this.numline.value = txt.join("\n");
+      }
+    }
     this.textarea.cols = this.longestLong() + 1;
     this.overlay.innerHTML = ToxenScriptManager.syntaxHighlightToxenScript(this.text);
   }

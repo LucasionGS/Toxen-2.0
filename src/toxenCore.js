@@ -380,7 +380,15 @@ class Song {
   }
 
   refreshElement() {
-    this.element.children[0].innerHTML = "<p>" + Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title) + "</p>";
+    this.element.children[0].innerHTML = (() => {
+      switch (Settings.current.songGrouping) {
+        case 1:
+          return "<p>" + Imd.MarkDownToHTML(this.details.title) + "</p>";
+          
+        default:
+          return "<p>" + Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title) + "</p>";
+      }
+    })();
     this.element.children[0].style.position = "relative";
     if (this.background != null && Settings.current.thumbnails == 1) {
       this.element.style.background = "";
@@ -499,7 +507,14 @@ class Song {
      * List of tags to better help find this song in searches.
      * @type {string[]}
      */
-    tags: []
+    tags: [],
+
+    // Unmodifiable
+    /**
+     * The length of the song in seconds.  
+     * **Note:** This value is automatically updated if it doesn't match the song's duration.
+     */
+    songLength: 0,
   };
 
   /**
@@ -582,17 +597,7 @@ class Song {
             console.log("Converting the file...");
             let p = new Prompt("First Time Convertion", "This song is in a different format than supported, "
             + "so it is being converted to a usable format.<br>Please allow a moment until it has been converted...");
-            p.addButtons(
-              (function() {
-                let _b = document.createElement("button");
-                _b.innerText = "Close";
-                _b.addEventListener("click", () => {
-                  p.close();
-                });
-                return _b;
-              })(),
-              "fancybutton"
-            );
+            p.addButtons("Close", null, true);
             src.toFormat("mp3").saveToFile(newName).on("end", () => {
               console.log("Finished!");
               SongManager.player.src = newName;
@@ -1251,6 +1256,9 @@ class SongManager {
     if (Settings.current.repeat) {
       SongManager.player.currentTime = 0;
       SongManager.player.play();
+      setTimeout(() => {
+        browserWindow.webContents.send("updatediscordpresence");
+      }, 10);
     }
     else if (Settings.current.shuffle) {
       SongManager.playRandom();
@@ -1780,6 +1788,7 @@ const menus = {
               
             }
             ScriptEditor.open(song);
+            browserWindow.webContents.send("updatediscordpresence");
           }
         }
       },
@@ -2126,6 +2135,16 @@ class ToxenScriptManager {
    */
   static async reloadCurrentScript() {
     ToxenScriptManager.events = [];
+    ToxenScriptManager.variables = {};
+    for (const key in ToxenScriptManager.defaultVariables) {
+      if (ToxenScriptManager.defaultVariables.hasOwnProperty(key)) {
+        let v = ToxenScriptManager.defaultVariables[key];
+        if (typeof v == "function") {
+          v = v();
+        }
+        ToxenScriptManager.variables[key] = v;
+      }
+    }
 
     // Resetting to the default values on reset.
     Storyboard.visualizerDirection = 0;
@@ -2147,7 +2166,32 @@ class ToxenScriptManager {
   }
 
   /**
-   * Parses Toxen script files for background effects.
+   * @type {{[$name: string]: string}}
+   */
+  static variables = {
+    
+  }
+
+  /**
+   * @type {{[$name: string]: string}}
+   */
+  static defaultVariables = {
+    "$end": Number.MAX_SAFE_INTEGER
+  }
+
+  static applyVariables(text) {
+    for (const key in ToxenScriptManager.variables) {
+      if (ToxenScriptManager.variables.hasOwnProperty(key)) {
+        const v = ToxenScriptManager.variables[key];
+        let reg = new RegExp("\\" + key + "\\b", "g");
+        text = text.replace(reg, v);
+      }
+    }
+    return text;
+  }
+
+  /**
+   * Parses Toxen script files for storyboard effects.
    * @param {string} scriptFile Path to script file.
    */
   static async scriptParser(scriptFile) {
@@ -2218,6 +2262,32 @@ class ToxenScriptManager {
     function lineParser(line) {
       try { // Massive trycatch for any error.
         let maxPerSecond = 0;
+        
+        const checkVariable = /(?<=^\s*)(\$\w+)\s*=>?\s*"(.*?[^\\])"/g;
+        if (checkVariable.test(line)) {
+          line.replace(checkVariable, function(item, $1, $2) {
+            $2 = $2.replace(/\\"/g, "\"");
+            $2 = ToxenScriptManager.applyVariables($2)
+            ToxenScriptManager.variables[$1] = $2
+            return "";
+          });
+          return;
+        }
+        
+        const checkRawVariable = /(?<=^\s*)(@\w+)\s*=>?\s*(.*)/g;
+        if (checkRawVariable.test(line)) {
+          line.replace(checkRawVariable, function(item, $1, $2) {
+            // $2 = $2.replace(/\\"/g, "\"");
+            $2 = ToxenScriptManager.applyVariables($2)
+            ToxenScriptManager.variables[$1] = $2
+            return "";
+          });
+          return;
+        }
+
+        // Replace variables
+        line = ToxenScriptManager.applyVariables(line);
+
         const checkMaxPerSecond = /^\b(once|twice)\b/g;
         if (checkMaxPerSecond.test(line)) {
           line.replace(checkMaxPerSecond, function(item) {
@@ -2428,6 +2498,7 @@ class ToxenScriptManager {
    * @type {{[eventName: string]: (args: string[])}}
    */
   static eventFunctions = {
+    // TODO: Implement logging function
     /**
      * Change the image of the background.
      * @param {[string]} args Arguments.
@@ -2571,21 +2642,26 @@ class ToxenScriptManager {
      * Connect to a hue bridge.
      */
     ":hueconnect": async function([type, ip, user, clientKey]) {
+      var ipAddress = "";
+      var hueUser = {
+        "username": "",
+        "clientKey": ""
+      };
       if (type == "local") {
-        var ipAddress = Settings.current.hueBridgeIp;
-        var hueUser = {
+        ipAddress = Settings.current.hueBridgeIp;
+        hueUser = {
           "username": Settings.current.hueBridgeUser,
           "clientKey": Settings.current.hueBridgeClientKey
         };
       }
       else if (type == "login") {
-        var ipAddress = ip;
-        var hueUser = {
+        ipAddress = ip;
+        hueUser = {
           "username": user,
           "clientKey": clientKey
         };
       }
-      if (ipAddress && hueUser.username && hueUser.clientKey) {
+      if (ipAddress && hueUser && hueUser.username && hueUser.clientKey) {
         hueApi = await hue.api.createInsecureLocal(ipAddress).connect(hueUser.username, hueUser.clientKey);
         console.log("Hue is now connected.");
         console.log(hueApi);
@@ -2594,6 +2670,9 @@ class ToxenScriptManager {
         console.error("Missing arguments. Please make sure all the data is correct.\n" +
         `ipAddress: ${ipAddress}\nhueUser.username: ${hueUser.username}\nhueUser.clientkey: ${hueUser.clientKey}`)
       }
+    },
+    ":log": function() {
+      console.log(...arguments);
     }
   }
 
@@ -2607,12 +2686,24 @@ class ToxenScriptManager {
      */
     const regex = {
       "value": {
-        "expression": /"(.*?)"/g,
+        "expression": /"(.*?[^\\])"/g,
         "function": function($0, $1) {
           if (!/[^\s\d]/g.test($1)) {
             return `<span class=toxenscript_number>${$0}</span>`;
           }
           return `<span class=toxenscript_string>${$0}</span>`;
+        }
+      },
+      "$var": {
+        "expression": /\$\w+/g,
+        "function": function($0, $1) {
+          return `<span class=toxenscript_var>${$0}</span>`;
+        }
+      },
+      "@rawvar": {
+        "expression": /@\w+/g,
+        "function": function($0, $1) {
+          return `<span class=toxenscript_rawvar>${$0}</span>`;
         }
       },
       "link": {
@@ -2848,16 +2939,14 @@ class Prompt {
 
     if (title != null) this.headerElement.innerText = title;
     if (description != null) {
-      if (typeof description == "object") {
-        if (Array.isArray(description)) {
-          for (let i = 0; i < description.length; i++) {
-            const item = description[i];
-            this.addContent(item);
-          }
+      if (Array.isArray(description)) {
+        for (let i = 0; i < description.length; i++) {
+          const item = description[i];
+          this.addContent(item);
         }
-        else {
-          this.addContent(description);
-        }
+      }
+      else {
+        this.addContent(description);
       }
     }
     this.buttonsElement.style.display = "flex";
@@ -3125,7 +3214,7 @@ class Update {
     }
     let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${updatePlatform}&get=url`;
     let toxenLatestURL = await fetch(toxenGetLatestURL).then(res => res.text());
-    let dl = new ion.Download("http://"+toxenLatestURL, "./latest.zip");
+    let dl = new ion.Download("https://"+toxenLatestURL, "./latest.zip");
     
     
     let dlText = document.createElement("p");
@@ -3205,7 +3294,7 @@ class ScriptEditor {
     if (!fs.existsSync(song.getFullPath("txnScript"))) {
       fs.writeFileSync(song.getFullPath("txnScript"),
         "# Start writting your storyboard code here!\n" + 
-        "# Go to https://www.toxen.net/toxenscript\n" +
+        "# Go to https://toxen.net/toxenscript\n" +
         "# for documentation on ToxenScript"
       );
     }
@@ -3213,12 +3302,12 @@ class ScriptEditor {
       ScriptEditor.window = ScriptEditor.makeWindow();
       ScriptEditor.window.once("closed", () => {
         ScriptEditor.window = null;
-        console.log("Closed");
+        browserWindow.webContents.send("updatediscordpresence");
       });
-      console.log("Made window");
+      // console.log("Made window");
     }
     if (ScriptEditor.window.isVisible()) {
-      dialog.showErrorBox("Cannot open editor", "Editor is already open. Close down the previous editor before opening a new one.");
+      dialog.showErrorBox("Editor already open", "Close down the previous editor before opening a new one.");
       ScriptEditor.window.show();
       return ScriptEditor.window;
     }
@@ -3249,11 +3338,14 @@ class ScriptEditor {
       // "alwaysOnTop": true,
       "width": 1280,
       "height": 768,
+      "minWidth": 640,
+      "minHeight": 480,
       "webPreferences": {
         "nodeIntegration": true
       },
       "show": false,
-      "parent": browserWindow
+      "parent": browserWindow,
+      "icon": "./icon.ico"
     });
   }
 
@@ -3277,6 +3369,3 @@ exports.Update = Update;
 exports.ScriptEditor = ScriptEditor;
 
 // Export Functions
-exports.getHueApi = function getHueApi() {
-  return hueApi;
-}

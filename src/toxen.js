@@ -10,13 +10,12 @@ const {
   Prompt,
   Update,
   ScriptEditor,
-  getHueApi
 } = require("./toxenCore");
 const process = require("process");
 const rpc = require("discord-rpc");
 // const Imd = require("./ionMarkDown").Imd;
 const version = require("./version.json");
-const { remote } = require("electron");
+const { remote, ipcRenderer } = require("electron");
 let debugMode = !remote.app.isPackaged;
 
 // Discord RPC
@@ -98,6 +97,14 @@ async function initialize() {
 
     // Discord Rich Presence
     updateDiscordPresence(song);
+
+    while(isNaN(SongManager.player.duration)) {
+      await wait(1); 
+    }
+    if (song.details.songLength != SongManager.player.duration) {
+      song.details.songLength = SongManager.player.duration;
+      song.saveDetails();
+    }
   }
 
   SongManager.toggleShuffle(settings.shuffle);
@@ -285,6 +292,11 @@ async function initialize() {
   settings.applySettingsToPanel();
 }
 
+
+ipcRenderer.on("updatediscordpresence", () => {
+  updateDiscordPresence();
+})
+
 /**
  * 
  * @param {Song} song 
@@ -304,7 +316,7 @@ async function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong(
        * @type {import("discord-rpc").Presence]}
        */
       let options = {
-        "details": `${song.isVideo ? "Watching a video" : "Listening to a song"} (vers. ${version})`,
+        "details": `${ScriptEditor.window != null ? "Editing a storyboard" : song.isVideo ? "Watching a video" : "Listening to a song"} (vers. ${version})`,
         "largeImageKey": "toxen"
       };
       if (settings.discordPresenceShowDetails) {
