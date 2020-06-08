@@ -2329,8 +2329,8 @@ class ToxenScriptManager {
         }
         // Regexes
         const timeReg = /(?<=\[).+\s*-\s*\S+(?=\])/g;
-        const typeReg = /(?<=\[.+\s*-\s*\S+\]\s*)\S*(?=\s*=>)/g;
-        const argReg = /(?<=\[.+\s*-\s*\S+\]\s*\S*\s*=>\s*).*/g;
+        const typeReg = /(?<=\[.+\s*-\s*\S+\]\s*)\S*(?=\s*=>?)/g;
+        const argReg = /(?<=\[.+\s*-\s*\S+\]\s*\S*\s*=>?\s*).*/g;
 
         // Variables
         var startPoint = 0;
