@@ -1846,6 +1846,14 @@ class Storyboard {
   static visualizerIntensity = 15;
   static visualizerStyle = 0;
   static visualizerDirection = 0;
+
+  /**
+   * @readonly
+   * The currently shown background dim value.  
+   * **Note:** This is often different from the ``Settings.backgroundDim`` setting, as this is dynamic.
+   * @type {number}
+   */
+  static currentBackgroundDim = 0;
   /**
    * Fade into a RGB color.
    * @param {number} red 
@@ -2613,6 +2621,7 @@ class ToxenScriptManager {
       if (args[4] !== undefined) {
         brightness = +args[4];
       }
+      brightness = Storyboard.currentBackgroundDim;
       if (hueApi)
         for (let i = 0; i < lights.length; i++)
           hueApi.lights.setLightState(+lights[i], new hue.lightStates.LightState().on().rgb(+args[1], +args[2], +args[3]).brightness(brightness));
@@ -2631,6 +2640,7 @@ class ToxenScriptManager {
       if (args[4] !== undefined) {
         brightness = +args[4];
       }
+      brightness = Storyboard.currentBackgroundDim;
       if (hueApi)
         for (let i = 0; i < lights.length; i++)
           hueApi.lights.setLightState(+lights[i], new hue.lightStates.LightState().on().rgb(+args[1], +args[2], +args[3]).brightness(brightness));

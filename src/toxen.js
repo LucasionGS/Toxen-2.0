@@ -396,10 +396,11 @@ function initializeVisualizer() {
 
     analyser.getByteFrequencyData(dataArray);
     
-    // dim = Math.max(dim, Math.min(0.2, 1 - (settings.backgroundDim/100)));
+    dim = Math.max(dim, 0);
     // console.log("Avg: ", avg);
     // console.log(dim);
     
+    Storyboard.currentBackgroundDim = 100 - dim;
     ctx.fillStyle = "rgba(0, 0, 0, "+(dim / 100)+")";
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
