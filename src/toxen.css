@@ -99,6 +99,7 @@ div.sidebar:hover, div.sidebar[open] {
   width: 100%;
   background-color: var(--bgcolor);
   border-top: solid white 1px;
+  padding-left: 8px;
 }
 
 #songselection div.songgroup div.songgrouphead:hover {
@@ -111,7 +112,7 @@ div.sidebar:hover, div.sidebar[open] {
   padding-bottom: calc(32px - 1em);
   margin: 0;
   user-select: none;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.15s ease-in-out;
 }
 
 #songselection div.songgroup div.songgrouphead:hover p {
@@ -174,6 +175,10 @@ p#subtitles {
 
 div#progress {
   width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--panelcolor);
 }
 
 /* div#progress label#progresstext {
@@ -364,6 +369,20 @@ div.pinput > input:focus-within{
 
 div.pinput > input:focus-within + p{
   opacity: 0;
+}
+
+.draganddrop {
+  outline-style: dotted;
+}
+
+.draganddrop:hover {
+  background-color: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.draganddrop:active {
+  outline-color: var(--txtcolor);
+  cursor: pointer;
 }
 
 /* ToxenScript Values */

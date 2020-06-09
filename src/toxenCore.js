@@ -18,6 +18,7 @@ const ytdl = require("ytdl-core");
 const ion = require("ionodelib");
 const Zip = require("adm-zip");
 const browserWindow = remote.getCurrentWindow();
+const {EventEmitter} = require("events")
 
 var updatePlatform;
 switch (process.platform) {
@@ -797,21 +798,22 @@ class SongManager {
     if (this.songListElement) {
       /**
        * @param {Song} a 
-       * @param {Song} b 
+       * @param {Song} b
        */
-      let sortFunc = (a, b) => { return true; };
-      switch (Settings.current.sortBy) {
-        case "title":
-          sortFunc = (a, b) => {
-            if (a.details.title.toLowerCase() > b.details.title.toLowerCase()) {
-              return 1;
-            }
-            if (a.details.title.toLowerCase() < b.details.title.toLowerCase()) {
-              return -1;
-            }
-            return 0;
-          };
-          break;
+      let sortFunc = (a, b) => { return 0; };
+      try {
+        switch (Settings.current.sortBy) {
+          case "title":
+            sortFunc = (a, b) => {
+              if (a.details.title.toLowerCase() > b.details.title.toLowerCase()) {
+                return 1;
+              }
+              if (a.details.title.toLowerCase() < b.details.title.toLowerCase()) {
+                return -1;
+              }
+              return 0;
+            };
+            break;
           case "artist": // Fall-through
           default:
             sortFunc = (a, b) => {
@@ -823,7 +825,10 @@ class SongManager {
               }
               return 0;
             };
-          break;
+            break;
+        }
+      } catch (error) {
+        
       }
       /**
        * @param {Song} a 
@@ -1122,18 +1127,6 @@ class SongManager {
     }
   }
 
-  // /**
-  //  * @param {Settings["sortBy"]} sortName
-  //  */
-  // static sortBy(sortName) {
-  //   SongManager.songList.sort((a, b) => {
-  //     if (sortName == "artist") {
-  //       // TODO: Fix
-  //     }
-  //   });
-  //   SongManager.refreshList();
-  // }
-
   static async loadFromFile(fileLocation = Settings.current.songFolder + "/db.json") {
     if (!Settings.current.remote) {
       try {
@@ -1157,7 +1150,8 @@ class SongManager {
         SongManager.songList = songList;
         SongManager.refreshList();
       } catch (error) {
-        console.error("Unable to parse settings file.", error);
+        console.error("Unable to parse database file... Rescanning.", error);
+        SongManager.scanDirectory();
       }
     }
     // Fix
@@ -1340,6 +1334,173 @@ class SongManager {
   static addSong() {
     let p = new Prompt("Add song");
     p.addContent("Add a song to your library");
+    p.addContent((function() {
+      // Create
+      let main = document.createElement("div");
+      let text = document.createElement("p");
+      let top = document.createElement("div");
+      // Fuse
+      main.appendChild(text);
+      main.appendChild(top);
+      
+      // Main
+      main.style.backgroundColor = "#4b4b4b";
+      main.style.opacity = "0.75";
+      main.style.position = "relative";
+      main.style.width = "256px";
+      main.style.height = "256px";
+      
+      // Text
+      text.innerText = "Drag mp3 here or click to select";
+      text.style.textAlign = "center";
+      text.style.lineHeight = "256px";
+      
+      // Top area
+      top.style.position = "absolute";
+      top.style.width = "256px";
+      top.style.height = "256px";
+      top.style.top = "0";
+      top.classList.add("draganddrop");
+      top.addEventListener('dragenter', function (){}, false);
+      top.addEventListener('dragleave', function (){}, false);
+      top.addEventListener('dragover', function (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }, false);
+      top.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        let files = e.dataTransfer.files;
+        let file = files[0]
+        let ext;
+        let fileNoExt = (function() {
+          let a = file.name.split(".");
+          ext = a.pop();
+          return a.join(".");
+        })();
+        let validExtensions = [
+          "mp3"
+        ];
+        if (!validExtensions.includes(ext)) {
+          new Prompt("Invalid File", [
+            "You can only drag and drop in the following files:",
+            validExtensions.join(", ")
+          ]);
+          return;
+        }
+        let songPath = Settings.current.songFolder + "/" + fileNoExt;
+        let surfix = 0;
+        while (fs.existsSync(songPath)) {
+          let len = surfix.toString().length + 3;
+          if (surfix == 0) {
+            songPath += ` (${surfix.toString()})`;
+          }
+          else {
+            songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
+          }
+          surfix++;
+        }
+        fs.mkdirSync(songPath, {recursive: true});
+        // let ws = fs.createWriteStream(songPath + "/" + file.name);
+        fs.copyFile(file.path, songPath + "/" + file.name, (err) => {
+          if (err) {
+            return console.error(err);
+          }
+          song.songId = SongManager.songList.length;
+          song.path = fileNoExt;
+          song.songPath = song.getFullPath("path") + "/" + file.name;
+          let parts = fileNoExt.split(" - ");
+          if (parts.length == 1) {
+            song.details.artist = "Unknown"
+            song.details.title = parts[0];
+          }
+          else if (parts.length >= 2) {
+            song.details.artist = parts.shift();
+            song.details.title = parts.join(" - ");
+          }
+    
+          SongManager.songList.push(song);
+          song.saveDetails();
+          SongManager.refreshList();
+          SongManager.saveToFile();
+          p.close();
+          song.focus();
+        });
+      }, false);
+
+      top.addEventListener("click", () => {
+        dialog.showOpenDialog(browserWindow).then(ans => {
+          if (ans.canceled) {
+            return;
+          }
+          let files = ans.filePaths;
+          let file = {
+            name: files[0].split(/\\|\//g).pop(),
+            path: files[0]
+          }
+          let ext;
+          let fileNoExt = (function() {
+            let a = file.name.split(".");
+            ext = a.pop();
+            return a.join(".");
+          })();
+          let validExtensions = [
+            "mp3"
+          ];
+          if (!validExtensions.includes(ext)) {
+            new Prompt("Invalid File", [
+              "You can only drag and drop in the following files:",
+              validExtensions.join(", ")
+            ]);
+            return;
+          }
+          let songPath = Settings.current.songFolder + "/" + fileNoExt;
+          let surfix = 0;
+          while (fs.existsSync(songPath)) {
+            let len = surfix.toString().length + 3;
+            if (surfix == 0) {
+              songPath += ` (${surfix.toString()})`;
+            }
+            else {
+              songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
+            }
+            surfix++;
+          }
+          fs.mkdirSync(songPath, {recursive: true});
+          // let ws = fs.createWriteStream(songPath + "/" + file.name);
+          fs.copyFile(file.path, songPath + "/" + file.name, (err) => {
+            if (err) {
+              return console.error(err);
+            }
+            song.songId = SongManager.songList.length;
+            song.path = fileNoExt;
+            song.songPath = song.getFullPath("path") + "/" + file.name;
+            let parts = fileNoExt.split(" - ");
+            if (parts.length == 1) {
+              song.details.artist = "Unknown"
+              song.details.title = parts[0];
+            }
+            else if (parts.length >= 2) {
+              song.details.artist = parts.shift();
+              song.details.title = parts.join(" - ");
+            }
+      
+            SongManager.songList.push(song);
+            song.saveDetails();
+            SongManager.refreshList();
+            SongManager.saveToFile();
+            p.close();
+            song.focus();
+          });
+        })
+      });
+
+      const song = new Song();
+      
+      return main;
+    })());
+    p.addContent("or other options:");
     let youtubeBtn = document.createElement("button");
     youtubeBtn.innerText = "Download YouTube Audio";
     youtubeBtn.onclick = function() {
@@ -1353,6 +1514,17 @@ class SongManager {
       p.close();
     };
     p.addButtons([youtubeBtn, close], "fancybutton");
+  }
+
+  static addSongLocal() {
+    dialog.showOpenDialog(browserWindow, {
+      "title": "Add a supported audio/video file",
+      "buttonLabel": "Add file",
+      "filters": [
+        "mp3",
+        "mp4"
+      ]
+    })
   }
 
   static addSongYouTube() {
@@ -1646,7 +1818,7 @@ class SongGroup {
     inner.innerHTML = (() => {
       let p = document.createElement("p");
       p.classList.add("songgrouphead");
-      p.innerHTML = "►" + Imd.MarkDownToHTML(this.name);
+      p.innerHTML = (this.collapsed ? "►" : "▼") + Imd.MarkDownToHTML(this.name);
       return p.outerHTML;
     })();
     this.element.appendChild(inner);
@@ -1822,11 +1994,25 @@ const menus = {
               SongManager.playNext();
             }
             SongManager.songList = SongManager.songList.filter(s => s.songId !== song.songId);
-            fs.rmdirSync(path, {
-              "recursive": true
-            });
             SongManager.saveToFile();
             SongManager.refreshList();
+            try {
+              fs.rmdirSync(path, {
+                "recursive": true
+              });
+            }
+            catch (error) {
+              console.error("Failed to deleting song... retrying in 1s... " + path, error);
+              setTimeout(() => {
+                try {
+                  fs.rmdirSync(path, {
+                    "recursive": true
+                  });
+                } catch (error) {
+                  console.error("Failed to delete " + path, error);
+                }
+              }, 1000);
+            }
           }
         }
       }
@@ -2521,7 +2707,6 @@ class ToxenScriptManager {
    * @type {{[eventName: string]: (args: string[])}}
    */
   static eventFunctions = {
-    // TODO: Implement logging function
     /**
      * Change the image of the background.
      * @param {[string]} args Arguments.
@@ -2952,7 +3137,6 @@ class Debug {
   }
 }
 
-// TODO: Complete this. Add time limitors and drag and drop zone
 class Prompt {
   /**
    * 
@@ -3046,6 +3230,8 @@ class Prompt {
     else {
       element = content;
     }
+    console.log(element);
+    
     this.contentElement.appendChild(element);
   }
 
@@ -3184,12 +3370,6 @@ class Prompt {
   }
 }
 
-class DropFile {
-  constructor() {
-
-  }
-}
-
 class Update {
   /**
    * 
@@ -3219,11 +3399,11 @@ class Update {
           btn.disabled = true;
           btn.innerText = "Downloading latest...";
           btn.classList.add("color-blue");
-          new Notification({
-            "title": "New Toxen Update is available",
-            "body": "Go to settings and press Download Latest Update to update."
-          }).show();
         }
+        new Notification({
+          "title": "New Toxen Update is available",
+          "body": "Go to settings and press Download Latest Update to update."
+        }).show();
       }
       else {
         btn.classList.remove("color-blue");
