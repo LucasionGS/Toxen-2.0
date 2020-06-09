@@ -2497,14 +2497,19 @@ class ToxenScriptManager {
         // Replace variables
         line = ToxenScriptManager.applyVariables(line);
 
-        const checkMaxPerSecond = /^\b(once|twice)\b/g;
+        const checkMaxPerSecond = /^\b(once|twice|thrice)\b/g;
         if (checkMaxPerSecond.test(line)) {
           line.replace(checkMaxPerSecond, function(item) {
-            if (item == "once") {
-              maxPerSecond = 1;
-            }
-            if (item == "twice") {
-              maxPerSecond = 2;
+            switch (item) {
+              case "once":
+                maxPerSecond = 1;
+                break;
+              case "twice":
+                maxPerSecond = 2;
+                break;
+              case "thrice":
+                maxPerSecond = 3;
+                break;
             }
             return "";
           });
@@ -2917,7 +2922,7 @@ class ToxenScriptManager {
         }
       },
       "limiter": {
-        "expression": /(?<=\s*)(once|twice)/gm,
+        "expression": /(?<=\s*)(once|twice|thrice)/gm,
         "function": function($0) {
           return `<span class=toxenscript_limiter>${$0}</span>`;
         }
