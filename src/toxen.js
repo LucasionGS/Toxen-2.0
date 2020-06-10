@@ -290,6 +290,16 @@ async function initialize() {
 
   // Load Settings
   settings.applySettingsToPanel();
+  
+  (function() {
+    let red = +document.getElementById("visualizercolor.redValue").value;
+    let green = +document.getElementById("visualizercolor.greenValue").value;
+    let blue = +document.getElementById("visualizercolor.blueValue").value;
+    document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
+    document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
+    document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
+    document.getElementById("totalColorBlock").style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+  })();
 }
 
 

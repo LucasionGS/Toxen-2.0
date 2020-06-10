@@ -154,6 +154,38 @@
       Display ToxenScript storyboards.<br>
       If you're experiencing low performance, try to disable this.
     </sup>
+    <label for="backgrounddimValue">Visualizer Color</label>
+    <div class="flex">
+      <div style="width: 48px;">
+        <label for="visualizercolor.redValue" style="text-align: center; width: 100%; display: block">Red</label>
+        <input type="range" id="visualizercolor.redValue" orient="vertical" value="0" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.red = +this.value" onmouseup="settings.saveToFile();">
+        <div id="redColorBlock" style="width: 48px; height: 48px"></div>
+      </div>
+      <div style="width: 48px;">
+        <label for="visualizercolor.greenValue" style="text-align: center; width: 100%; display: block">Green</label>
+        <input type="range" id="visualizercolor.greenValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.green = +this.value" onmouseup="settings.saveToFile();">
+        <div id="greenColorBlock" style="width: 48px; height: 48px"></div>
+      </div>
+      <div style="width: 48px;">
+        <label for="visualizercolor.blueValue" style="text-align: center; width: 100%; display: block">Blue</label>
+        <input type="range" id="visualizercolor.blueValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.blue = +this.value" onmouseup="settings.saveToFile();">
+        <div id="blueColorBlock" style="width: 48px; height: 48px"></div>
+      </div>
+      <div id="totalColorBlock" style="width: 64px; height: 64px"></div>
+      <script>
+        function local_setColors() {
+          let red = +document.getElementById("visualizercolor.redValue").value
+          let green = +document.getElementById("visualizercolor.greenValue").value
+          let blue = +document.getElementById("visualizercolor.blueValue").value
+          Storyboard.rgb(red, green, blue);
+          document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
+          document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
+          document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
+          document.getElementById("totalColorBlock").style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+        }
+      </script>
+    </div>
+    <hr>
     <label for="backgrounddimValue">Background Dimming</label>
     <input type="range" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = this.value" onmouseup="settings.saveToFile();">
     <hr>

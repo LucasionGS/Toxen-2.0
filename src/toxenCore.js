@@ -124,6 +124,28 @@ class Settings {
             continue;
           }
         }
+        if (typeof value == "object") {
+          for (const keyName in value) {
+            if (value.hasOwnProperty(keyName)) {
+              const VALUE = value[keyName];
+              let element = document.getElementById(key.toLowerCase()+"."+keyName.toLowerCase()+"="+VALUE);
+              if (element != null && element instanceof HTMLInputElement) {
+                if (element.type == "radio") {
+                  element.checked = true;
+                }
+                else {
+                  element.value = VALUE;
+                }
+                continue;
+              }
+              element = document.getElementById(key.toLowerCase()+"."+keyName.toLowerCase()+"Value");
+              if (element != null && element instanceof HTMLInputElement) {
+                element.value = VALUE;
+                continue;
+              }
+            }
+          }
+        }
 
         if (typeof value == "boolean") {
           let element = document.getElementById(key.toLowerCase()+"Toggle");          
@@ -1351,9 +1373,11 @@ class SongManager {
       main.style.height = "256px";
       
       // Text
-      text.innerText = "Drag mp3 here or click to select";
+      text.innerText = "Drag mp3/mp4 here or click to select";
       text.style.textAlign = "center";
-      text.style.lineHeight = "256px";
+      text.style.boxSizing = "borderbox";
+      text.style.paddingTop = "calc(128px - 1em)";
+      text.style.paddingBottom = "128px";
       
       // Top area
       top.style.position = "absolute";
@@ -1367,6 +1391,10 @@ class SongManager {
         event.stopPropagation();
         event.preventDefault();
       }, false);
+      let validExtensions = [
+        "mp3",
+        "mp4"
+      ];
       top.addEventListener("drop", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1379,14 +1407,11 @@ class SongManager {
           ext = a.pop();
           return a.join(".");
         })();
-        let validExtensions = [
-          "mp3"
-        ];
         if (!validExtensions.includes(ext)) {
           new Prompt("Invalid File", [
             "You can only drag and drop in the following files:",
             validExtensions.join(", ")
-          ]);
+          ]).addButtons("Close", "fancybutton");
           return;
         }
         let songPath = Settings.current.songFolder + "/" + fileNoExt;
@@ -1445,12 +1470,9 @@ class SongManager {
             ext = a.pop();
             return a.join(".");
           })();
-          let validExtensions = [
-            "mp3"
-          ];
           if (!validExtensions.includes(ext)) {
             new Prompt("Invalid File", [
-              "You can only drag and drop in the following files:",
+              "You can only select files with the following extension:",
               validExtensions.join(", ")
             ]);
             return;
@@ -2423,7 +2445,7 @@ class ToxenScriptManager {
 
     fs.unwatchFile(ToxenScriptManager.currentScriptFile);
     if (!Settings.current.remote) {
-      fs.watchFile(scriptFile, (curr, prev) => {
+      fs.watchFile(scriptFile, () => {
         ToxenScriptManager.reloadCurrentScript();
       });
     }
@@ -3568,6 +3590,13 @@ class ScriptEditor {
   static currentSong = null;
 }
 
+/**
+ * Start the tutorial prompts
+ */
+function showTutorial() {
+
+}
+
 // Export Classes
 exports.Settings = Settings;
 exports.HTMLSongElement = HTMLSongElement;
@@ -3582,3 +3611,4 @@ exports.Update = Update;
 exports.ScriptEditor = ScriptEditor;
 
 // Export Functions
+exports.showTutorial = showTutorial;
