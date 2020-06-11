@@ -10,7 +10,7 @@
 <body>
   <canvas id="storyboard"></canvas>
   <video id="musicObject"></video>
-  <div class="sidebar left" id="songmenusidebar" open>
+  <div class="sidebar left" id="songmenusidebar">
     <div id="progress">
       <label id="progresstext"></label>
       <br>
@@ -104,9 +104,16 @@
     <label for="volumeValue">Volume</label>
     <input type="range" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.setVolume(this.value);" onmouseup="settings.saveToFile();">
     <hr>
-    <label>Song Folder</label>
+    <label for="songFolder">Song Folder</label>
     <input type="text" name="songFolder" id="songfolderValue" readonly class="fancyinput">
     <button class="fancybutton" onclick="Settings.current.selectSongFolder();">Select</button>
+    <br>
+    <br>
+    <label for="playlist">Playlist</label>
+    <select name="playlist" id="playlistselection" class="fancyselect" onchange="Settings.current.selectPlaylist(this.value); Settings.current.saveToFile();">
+      <option value="%null%">None</option>
+    </select>
+    <button class="fancybutton" onclick="Settings.current.addPlaylist();">New Playlist</button>
     <hr>
     <!-- <h3>Song Grouping</h3> -->
     <label>Song Grouping</label>
@@ -159,17 +166,23 @@
       <div style="width: 48px;">
         <label for="visualizercolor.redValue" style="text-align: center; width: 100%; display: block">Red</label>
         <input type="range" id="visualizercolor.redValue" orient="vertical" value="0" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.red = +this.value" onmouseup="settings.saveToFile();">
-        <div id="redColorBlock" style="width: 48px; height: 48px"></div>
+        <div id="redColorBlock" style="width: 48px; height: 48px">
+          <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+        </div>
       </div>
       <div style="width: 48px;">
         <label for="visualizercolor.greenValue" style="text-align: center; width: 100%; display: block">Green</label>
         <input type="range" id="visualizercolor.greenValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.green = +this.value" onmouseup="settings.saveToFile();">
-        <div id="greenColorBlock" style="width: 48px; height: 48px"></div>
+        <div id="greenColorBlock" style="width: 48px; height: 48px">
+          <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+        </div>
       </div>
       <div style="width: 48px;">
         <label for="visualizercolor.blueValue" style="text-align: center; width: 100%; display: block">Blue</label>
         <input type="range" id="visualizercolor.blueValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.blue = +this.value" onmouseup="settings.saveToFile();">
-        <div id="blueColorBlock" style="width: 48px; height: 48px"></div>
+        <div id="blueColorBlock" style="width: 48px; height: 48px">
+          <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+        </div>
       </div>
       <div id="totalColorBlock" style="width: 64px; height: 64px"></div>
       <script>
@@ -182,6 +195,10 @@
           document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
           document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
           document.getElementById("totalColorBlock").style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+
+          document.getElementById("redColorBlock").firstElementChild.innerText = red;
+          document.getElementById("greenColorBlock").firstElementChild.innerText = green;
+          document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
         }
       </script>
     </div>

@@ -5,7 +5,7 @@ const { Popup } = require("ionlib");
 // const fetch = require("node-fetch").default;
 const hue = require("node-hue-api").v3;
 /**
- * type {import("node-hue-api")}
+ * @type {import("node-hue-api/lib/api/Api.js")}
  */
 let hueApi = null;
 const Imd = require("./ionMarkDown").Imd;
@@ -150,8 +150,6 @@ class Settings {
         if (typeof value == "boolean") {
           let element = document.getElementById(key.toLowerCase()+"Toggle");          
           if (element != null && element instanceof HTMLInputElement) {
-            console.log("Found one!");
-            console.log(element);
             if (element.type == "radio") {
               element.checked = value;
             }
@@ -162,6 +160,87 @@ class Settings {
         }
       }
     }
+  }
+
+  /**
+   * 
+   * @param {boolean} newInstance If `true`, returns a new instance of a playlist and without the "No playlist selected" option.
+   */
+  reloadPlaylists(newInstance = false) {
+    /**
+     * @type {HTMLSelectElement}
+     */
+    let selection;
+    
+    // Add "None"
+    if (newInstance == true) {
+      selection = document.createElement("select");
+      selection.classList.add("fancyselect");
+    }
+    else {
+      selection = selection = document.getElementById("playlistselection");
+      selection.innerHTML = ""; // clear
+      let opt = document.createElement("option");
+      opt.innerText = "No Playlist Selected";
+      opt.value = "%null%";
+      selection.appendChild(opt);
+    }
+
+    for (let i = 0; i < this.playlists.length; i++) {
+      const playlist = this.playlists[i];
+      let opt = document.createElement("option");
+      opt.innerText = playlist;
+      opt.value = playlist;
+
+      selection.appendChild(opt);
+    }
+
+    if (this.playlist) {
+      selection.value = this.playlist;
+    }
+    else {
+      selection.value = "%null%";
+    }
+
+    return selection;
+  }
+
+  /**
+   * @param {string} playlist 
+   */
+  selectPlaylist(playlist) {
+    Settings.current.playlist = playlist == "%null%" ? null : playlist;
+    SongManager.search();
+  }
+
+  /**
+   * @param {string} name 
+   */
+  addPlaylist() {
+    let inpName = document.createElement("input");
+    inpName.classList.add("fancyinput");
+
+    let p = new Prompt("New Playlist", [inpName]);
+    let [create, close] = p.addButtons(["Create", "Close"], "fancybutton", true);
+    inpName.addEventListener("input", () => {
+      if (!Array.isArray(this.playlists)) {
+        this.playlists = [];
+      }
+      if (inpName.value == "%null%" || inpName.value == "" || this.playlists.includes(inpName.value)) {
+        create.disabled = true;
+        create.title = "Playlist already exists or is a reserved string.";
+      }
+      else {
+        create.title = "Create playlist!";
+        create.disabled = false;
+      }
+    });
+    create.classList.add("color-green");
+    create.addEventListener("click", () => {
+      this.playlists.push(inpName.value);
+      this.reloadPlaylists();
+      p.close();
+    });
   }
 
   async selectSongFolder() {
@@ -215,6 +294,23 @@ class Settings {
     document.getElementById("songmenusidebar").toggleAttribute("open", this.songMenuLocked);
     this.saveToFile();
     return this.songMenuLocked;
+  }
+
+  /**
+   * @param {boolean} force
+   */
+  toggleSettingsPanelLock(force) {
+    let locked = document.getElementById("settingsmenusidebar").hasAttribute("open");
+    // /**
+    //  * @type {HTMLButtonElement}
+    //  */
+    // const element = document.getElementById("lockPanelSettings");
+    if (typeof force == "boolean") {
+      locked = !force;
+    }
+    
+    document.getElementById("settingsmenusidebar").toggleAttribute("open", !locked);
+    return locked;
   }
 
   /**
@@ -336,7 +432,7 @@ class Settings {
    */
   songMenuLocked = false;
   /**
-   * `0` Doesn't show thumbnails.
+   * `0` Doesn't show thumbnails.  
    * `1` Shows backgrounds as a thumbnail for the songs with a custom background.  
    * `2` Shows backgrounds as a background on the music panel for the songs with a custom background.  
    */
@@ -361,6 +457,17 @@ class Settings {
    * @type {string}
    */
   hueBridgeClientKey = null;
+  /**
+   * Currently selected playlist.  
+   * (`null`) if none is selected.
+   * @type {string}
+   */
+  playlist = null;
+  /**
+   * All selected playlist.
+   * @type {string[]}
+   */
+  playlists = [];
 }
 
 /**
@@ -531,6 +638,13 @@ class Song {
      * @type {string[]}
      */
     tags: [],
+    
+    // Indirectly Modifiable
+    /**
+     * List of playlists this song belongs in.
+     * @type {string[]}
+     */
+    playlists: [],
 
     // Unmodifiable
     /**
@@ -794,6 +908,52 @@ class Song {
     }
     this.element.scrollIntoViewIfNeeded();
   }
+
+  addToPlaylist() {
+    let list = Settings.current.reloadPlaylists(true);
+    list.style.display = "block";
+    list.style.width = "95%";
+    list.style.margin = "auto";
+    let p = new Prompt("Add to Playlist",
+    [
+      `Add "${this.details.artist} - ${this.details.title}" to playlist:`,
+      list
+    ]);
+    if (!Array.isArray(this.details.playlists)) {
+      this.details.playlists = [];
+    }
+    console.log(list.childNodes);
+    
+    // Removing already in.
+    for (let i = 0; i < list.childNodes.length; i++) {
+      const c = list.childNodes[i];
+      if (this.details.playlists.includes(c.value)) {
+        list.removeChild(c);
+        i--;
+      }
+    }
+    let [add] = p.addButtons(["Add to playlist", "Close"], "fancybutton", true);
+    if (list.childNodes.length == 0) {
+      p.headerText = "Cannot add to a playlist";
+      p.contentElement.innerText = "Already in every playlist. Create new ones in the settings menu!";
+      add.parentElement.removeChild(add);
+      return;
+    }
+    list.value = list.childNodes[0].value;
+    add.classList.add("color-green");
+    add.addEventListener("click", () => {
+      this.details.playlists.push(list.value);
+      this.saveDetails();
+      SongManager.saveToFile();
+      p.close();
+    });
+  }
+
+  removeFromPlaylist() {
+    // TODO: Implement removeFromPlaylist
+    // see addToPlaylist above for reference.
+    
+  }
 }
 
 class SongManager {
@@ -990,14 +1150,26 @@ class SongManager {
         // s.txnScript == null ? "$!storyboard" : "$storyboard",
       ].concat(s.details.tags);
 
-      if (match(searchTags)) {
-        s.element.hidden = false;
-        nSearch.push(s);
+      if (Settings.current.playlist) {
+        if (Array.isArray(s.details.playlists) && s.details.playlists.includes(Settings.current.playlist) && match(searchTags)) {
+          s.element.hidden = false;
+          nSearch.push(s);
+        }
+        else {
+          s.element.hidden = true;
+        }
       }
       else {
-        s.element.hidden = true;
+        if (match(searchTags)) {
+          s.element.hidden = false;
+          nSearch.push(s);
+        }
+        else {
+          s.element.hidden = true;
+        }
       }
     });
+
     if (nSearch.length > 0) {
       SongManager.playableSongs = nSearch;
     }
@@ -1018,7 +1190,7 @@ class SongManager {
           }
         }
         g.element.hidden = (len == hiddenElements);
-        if (search != "" && len - 1 == hiddenElements) {
+        if (search != "" && search.length > 2 && len - 1 == hiddenElements) {
           g.collapsed = false;
         }
       }
@@ -1260,9 +1432,9 @@ class SongManager {
 
   static playRandom() {
     let song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
-    // while (song.songId === SongManager.getCurrentlyPlayingSong().songId && SongManager.songList.length > 1) {
-    //   song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
-    // }
+    while (song.songId === SongManager.getCurrentlyPlayingSong().songId && SongManager.playableSongs.length > 1) {
+      song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
+    }
     song.play();
   }
 
@@ -1952,6 +2124,18 @@ const menus = {
           if (song instanceof Song) {
             song.displayInfo();
             document.getElementById("songinfo").scrollIntoView();
+          }
+        }
+      },
+      {
+        label: "Add to playlist...",
+        click: (menuItem) => {
+          /**
+           * @type {Song}
+           */
+          const song = menuItem.songObject;
+          if (song instanceof Song) {
+            song.addToPlaylist();
           }
         }
       },
@@ -2833,7 +3017,7 @@ class ToxenScriptManager {
       if (args[4] !== undefined) {
         brightness = +args[4];
       }
-      brightness = Storyboard.currentBackgroundDim;
+      brightness = 100 - Storyboard.currentBackgroundDim;
       if (hueApi)
         for (let i = 0; i < lights.length; i++)
           hueApi.lights.setLightState(+lights[i], new hue.lightStates.LightState().on().rgb(+args[1], +args[2], +args[3]).brightness(brightness));
@@ -2852,7 +3036,7 @@ class ToxenScriptManager {
       if (args[4] !== undefined) {
         brightness = +args[4];
       }
-      brightness = Storyboard.currentBackgroundDim;
+      brightness = 100 - Storyboard.currentBackgroundDim;
       if (hueApi)
         for (let i = 0; i < lights.length; i++)
           hueApi.lights.setLightState(+lights[i], new hue.lightStates.LightState().on().rgb(+args[1], +args[2], +args[3]).brightness(brightness));
@@ -3257,7 +3441,6 @@ class Prompt {
     else {
       element = content;
     }
-    console.log(element);
     
     this.contentElement.appendChild(element);
   }
@@ -3334,8 +3517,8 @@ class Prompt {
       }
       this.buttonsElement.appendChild(button);
       
-      return button;
     }
+    return button;
   }
 
   get width() {

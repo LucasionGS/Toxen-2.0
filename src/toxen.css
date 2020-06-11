@@ -307,7 +307,6 @@ input[type="range"][orient="vertical"]
   padding: 0 16px;
 }
 
-input.fancyinput,
 input.fancyinput {
   border-radius: 4px;
   font-size: 16px;
@@ -317,9 +316,18 @@ input.fancyinput {
   border-color: var(--txtcolor);
 }
 
-input.fancyinput:disabled,
 input.fancyinput:disabled {
   filter: brightness(0.7);
+}
+
+select.fancyselect {
+  display: block;
+  border-radius: 4px;
+  font-size: 16px;
+  padding: 4px;
+  background-color: var(--bgcolor);
+  color: var(--txtcolor);
+  border-color: var(--txtcolor);
 }
 
 progress.fancyprogress {

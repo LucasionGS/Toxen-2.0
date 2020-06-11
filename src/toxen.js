@@ -125,7 +125,7 @@ async function initialize() {
     await SongManager.loadFromFile();
   }
 
-  SongManager.playableSongs = SongManager.songList;
+  // SongManager.playableSongs = SongManager.songList;
 
   settings.toggleSongPanelToRight(settings.songMenuToRight);
 
@@ -180,7 +180,6 @@ async function initialize() {
 
     console.log("Visualizer is now ready.");
     initializeVisualizer();
-    SongManager.playRandom();
   })();
   //#endregion
 
@@ -228,6 +227,10 @@ async function initialize() {
     
     if (ctrl && !shift && key == "l") {
       settings.toggleSongPanelLock();
+    }
+
+    if (ctrl && shift && key == "l") {
+      settings.toggleSettingsPanelLock();
     }
   });
 
@@ -299,7 +302,14 @@ async function initialize() {
     document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
     document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
     document.getElementById("totalColorBlock").style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+
+    document.getElementById("redColorBlock").firstElementChild.innerText = red;
+    document.getElementById("greenColorBlock").firstElementChild.innerText = green;
+    document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
   })();
+
+  settings.reloadPlaylists();
+  SongManager.playRandom();
 }
 
 
