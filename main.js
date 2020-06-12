@@ -37,69 +37,6 @@ function createWindow () {
     win.show();
   });
 
-  var menu = Menu.buildFromTemplate([
-    {
-      label: "Toxen",
-      submenu: [
-        {
-          label:"Restart Toxen",
-          click(){
-            // win.loadFile('./src/index.html');
-            //console.log("Open Music Player");
-            app.relaunch();
-            app.quit();
-          },
-          accelerator: "CTRL + F5"
-        },
-        {
-          type: "separator"
-        },
-        {
-          label:"Exit",
-          click(){
-            app.quit();
-          }
-        }
-      ]
-    },
-    {
-      label: "Window",
-      submenu: [
-        {
-          label:"Reload Window",
-          click() {
-            win.reload();
-          },
-          accelerator: "F5"
-        },
-        {
-          label:"Toggle Fullscreen",
-          click() {
-            let mode = !win.isFullScreen();
-            win.setFullScreen(mode);
-            win.setMenuBarVisibility(!mode);
-          },
-          accelerator: "F11"
-        }
-      ]
-    },
-    {
-      label:"Developer Tools",
-      click(){
-        win.webContents.toggleDevTools();
-      },
-      accelerator: "F12"
-    },
-    {
-      label:"Website",
-      click(){
-        //Open github page
-        shell.openExternal("https://toxen.net/");
-      }
-    }
-  ]);
-  Menu.setApplicationMenu(menu);
-
   // and load the index.html of the app.
   win.loadFile('./src/index.html');
 
@@ -124,7 +61,7 @@ function createWindow () {
       appIcon = new Tray("./icon.ico");
       var contextMenu = Menu.buildFromTemplate([
         {
-          label: "Restore",
+          label: "Show",
           type: "radio",
           click(){
             win.show();

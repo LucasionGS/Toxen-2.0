@@ -11,14 +11,14 @@ let hueApi = null;
 const Imd = require("./ionMarkDown").Imd;
 const electron = require("electron");
 const { remote, shell, ipcRenderer } = electron;
-const { Menu, dialog, Notification } = remote;
+const { Menu, dialog, Notification, app } = remote;
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const ytdl = require("ytdl-core");
 const ion = require("ionodelib");
 const Zip = require("adm-zip");
 const browserWindow = remote.getCurrentWindow();
-const {EventEmitter} = require("events")
+const {EventEmitter} = require("events");
 
 var updatePlatform;
 switch (process.platform) {
@@ -185,7 +185,7 @@ class Settings {
       opt.value = "%null%";
       selection.appendChild(opt);
     }
-
+    
     for (let i = 0; i < this.playlists.length; i++) {
       const playlist = this.playlists[i];
       let opt = document.createElement("option");
@@ -194,6 +194,8 @@ class Settings {
 
       selection.appendChild(opt);
     }
+
+    if (newInstance == false) Menu.setApplicationMenu((menu = reloadMenu()));
 
     if (this.playlist) {
       selection.value = this.playlist;
@@ -210,6 +212,10 @@ class Settings {
    */
   selectPlaylist(playlist) {
     Settings.current.playlist = playlist == "%null%" ? null : playlist;
+    if (document.getElementById("playlistselection").value != playlist) {
+      document.getElementById("playlistselection").value = playlist;
+    }
+    new Prompt("", "Switched to playlist "+ (playlist != "%null%" ? "\"" + playlist + "\"" : "None" ) +"").close(1000);
     SongManager.search();
   }
 
@@ -222,6 +228,15 @@ class Settings {
 
     let p = new Prompt("New Playlist", [inpName]);
     let [create, close] = p.addButtons(["Create", "Close"], "fancybutton", true);
+    inpName.addEventListener("keydown", (e) => {
+      if (e.key == "Enter") {
+        create.click();
+      }
+      if (e.key == "Escape") {
+        close.click();
+      }
+    });
+    inpName.focus();
     inpName.addEventListener("input", () => {
       if (!Array.isArray(this.playlists)) {
         this.playlists = [];
@@ -239,9 +254,13 @@ class Settings {
     create.addEventListener("click", () => {
       this.playlists.push(inpName.value);
       this.reloadPlaylists();
+      this.saveToFile();
       p.close();
+      new Prompt("", "Successfully created playlist \""+ inpName.value +"\"").close(1000);
     });
   }
+
+  // TODO: removePlaylist
 
   async selectSongFolder() {
     let self = this;
@@ -294,6 +313,20 @@ class Settings {
     document.getElementById("songmenusidebar").toggleAttribute("open", this.songMenuLocked);
     this.saveToFile();
     return this.songMenuLocked;
+  }
+
+  revealSongPanel() {
+    if (!this.songMenuLocked) {
+      let self = this;
+      document.getElementById("songmenusidebar").toggleAttribute("open", true);
+      function _a() {
+        if (!self.songMenuLocked) {
+          document.getElementById("songmenusidebar").toggleAttribute("open", false);
+        }
+        document.getElementById("songmenusidebar").removeEventListener("mouseover", _a);
+      }
+      document.getElementById("songmenusidebar").addEventListener("mouseover", _a);
+    }
   }
 
   /**
@@ -468,6 +501,10 @@ class Settings {
    * @type {string[]}
    */
   playlists = [];
+  /**
+   * Display the tutorial the first time toxen launches.
+   */
+  showTutorialOnStart = true;
 }
 
 /**
@@ -1028,7 +1065,7 @@ class SongManager {
       SongManager.songListElement.innerHTML = "";
       let noGrouping = false;
       // Group Songs
-      if (typeof Settings.current.songGrouping == "number" && Settings.current.songGrouping > 0 && Settings.current.songGrouping < 5) {
+      if (typeof Settings.current.songGrouping == "number" && Settings.current.songGrouping > 0 && Settings.current.songGrouping <= 6) {
         /**
          * @type {{[key: string]: Song[]}}
          */
@@ -1067,6 +1104,16 @@ class SongManager {
           case 4:
             SongManager.songList.forEach(s => {
               addToGroup(s.details.language, s, "!Missing Language!");
+            });
+            break;
+          case 5:
+            SongManager.songList.forEach(s => {
+              addToGroup(s.details.artist[0].toUpperCase(), s, "!Missing Artist!");
+            });
+            break;
+          case 6:
+            SongManager.songList.forEach(s => {
+              addToGroup(s.details.title[0].toUpperCase(), s, "!Missing Title!");
             });
             break;
         
@@ -1431,6 +1478,11 @@ class SongManager {
   }
 
   static playRandom() {
+    if (SongManager.playableSongs.length == 0) {
+      console.warn("No songs to play. SongManager.playableSongs is empty.")
+      return;
+    }
+
     let song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
     while (song.songId === SongManager.getCurrentlyPlayingSong().songId && SongManager.playableSongs.length > 1) {
       song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
@@ -2225,6 +2277,136 @@ const menus = {
     ]
   )
 }
+
+/**
+ * Electron Menu
+ * @type {Electron.Menu}
+ */
+var menu = reloadMenu();
+/**
+ * 
+ * @param {{"playlists"?: string[]}} opts 
+ */
+function reloadMenu() {
+  let menu = Menu.buildFromTemplate([
+    {
+      label: "File",
+      submenu: [
+        {
+          label:"Restart Toxen",
+          click(){
+            app.relaunch();
+            app.quit();
+          },
+          accelerator: "CTRL + F5"
+        },
+        {
+          type: "separator"
+        },
+        {
+          label:"Exit",
+          click(){
+            app.quit();
+          }
+        }
+      ]
+    },
+    {
+      label: "Song Manager",
+      submenu: [
+        {
+          label: "Add Song",
+          click() {
+            SongManager.addSong();
+          }
+        },
+        {
+          label: "Set Background for current song",
+          click() {
+            SongManager.selectBackground();
+          }
+        },
+        { type: "separator" },
+        {
+          label: "Select Playlist",
+          submenu: (function() {
+            let menus = (Settings && Settings.current && Array.isArray(Settings.current.playlists) ? Settings.current.playlists.map(playlist => {
+              return new remote.MenuItem({
+                "label": playlist,
+                click() {
+                  Settings.current.selectPlaylist(playlist);
+                },
+                "type": "radio",
+                "checked": Settings.current.playlist && Settings.current.playlist == playlist ? true : false
+              });
+            }) : []);
+            menus.unshift({
+              "label": "No Playlist Selected",
+              click() {
+                Settings.current.selectPlaylist("%null%");
+              },
+              "type": "radio",
+              "checked": Settings && Settings.current && Settings.current.playlist ? false : true
+            });
+            return menus;
+          })(),
+          id: "playlists"
+        },
+        {
+          label: "New playlist...",
+          click() {
+            Settings.current.addPlaylist();
+          }
+        },
+        {
+          label: "Show currently playing song",
+          click() {
+            Settings.current.revealSongPanel();
+            SongManager.getCurrentlyPlayingSong().focus();
+          },
+          "accelerator": "CTRL + SHIFT + F"
+        },
+      ]
+    },
+    {
+      label: "Window",
+      submenu: [
+        {
+          label:"Reload Window",
+          click() {
+            browserWindow.reload();
+          },
+          accelerator: "F5"
+        },
+        {
+          label:"Toggle Fullscreen",
+          click() {
+            let mode = !browserWindow.isFullScreen();
+            browserWindow.setFullScreen(mode);
+            browserWindow.setMenuBarVisibility(!mode);
+          },
+          accelerator: "F11"
+        }
+      ]
+    },
+    {
+      label:"Developer Tools",
+      click(){
+        browserWindow.webContents.toggleDevTools();
+      },
+      accelerator: "F12"
+    },
+    {
+      label:"Website",
+      click(){
+        //Open github page
+        shell.openExternal("https://toxen.net/");
+      }
+    }
+  ]);
+  return menu;
+}
+// Menu.setApplicationMenu(menu);
 
 class Storyboard {
   static red = 25;
@@ -3388,6 +3570,12 @@ class Prompt {
     this.main.style.backgroundColor = "#2b2b2b";
     this.main.style.paddingLeft = "32px";
     this.main.style.paddingRight = "32px";
+    this.main.style.zIndex = "10000";
+    this.main.style.transition = "all 0.1s ease-in-out";
+    this.main.style.maxWidth = "95vw";
+    this.main.style.maxHeight = "95vh";
+
+    this.main.style.overflow = "auto";
 
     document.body.appendChild(this.main);
   }
@@ -3773,11 +3961,158 @@ class ScriptEditor {
   static currentSong = null;
 }
 
+class Effect {
+  /**
+   * Highlight an element with a flash that lasts 2 seconds.
+   * @param {HTMLElement} element 
+   */
+  static flashElement(element, color = "#fff") {
+    let ef = document.createElement("div");
+    ef.style.pointerEvents = "none";
+    ef.style.zIndex = "1000";
+    ef.style.backgroundColor = color;
+    let opacity = 0;
+    let add = 0.005;
+    let int = setInterval(() => {
+      ef.style.opacity = (opacity += add).toString();
+      ef.style.position = "absolute";
+      let boundingBox = element.getBoundingClientRect();
+      ef.style.left = boundingBox.left + "px";
+      ef.style.top =  boundingBox.top + "px";
+      ef.style.width = element.clientWidth + "px";
+      ef.style.height = element.clientHeight + "px";
+    }, 10);
+    setTimeout(() => {
+      add = -0.005;
+    }, 1000);
+    setTimeout(() => {
+      clearInterval(int);
+      ef.parentElement.removeChild(ef);
+    }, 2000);
+
+    document.body.appendChild(ef);
+  }
+}
+
 /**
  * Start the tutorial prompts
  */
 function showTutorial() {
+  // Tutorial Preperation
+  let currentStep = 0;
+  let prompt = new Prompt(
+    "Welcome to Toxen!",
+    [
+      "Would you like to get a walkthrough of how Toxen works?"
+    ]
+  );
+  let [next, end] = prompt.addButtons(["Next", "End Tutorial"], "fancybutton");
+  next.classList.add("color-green");
+  end.classList.add("color-red");
+  next.addEventListener("click", () => {
+    showStep(++currentStep);
+  });
+  prompt.main.addEventListener("keydown", (e) => {
+    console.log(e.key);
+  })
+  end.addEventListener("click", () => {
+    Settings.current.showTutorialOnStart = false;
+    Settings.current.toggleSongPanelLock(false);
+    Settings.current.toggleSettingsPanelLock(false);
+    prompt.close();
+  });
+  function clearContent() {
+    prompt.contentElement.innerHTML = "";
+  }
+  function clearButtons() {
+    prompt.buttonsElement.innerHTML = "";
+  }
 
+  // Steps
+  function showStep(step = currentStep) {
+    switch (step) {
+      case 0:
+        showStep(1);
+        break;
+      case 1:
+        clearContent();
+        prompt.headerText = "The Song Panel";
+        Settings.current.toggleSongPanelLock(true);
+        prompt.addContent("This is your song panel.");
+        prompt.addContent(`You can get the song panel out by hovering your mouse to the <b>${Settings.current.songMenuToRight ? "right" : "left"}</b> side of the app.`);
+        prompt.addContent(`Here you'll see a list of all the songs you have.<br>They can be sorted and grouped, as you'll see later in the tutorial.`);
+        prompt.addContent(`You can lock and unlock the song panel by pressing on the Pad Lock🔒 (or press <b>CTRL + L</b>).<br>This will prevent it from disappearing when your mouse moves away.`);
+        // prompt.addContent(`Continue by pressing on the padlock`);
+        if (Settings.current.songMenuToRight) {
+          prompt.main.style.marginLeft = "-15%";
+          // prompt.main.style.marginRight = "10%";
+        }
+        else {
+          prompt.main.style.marginLeft = "10%";
+        }
+        Effect.flashElement(SongManager.songListElement);
+        break;
+      // Songs
+      case 2:
+        clearContent();
+        prompt.headerText = "The Song Panel: Adding Songs";
+        Settings.current.toggleSongPanelLock(true);
+        if (SongManager.songList.length == 0) {
+          prompt.addContent("Though... your song list does look a bit empty now, doesn't it? Let's change that!");
+        }
+        else {
+          prompt.addContent("It seems like you already have music in your library, but I'll still tell you how to add new songs, if you forgot.");
+        }
+        prompt.addContent("You can add one from your computer or download one from a YouTube URL, directly within Toxen.");
+        prompt.addContent("Press on the <b>Add Song</b> button to add a new song now if you'd like.");
+        document.getElementById("addsongbutton").scrollIntoView();
+        Effect.flashElement(document.getElementById("addsongbutton"), "#0f0");
+        // prompt.main.style.marginLeft = "0%";''
+        break;
+      // Backgrounds
+      case 3:
+        clearContent();
+        Settings.current.toggleSongPanelLock(true);
+        prompt.headerText = "The Song Panel: Adding Backgrounds";
+        prompt.addContent("When you're listening to a song, you can press the <b>Set Background</b> to give the song you're currently listening to, a background.")
+        Effect.flashElement(document.getElementById("setbackgroundbutton"), "#0f0");
+        break;
+      // Settings panel
+      case 4:
+        clearContent();
+        Settings.current.toggleSongPanelLock(false);
+        Settings.current.toggleSettingsPanelLock(true);
+        prompt.headerText = "Settings Panel";
+        prompt.addContent("This is your settings panel.");
+        prompt.addContent(`You can get the settings panel out by hovering your mouse to the <b>${Settings.current.songMenuToRight ? "left" : "right"}</b> side of the app.`);
+        prompt.addContent(`Here you can customize Toxen however you like.<br>Take a look at the settings and set your preferences!`);
+        // prompt.addContent(`Continue by pressing on the padlock`);
+        if (Settings.current.songMenuToRight) {
+          prompt.main.style.marginLeft = "10%";
+        }
+        else {
+          prompt.main.style.marginLeft = "-15%";
+        }
+        Effect.flashElement(document.getElementById("settingsmenusidebar"));
+        for (let i = 0; i < document.getElementById("settingsmenusidebar").clientHeight; i++) {
+          setTimeout(() => {
+            document.getElementById("settingsmenusidebar").scrollTop += 2;
+          }, i * 5);
+        }
+        break;
+
+      default:
+        clearContent();
+        Settings.current.toggleSongPanelLock(false);
+        Settings.current.toggleSettingsPanelLock(false);
+        prompt.main.style.marginLeft = "0%";
+        prompt.headerText = "Enjoy using Toxen";
+        prompt.addContent("Add some songs and make the experience you want.");
+        prompt.addContent("If you need more help, go to https://toxen.net to learn more.");
+        next.parentElement.removeChild(next);
+      break;
+    }
+  }
 }
 
 // Export Classes
@@ -3792,6 +4127,7 @@ exports.Debug = Debug;
 exports.Prompt = Prompt;
 exports.Update = Update;
 exports.ScriptEditor = ScriptEditor;
+exports.Effect = Effect;
 
 // Export Functions
 exports.showTutorial = showTutorial;

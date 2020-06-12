@@ -1,4 +1,5 @@
 const fs = require("fs");
+
 // const {Popup} = require("ionlib");
 const {
   Settings,
@@ -10,6 +11,7 @@ const {
   Prompt,
   Update,
   ScriptEditor,
+  showTutorial,
 } = require("./toxenCore");
 const process = require("process");
 const rpc = require("discord-rpc");
@@ -74,6 +76,7 @@ function fixPath(path) {
 window.addEventListener("load", initialize);
 
 async function initialize() {
+  // Load settings (IMPORTANT TO BE DONE FIRST)
   settings.loadFromFile();
   if (settings.songFolder == null) {
     switch(process.platform) {
@@ -85,6 +88,10 @@ async function initialize() {
         settings.songFolder = process.env.HOME + "/Music/";
         break;
     }
+  }
+
+  if (settings.showTutorialOnStart) {
+    showTutorial();
   }
 
   // Check for update
@@ -220,10 +227,10 @@ async function initialize() {
       SongManager.getCurrentlyPlayingSong().play();
     }
 
-    if (ctrl && shift && key == "f") {
-      let cp = SongManager.getCurrentlyPlayingSong();
-      cp.focus();
-    }
+    // if (ctrl && shift && key == "f") {
+    //   let cp = SongManager.getCurrentlyPlayingSong();
+    //   cp.focus();
+    // }
     
     if (ctrl && !shift && key == "l") {
       settings.toggleSongPanelLock();
