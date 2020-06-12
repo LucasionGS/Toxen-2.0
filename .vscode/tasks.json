@@ -23,6 +23,12 @@
       "label": "Build Electron for Linux",
       "command": "electron-packager ./ \"${workspaceFolderBasename}\" --out=\"E:/Dev/.distributions/toxen/linux-armv7l\"--arch=armv7l --platform=linux --overwrite --icon=./icon.ico",
       "problemMatcher": []
+    },
+    {
+      "type": "shell",
+      "label": "Build Electron for MacOS",
+      "command": "electron-packager ./ \"${workspaceFolderBasename}\" --out=\"E:/Dev/.distributions/toxen/macos\" --platform=darwin --overwrite --icon=./icon.ico",
+      "problemMatcher": []
     }
 	]
 }

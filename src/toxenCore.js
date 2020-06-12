@@ -4014,7 +4014,7 @@ function showTutorial() {
   });
   prompt.main.addEventListener("keydown", (e) => {
     console.log(e.key);
-  })
+  });
   end.addEventListener("click", () => {
     Settings.current.showTutorialOnStart = false;
     Settings.current.toggleSongPanelLock(false);
