@@ -219,6 +219,7 @@ async function initialize() {
     }
     
     if (ctrl && !shift && key == "s" || ctrl && !shift && key == "f") {
+      settings.revealSongPanel();
       document.getElementById("search").focus();
     }
 
