@@ -1,6 +1,7 @@
 const fs = require("fs");
 
 // const {Popup} = require("ionlib");
+const ToxenCore = require("./toxenCore");
 const {
   Settings,
   Song,
@@ -11,8 +12,9 @@ const {
   Prompt,
   Update,
   ScriptEditor,
+  ToxenModule,
   showTutorial,
-} = require("./toxenCore");
+} = ToxenCore;
 const process = require("process");
 const rpc = require("discord-rpc");
 // const Imd = require("./ionMarkDown").Imd;
@@ -221,6 +223,7 @@ async function initialize() {
     if (ctrl && !shift && key == "s" || ctrl && !shift && key == "f") {
       settings.revealSongPanel();
       document.getElementById("search").focus();
+      document.getElementById("search").scrollIntoViewIfNeeded();
     }
 
     if (ctrl && key == " ") {
@@ -316,6 +319,11 @@ async function initialize() {
     document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
   })();
 
+  // Load modules
+  ToxenModule.initialize();
+  ToxenModule.loadAllModules();
+
+  // Finish
   settings.reloadPlaylists();
   SongManager.playRandom();
 }
@@ -332,12 +340,12 @@ ipcRenderer.on("updatediscordpresence", () => {
 async function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
   let attemptCount = 0;
   while(true) {
-    if (attemptCount > 3) {
+    if (attemptCount > 30) {
       break;
     }
     if (isNaN(SongManager.player.duration) || !discordReady) {
       attemptCount++;
-      await wait(1000);
+      await wait(100);
     }
     else {
       /**
@@ -349,8 +357,9 @@ async function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong(
       };
       if (settings.discordPresenceShowDetails) {
         options["startTimestamp"] = Date.now();
+        options["details"] = (`${ScriptEditor.window != null ? "Editing " : song.isVideo ? "Watching " : "Listening to "}`) + `${song.details.artist} - ${song.details.title}`;
         options["endTimestamp"] = Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000;
-        options["state"] = `${song.details.artist} - ${song.details.title}`;
+        options["state"] = (song.details.source ? `\nFrom ${song.details.source} ` : "") + `(Vers. ${version})`;
       }
       discord.setActivity(options);
       break;

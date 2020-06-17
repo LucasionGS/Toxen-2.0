@@ -26,8 +26,14 @@ var saveOnQuit = true;
 ipcRenderer.on("editor.song",
 /**
  * @param {string} _song
+ * @param {string[]} validSyntax
  */
-(e, _song) => {
+(e, _song, validSyntax) => {
+  let _eventFunctions = {};
+  validSyntax.forEach(v => {
+    _eventFunctions[v] = null;
+  })
+  ToxenScriptManager.eventFunctions = _eventFunctions;
   song = JSON.parse(_song);
   document.getElementById("info").innerHTML = Imd.MarkDownToHTML(song.details.artist + " - " + song.details.title) + "<br>" + `<code>${song.txnScript}</code>`;
   editor = new Editor(document.getElementById("editor"), song.txnScript);

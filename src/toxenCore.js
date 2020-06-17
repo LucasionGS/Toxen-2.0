@@ -48,6 +48,14 @@ class Settings {
       Settings.current = this;
     }
   }
+  
+  /**
+   * Restarts Toxen immediately.
+   */
+  static restartToxen() {
+    app.relaunch();
+    app.exit();
+  }
 
   static createFromFile(fileLocation = "./data/settings.json") {
     let newSettings = new Settings();
@@ -544,6 +552,27 @@ class Song {
         "y": e.clientY
       });
     });
+  }
+
+  /**
+   * Zip the entire song folder and save it as a `txs`
+   */
+  export() {
+    let txs = new Zip();
+    txs.addLocalFolder(this.getFullPath("path"));
+    let ans = dialog.showSaveDialogSync(browserWindow, {
+      "title": "Save Toxen Song File",
+      "buttonLabel": "Save Song",
+      "filters": [
+        "txs"
+      ],
+      "defaultPath": this.path + ".txs"
+    });
+
+    if (typeof ans == "string") {
+      txs.writeZip(ans);
+      shell.showItemInFolder(ans);
+    }
   }
 
   refreshElement() {
@@ -1597,7 +1626,7 @@ class SongManager {
       main.style.height = "256px";
       
       // Text
-      text.innerText = "Drag mp3/mp4 here or click to select";
+      text.innerText = "Drag mp3/mp4/txs here or click to select";
       text.style.textAlign = "center";
       text.style.boxSizing = "borderbox";
       text.style.paddingTop = "calc(128px - 1em)";
@@ -1617,7 +1646,8 @@ class SongManager {
       }, false);
       let validExtensions = [
         "mp3",
-        "mp4"
+        "mp4",
+        "txs"
       ];
       top.addEventListener("drop", (e) => {
         e.preventDefault();
@@ -1667,6 +1697,14 @@ class SongManager {
           else if (parts.length >= 2) {
             song.details.artist = parts.shift();
             song.details.title = parts.join(" - ");
+          }
+
+          if (ext.toLowerCase() == "txs") {
+            let zip = new Zip(file.path);
+            zip.extractAllTo(songPath + "/", true);
+            fs.unlinkSync(file.path);
+            fs.unlinkSync(songPath + "/" + file.name);
+            SongManager.scanDirectory();
           }
     
           SongManager.songList.push(song);
@@ -1730,6 +1768,14 @@ class SongManager {
             else if (parts.length >= 2) {
               song.details.artist = parts.shift();
               song.details.title = parts.join(" - ");
+            }
+
+            if (ext.toLowerCase() == "txs") {
+              let zip = new Zip(file.path);
+              zip.extractAllTo(songPath + "/", true);
+              fs.unlinkSync(file.path);
+              fs.unlinkSync(songPath + "/" + file.name);
+              SongManager.scanDirectory();
             }
       
             SongManager.songList.push(song);
@@ -2224,6 +2270,18 @@ const menus = {
       },
       {
         type: "separator"
+      },
+      {
+        label: "Export song",
+        click: (menuItem) => {
+          /**
+           * @type {Song}
+           */
+          const song = menuItem.songObject;
+          if (song instanceof Song) {
+            song.export();
+          }
+        }
       },
       {
         label: "Delete song",
@@ -3883,7 +3941,7 @@ ipcRenderer.on("editor.request.data", () => {
   let txnScript = ScriptEditor.currentSong.txnScript;
   ScriptEditor.currentSong.txnScript = ScriptEditor.currentSong.getFullPath("txnScript");
   ScriptEditor.currentSong.element = null;
-  ScriptEditor.window.webContents.send("editor.song", JSON.stringify(ScriptEditor.currentSong));
+  ScriptEditor.window.webContents.send("editor.song", JSON.stringify(ScriptEditor.currentSong), ToxenScriptManager.getEventNames());
   ScriptEditor.currentSong.txnScript = txnScript;
   ScriptEditor.currentSong.element = element;
 });
@@ -3901,7 +3959,7 @@ class ScriptEditor {
       fs.writeFileSync(song.getFullPath("txnScript"),
         "# Start writting your storyboard code here!\n" + 
         "# Go to https://toxen.net/toxenscript\n" +
-        "# for documentation on ToxenScript"
+        "# for documentation on ToxenScript\n\n"
       );
     }
     if (ScriptEditor.window == null) {
@@ -3991,6 +4049,176 @@ class Effect {
     }, 2000);
 
     document.body.appendChild(ef);
+  }
+}
+
+class ToxenModule {
+  /**
+   * Create a manageable Module
+   * @param {string} moduleName 
+   */
+  constructor(moduleName) {
+    try {
+      this.moduleName = moduleName;
+      if (!fs.existsSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json")) {
+        fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json", JSON.stringify({
+          "main": "index.js",
+          "active": true,
+        }, null, 2))
+      }
+      /**
+       * @type {{
+        "main": string,
+        "active": boolean,
+        "name": string,
+        "description": string
+       }}
+       */
+      this.module = JSON.parse(fs.readFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json"));
+      /**
+       * @type {(ToxenCore: exports) => void}
+       */
+      this.function = require("../" + ToxenModule.moduleFolder + "/" + moduleName + "/" + (this.module.main ? this.module.main : "index.js")).default;
+    } catch (error) {
+      let p = new Prompt("Module Error", [
+       `Unable to load module "${moduleName}"`,
+       "Please check the Developer Tools console for more information."
+      ]);
+
+      let [ openDevTools ] = p.addButtons(["Open Dev. Tools", "Close"], "fancybutton", true);
+      openDevTools.addEventListener("click", () => {
+        browserWindow.webContents.openDevTools();
+      });
+      
+      console.error(error);
+    }
+  }
+
+  /**
+   * Activate or deactivate the module
+   * @param {boolean} active 
+   */
+  activation(active = undefined) {
+    if (active === undefined && this.module && typeof this.module.active == "boolean") {
+      active = !this.module.active;
+    }
+    if (fs.existsSync(ToxenModule.moduleFolder + "/" + this.moduleName + "/module.json")) {
+      let data = JSON.parse(fs.readFileSync(ToxenModule.moduleFolder + "/" + this.moduleName + "/module.json"));
+      data.active = active;
+      fs.writeFileSync(ToxenModule.moduleFolder + "/" + this.moduleName + "/module.json", JSON.stringify(
+        data,
+      null, 2));
+    }
+    else {
+      fs.writeFileSync(ToxenModule.moduleFolder + "/" + this.moduleName + "/module.json", JSON.stringify({
+        "main": "index.js",
+        "active": active
+      }, null, 2));
+    }
+  }
+
+  static moduleFolder = "toxenModules";
+  /**
+   * Initialize folders
+   */
+  static initialize() {
+    if (!fs.existsSync(ToxenModule.moduleFolder)) {
+      fs.mkdirSync(ToxenModule.moduleFolder, { recursive: true });
+    }
+  }
+
+  static createModule(moduleName) {
+    if (!fs.existsSync(moduleName)) {
+      fs.mkdirSync(ToxenModule.moduleFolder + "/" + moduleName, { recursive: true });
+      fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/index.js",
+`/**
+ * Your main function is required to be exported as \`exports.default\`.  
+ * Otherwise, your module will not work.++
+ * @param {import("../../src/toxenCore")} Core
+ */
+exports.default = (Core) => {
+  // You can export specific functionality from the Toxen Core if you'll be using them often
+  const {
+    // SongManager,
+    // Storyboard
+  } = Core;
+
+  // Your code goes here
+
+}`
+      )
+    }
+    else {
+      console.error("This module already exists");
+    }
+  }
+
+  static listModules() {
+    return fs.readdirSync(ToxenModule.moduleFolder);
+  }
+
+  /**
+   * Loads all of the modules.  
+   * If `activate` is set to `false`, the modules won't be activated, and only returned.
+   * @param {boolean} activate
+   */
+  static loadAllModules(activate = true) {
+    let modules = ToxenModule.listModules().map(m => new ToxenModule(m));
+    /**
+     * @type {HTMLDivElement}
+     */
+    let panel = document.getElementById("moduleActivation");
+    panel.innerHTML = "";
+    modules.forEach(m => {
+      let randName = `module_${m.moduleName}_` + Debug.generateRandomString(3);
+      let div = document.createElement("div");
+      let input = document.createElement("input");
+      input.type = "checkbox";
+      let label = document.createElement("label");
+      label.innerText = (m.module.name ? m.module.name : m.moduleName);
+
+      div.appendChild(input);
+      input.id = randName;
+      div.appendChild(label);
+      label.setAttribute("for",randName);
+      
+      if (m.module.description) {
+        let sup = document.createElement("sup");
+        sup.innerText = m.module.description;
+        div.appendChild(sup);
+      }
+
+      div.appendChild(document.createElement("br"));
+
+      panel.appendChild(div);
+
+      input.addEventListener("click", () => {
+        m.activation(input.checked);
+      });
+
+      if (activate === true) {
+        if (!m.module.active === false && typeof m.function == "function") {
+          m.function(exports);
+          console.log("[Module: \""+ m.moduleName +"\"] Loaded");
+          input.checked = true;
+        }
+        else if (m.module.active === false) {
+          console.log("[Module: \""+ m.moduleName +"\"] Inactive, not loaded");
+        }
+        else {
+          console.log("[Module: \""+ m.moduleName +"\"] Invalid module function");
+        }
+      }
+    });
+    return modules;
+  }
+
+  /**
+   * Load a module in the toxenModules folder.
+   * @param {string} moduleName 
+   */
+  static loadModule(moduleName) {
+    return new ToxenModule(moduleName);
   }
 }
 
@@ -4128,6 +4356,10 @@ exports.Prompt = Prompt;
 exports.Update = Update;
 exports.ScriptEditor = ScriptEditor;
 exports.Effect = Effect;
+exports.ToxenModule = ToxenModule;
 
 // Export Functions
 exports.showTutorial = showTutorial;
+
+// Export objects
+exports.hueApi = hueApi;
