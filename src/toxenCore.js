@@ -4150,7 +4150,8 @@ class Effect {
   "main": string,
   "active": boolean,
   "name": string,
-  "description": string
+  "description": string,
+  "author": string
   }} ToxenModule_module
  */
 
@@ -4248,10 +4249,11 @@ exports.default = (Core) => {
        * @type {ToxenModule_module}
        */
       let module = {
+        "author": "<Put your name here>",
         "name": moduleName,
         "main": "index.js",
         "description": "A Toxen Module",
-        "active": true
+        "active": true,
       }
 
       fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json", JSON.stringify(module, null, 2));

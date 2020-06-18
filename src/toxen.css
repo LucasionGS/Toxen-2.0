@@ -208,6 +208,12 @@ div#progress progress#progressbar {
   width: 100%;
 }
 
+input[type="checkbox"], input[type="radio"] {
+  width: 1.2em;
+  height: 1.2em;
+  transform: translateY(0.1em);
+}
+
 div.flex {
   display: flex;
   box-sizing: border-box;
