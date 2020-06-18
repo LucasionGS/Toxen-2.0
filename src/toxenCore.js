@@ -628,6 +628,10 @@ class Song {
 
   songId = 0;
 
+  getListIndex() {
+    return SongManager.songList.findIndex(s => s.songId === this.songId);
+  }
+
   click = function() {};
 
   /**
@@ -1057,6 +1061,17 @@ class SongManager {
                 return 1;
               }
               if (a.details.title.toLowerCase() < b.details.title.toLowerCase()) {
+                return -1;
+              }
+              return 0;
+            };
+            break;
+          case "length":
+            sortFunc = (a, b) => {
+              if (typeof a.details.songLength == "number" && typeof b.details.songLength == "number" && a.details.songLength > b.details.songLength) {
+                return 1;
+              }
+              if (typeof a.details.songLength == "number" && typeof b.details.songLength == "number" && a.details.songLength < b.details.songLength) {
                 return -1;
               }
               return 0;
@@ -1521,7 +1536,7 @@ class SongManager {
 
   static playNext() {
     const song = SongManager.getCurrentlyPlayingSong();
-    let id = song.songId;
+    let id = song.getListIndex();
     if (Settings.current.repeat) {
       SongManager.player.currentTime = 0;
       SongManager.player.play();
@@ -1538,21 +1553,21 @@ class SongManager {
       //   return;
       // }
       if (SongManager.playableSongs.length > id + 1) {
-        SongManager.getSong(id + 1).play();
+        SongManager.playableSongs[id + 1].play();
       }
       else {
-        SongManager.getSong(0).play();
+        SongManager.playableSongs[0].play();
       }
     }
   }
 
   static playPrev() {
-    let id = SongManager.getCurrentlyPlayingSong().songId;
+    let id = SongManager.getCurrentlyPlayingSong().getListIndex();
     if (id - 1 >= 0) {
-      SongManager.getSong(id - 1).play();
+      SongManager.playableSongs[id - 1].play();
     }
     else {
-      SongManager.getSong(SongManager.playableSongs.length - 1).play();
+      SongManager.playableSongs[SongManager.playableSongs.length - 1].play();
     }
   }
 
@@ -2386,6 +2401,36 @@ function reloadMenu() {
         },
         { type: "separator" },
         {
+          "label": "Next Song",
+          click() {
+            local_playNext();
+          },
+          "accelerator": "CTRL + Right"
+        },
+        {
+          "label": "Previous Song",
+          click() {
+            SongManager.playPrev();
+          },
+          "accelerator": "CTRL + Left"
+        },
+        {
+          "label": "Next Random",
+          click() {
+            SongManager.playRandom();
+          },
+          // "accelerator": "CTRL + ArrowLeft"
+        },
+        { type: "separator" },
+        {
+          "label": "Toggle Shuffle",
+          click() {
+            SongManager.toggleShuffle();
+          },
+          // "accelerator": "CTRL + ArrowLeft"
+        },
+        { type: "separator" },
+        {
           label: "Select Playlist",
           submenu: (function() {
             let menus = (Settings && Settings.current && Array.isArray(Settings.current.playlists) ? Settings.current.playlists.map(playlist => {
@@ -2528,12 +2573,14 @@ class Storyboard {
     };
   }
 
+  static currentBackground = "";
+
   /**
- * Change the current background image.
- * @param {string} image The path to the image
- * @param {string} queryString An extra query string for updating cache.
- * @param {boolean} reset If true, removes background.
- */
+   * Change the current background image.
+   * @param {string} image The path to the image
+   * @param {string} queryString An extra query string for updating cache.
+   * @param {boolean} reset If true, removes background.
+   */
   static setBackground(image, queryString, reset) {
     if (queryString == undefined) {
       try {
@@ -2552,21 +2599,26 @@ class Storyboard {
       var curBG = image;
       if (curBG != null) curBG = curBG.replace(/\\/g, "/");
       if (Settings.current.remote && curBG != "" && curBG != null) {
+        Storyboard.currentBackground = image;
         body.style.background = "url(\"" + curBG + "\") no-repeat center center fixed black";
         body.style.backgroundSize = "cover";
       }
       else if (curBG != "" && curBG != null) {
+        Storyboard.currentBackground = image;
         body.style.background = "url(\"" + curBG + "?" + queryString + "\") no-repeat center center fixed black";
         body.style.backgroundSize = "cover";
       }
       else {
         var defImg = "../icon.png";
+        Storyboard.currentBackground = defImg;
         if (!Settings.current.remote && fs.existsSync(Settings.current.songFolder + "/default.jpg")) {
           defImg = Settings.current.songFolder + "/default.jpg";
+          Storyboard.currentBackground = defImg;
           body.style.background = "url(\"" + defImg.replace(/\\/g, "/") + "?" + queryString + "\") no-repeat center center fixed black";
           body.style.backgroundSize = "cover";
         }
         else {
+          Storyboard.currentBackground = defImg;
           body.style.background = "url(\"" + defImg + "?" + queryString + "\") no-repeat center center fixed black";
           body.style.backgroundSize = "contain";
         }
@@ -2990,9 +3042,12 @@ class ToxenScriptManager {
         startPoint = tP[0];
         endPoint = tP[1];
 
-        // if (!startPoint.startsWith("$")) { // Maybe add this as a features just like endPoint...
-        startPoint = ToxenScriptManager.timeStampToSeconds(tP[0]);
-        // }
+        if (startPoint != "$") { // Maybe add this as a features just like endPoint...
+          startPoint = ToxenScriptManager.timeStampToSeconds(tP[0]);
+        }
+        else {
+          startPoint = ToxenScriptManager.events[ToxenScriptManager.events.length - 1] ? ToxenScriptManager.events[ToxenScriptManager.events.length - 1].startPoint : 0;
+        }
         if (endPoint != "$") {
           endPoint = ToxenScriptManager.timeStampToSeconds(tP[1]);
         }
@@ -3000,9 +3055,19 @@ class ToxenScriptManager {
         //   endPoint = "$";
         // }
 
-        if (ToxenScriptManager.events[ToxenScriptManager.events.length - 1] && ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint == "$") {
-          ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint = startPoint;
+        let backwards = 1;
+        let curEvent;
+        while ((curEvent = ToxenScriptManager.events[ToxenScriptManager.events.length - backwards])) {
+          if (curEvent.endPoint == "$" && curEvent.startPoint < startPoint) {
+            curEvent.endPoint = startPoint;
+            break;
+          }
+          backwards++;
         }
+
+        // if (ToxenScriptManager.events[ToxenScriptManager.events.length - 1] && ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint == "$") {
+        //   ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint = startPoint;
+        // }
 
         if (startPoint >= endPoint) { // Catch error if sP is higher than eP
           return "startPoint cannot be higher than endPoint";
@@ -3164,7 +3229,10 @@ class ToxenScriptManager {
      */
     background: function (args) {
       let song = SongManager.getCurrentlyPlayingSong();
-      Storyboard.setBackground(song.getFullPath("path") + "/" + args[0]);
+      let _path = song.getFullPath("path") + "/" + args[0];
+      if (Storyboard.currentBackground != _path) {
+        Storyboard.setBackground(_path, "");
+      }
     },
     /**
      * Change the color of the visualizer

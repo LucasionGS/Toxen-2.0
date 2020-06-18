@@ -25,6 +25,7 @@
     <div class="flex">
       <button class="fancybutton" title="Sort by Artist" id="sortByArtist" onclick="SongManager.refreshList('artist');">Artist</button>
       <button class="fancybutton" title="Sort by Title" id="sortByTitle" onclick="SongManager.refreshList('title');">Title</button>
+      <button class="fancybutton" title="Sort by Length" id="sortByLength" onclick="SongManager.refreshList('length');">Length</button>
     </div>
     <hr>
 	  <div class="flex">
@@ -51,7 +52,13 @@
     <div class="flex">
       <button class="fancybutton" onclick="SongManager.scanDirectory();" title="Refresh the music library">Update Music Library</button>
       <button id="addsongbutton" class="fancybutton" onclick="SongManager.addSong()" title="Add a new song to your library">Add Song</button>
+      <button disabled id="setdefaultbackgroundbutton" class="fancybutton" onclick="SongManager.selectDefaultBackground()" title="Set the default background for all songs that doesn't have a custom background">Set Default Background</button>
+    </div>
+    <hr>
+    <div class="flex">
       <button id="setbackgroundbutton" class="fancybutton" onclick="SongManager.selectBackground()" title="Set the background for the currently playing song">Set Background</button>
+      <button disabled id="setsubtitlesbutton" class="fancybutton" onclick="SongManager.selectSubtitles()" title="Set the subtitles file for the currently playing song">Set Subtitles</button>
+      <button disabled id="setstoryboardbutton" class="fancybutton" onclick="SongManager.selectStoryboard()" title="Set the storyboard file for the currently playing song">Set Storyboard</button>
     </div>
     <div id="songinfo">
       <h2>Song Info</h2>
