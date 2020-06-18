@@ -18,7 +18,6 @@ const ytdl = require("ytdl-core");
 const ion = require("ionodelib");
 const Zip = require("adm-zip");
 const browserWindow = remote.getCurrentWindow();
-const {EventEmitter} = require("events");
 
 var updatePlatform;
 switch (process.platform) {
@@ -3654,6 +3653,32 @@ class Debug {
   static randomInt(max, min = 0) {
     return Math.floor(Math.random() * (max - min)) + min;
   }
+
+  // Yeeted from StackOverflow
+  // https://stackoverflow.com/a/5624139/8614415
+  /**
+   * @param {number} c 
+   */
+  static componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+  }
+  
+  static rgbToHex(r, g, b) {
+    return "#" + Debug.componentToHex(r) + Debug.componentToHex(g) + Debug.componentToHex(b);
+  }
+
+  /**
+   * @param {string} hex 
+   */
+  static hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+  }
 }
 
 class Prompt {
@@ -4120,6 +4145,15 @@ class Effect {
   }
 }
 
+/**
+ * @typedef {{
+  "main": string,
+  "active": boolean,
+  "name": string,
+  "description": string
+  }} ToxenModule_module
+ */
+
 class ToxenModule {
   /**
    * Create a manageable Module
@@ -4135,12 +4169,7 @@ class ToxenModule {
         }, null, 2))
       }
       /**
-       * @type {{
-        "main": string,
-        "active": boolean,
-        "name": string,
-        "description": string
-       }}
+       * @type {ToxenModule_module}
        */
       this.module = JSON.parse(fs.readFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json"));
       /**
@@ -4214,7 +4243,18 @@ exports.default = (Core) => {
   // Your code goes here
 
 }`
-      )
+      );
+      /**
+       * @type {ToxenModule_module}
+       */
+      let module = {
+        "name": moduleName,
+        "main": "index.js",
+        "description": "A Toxen Module",
+        "active": true
+      }
+
+      fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json", JSON.stringify(module, null, 2));
     }
     else {
       console.error("This module already exists");

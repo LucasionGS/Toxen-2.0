@@ -191,17 +191,36 @@
           <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
         </div>
       </div>
-      <div id="totalColorBlock" style="width: 64px; height: 64px"></div>
+      <div>
+        <input id="colorPicker" type="color" style="width: 64px; height: 64px; padding: 0" oninput="local_setColorsFromSelector(this.value)">
+        <!-- <div id="totalColorBlock" style="width: 64px; height: 64px"></div> -->
+        <!-- <br> -->
+      </div>
       <script>
         function local_setColors() {
-          let red = +document.getElementById("visualizercolor.redValue").value
-          let green = +document.getElementById("visualizercolor.greenValue").value
-          let blue = +document.getElementById("visualizercolor.blueValue").value
+          let red = +document.getElementById("visualizercolor.redValue").value;
+          let green = +document.getElementById("visualizercolor.greenValue").value;
+          let blue = +document.getElementById("visualizercolor.blueValue").value;
           Storyboard.rgb(red, green, blue);
           document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
           document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
           document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
-          document.getElementById("totalColorBlock").style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
+
+          document.getElementById("redColorBlock").firstElementChild.innerText = red;
+          document.getElementById("greenColorBlock").firstElementChild.innerText = green;
+          document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
+          
+          document.getElementById("colorPicker").value = Debug.rgbToHex(red, green, blue);
+        }
+        function local_setColorsFromSelector(value) {
+          let rgb = Debug.hexToRgb(value);
+          let red = +(document.getElementById("visualizercolor.redValue").value = rgb.r);
+          let green = +(document.getElementById("visualizercolor.greenValue").value = rgb.g);
+          let blue = +(document.getElementById("visualizercolor.blueValue").value = rgb.b);
+          Storyboard.rgb(red, green, blue);
+          document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
+          document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
+          document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
 
           document.getElementById("redColorBlock").firstElementChild.innerText = red;
           document.getElementById("greenColorBlock").firstElementChild.innerText = green;

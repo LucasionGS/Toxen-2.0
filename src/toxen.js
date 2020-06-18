@@ -312,11 +312,12 @@ async function initialize() {
     document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
     document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
     document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
-    document.getElementById("totalColorBlock").style.backgroundColor = `rgb(${red}, ${green}, ${blue})`;
 
     document.getElementById("redColorBlock").firstElementChild.innerText = red;
     document.getElementById("greenColorBlock").firstElementChild.innerText = green;
     document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
+
+    document.getElementById("colorPicker").value = Debug.rgbToHex(red, green, blue);
   })();
 
   // Load modules

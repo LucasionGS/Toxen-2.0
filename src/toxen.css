@@ -4,6 +4,9 @@
   --innerpanelcolor: #4b4b4b;
   --txtcolor: white;
   --playingSong: #00c843;
+  --scrollbarColor: #1b1b1b;
+  --scrollbarThumbColor: #353535;
+  --scrollbarWidth: 24px;
 }
 
 body {
@@ -19,8 +22,6 @@ body {
   position: absolute;
   right: 0;
   top: 0;
-  /* width: 100%; */
-  /* max-width: 100%; */
   height: 100%;
   transition: all 0.2s ease-out;
 }
@@ -58,6 +59,20 @@ div.sidebar {
   z-index: 100;
 }
 
+::-webkit-scrollbar {
+  background-color: var(--scrollbarColor);
+  width: var(--scrollbarWidth);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbarThumbColor);
+}
+
+/* div.sidebar::-webkit-scrollbar:hover {
+  visibility: visible;
+  width: 64px;
+} */
+
 div.sidebar:hover, div.sidebar[open] {
   width: 35vw;
   opacity: 0.9;
@@ -73,9 +88,13 @@ div.sidebar:hover, div.sidebar[open] {
   max-height: 60%;
   margin-top: 2%;
   box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: auto;
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+#songselection:hover {
+  overflow-y: auto;
 }
 
 #songselection div.musicitem {
