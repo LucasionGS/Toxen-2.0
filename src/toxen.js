@@ -237,11 +237,6 @@ async function initialize() {
       e.preventDefault();
       SongManager.getCurrentlyPlayingSong().play();
     }
-
-    // if (ctrl && shift && key == "f") {
-    //   let cp = SongManager.getCurrentlyPlayingSong();
-    //   cp.focus();
-    // }
     
     if (ctrl && !shift && key == "l") {
       settings.toggleSongPanelLock();
