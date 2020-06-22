@@ -17,6 +17,7 @@ const path = require("path");
 const ytdl = require("ytdl-core");
 const ion = require("ionodelib");
 const Zip = require("adm-zip");
+const { EventEmitter } = require("events");
 const browserWindow = remote.getCurrentWindow();
 
 var updatePlatform;
@@ -36,6 +37,46 @@ switch (process.platform) {
     break;
 }
 
+/**
+ * General Toxen functionality.
+ * 
+ * Primarily used for events.
+ */
+class Toxen {
+  /**
+   * Restarts Toxen immediately.
+   */
+  static restart() {
+    app.relaunch();
+    app.exit();
+  }
+
+  static eventEmitter = new EventEmitter({
+    "captureRejections": true
+  });
+
+  /**
+   * Listen for an event
+   * @type {import("./toxenOnEvent")["on"]}
+   */
+  static on = (event, callback) => {
+    Toxen.eventEmitter.on(event, callback)
+  }
+  
+  /**
+   * Emit an event.
+   * @type {import("./toxenOnEvent")["emit"]}
+   */
+  static emit = (event, args) => {
+    if (Array.isArray(args)) {
+      Toxen.eventEmitter.emit(event, ...args);
+    }
+    else {
+      Toxen.eventEmitter.emit(event);
+    }
+  }
+}
+
 class Settings {
   /**
    * @type {Settings}
@@ -46,14 +87,6 @@ class Settings {
     if (!doNotReplaceCurrent) {
       Settings.current = this;
     }
-  }
-  
-  /**
-   * Restarts Toxen immediately.
-   */
-  static restartToxen() {
-    app.relaunch();
-    app.exit();
   }
 
   static createFromFile(fileLocation = "./data/settings.json") {
@@ -753,7 +786,9 @@ class Song {
     this.element.toggleAttribute("playing", true);
     this.focus();
 
-    if (SongManager.player.getAttribute("songid") != id) {
+    // if (SongManager.player.getAttribute("songid") != id) {
+    if (cur && cur.songId != id) {
+      Toxen.emit("play", this);
       SongManager.player.setAttribute("songid", id);
       if (this.isVideo) {
         let source = SongManager.player.querySelector("source");
@@ -2355,10 +2390,7 @@ const menus = {
  * @type {Electron.Menu}
  */
 var menu = reloadMenu();
-/**
- * 
- * @param {{"playlists"?: string[]}} opts 
- */
+
 function reloadMenu() {
   let menu = Menu.buildFromTemplate([
     {
@@ -2367,8 +2399,7 @@ function reloadMenu() {
         {
           label:"Restart Toxen",
           click(){
-            app.relaunch();
-            app.quit();
+            Toxen.restart();
           },
           accelerator: "CTRL + F5"
         },
@@ -4115,17 +4146,24 @@ class ScriptEditor {
 class Effect {
   /**
    * Highlight an element with a flash that lasts 2 seconds.
-   * @param {HTMLElement} element 
+   * @param {HTMLElement} element HTML Element to highlight with a flash.
+   * @param {string} color CSS color to flash with.
+   * @param {number} ms Total time in millseconds it should be visible. (Including fade in and out)
    */
-  static flashElement(element, color = "#fff") {
+  static flashElement(element, color = "#fff", ms = 2000) {
     let ef = document.createElement("div");
     ef.style.pointerEvents = "none";
     ef.style.zIndex = "1000";
     ef.style.backgroundColor = color;
     let opacity = 0;
-    let add = 0.005;
+    // let add = 0.005;
+    let add = 10 / ms;
     let int = setInterval(() => {
-      ef.style.opacity = (opacity += add).toString();
+      if (opacity < 0) opacity = 0;
+      if (opacity <= 0.5) opacity += add;
+      if (opacity >= 0.5) opacity = 0.5;
+
+      ef.style.opacity = (opacity).toString();
       ef.style.position = "absolute";
       let boundingBox = element.getBoundingClientRect();
       ef.style.left = boundingBox.left + "px";
@@ -4134,12 +4172,12 @@ class Effect {
       ef.style.height = element.clientHeight + "px";
     }, 10);
     setTimeout(() => {
-      add = -0.005;
-    }, 1000);
+      add *= -1;
+    }, ms / 2);
     setTimeout(() => {
       clearInterval(int);
       ef.parentElement.removeChild(ef);
-    }, 2000);
+    }, ms);
 
     document.body.appendChild(ef);
   }
@@ -4191,6 +4229,11 @@ class ToxenModule {
       console.error(error);
     }
   }
+
+  /**
+   * @type {ToxenModule[]}
+   */
+  static installedModules = [];
 
   /**
    * Activate or deactivate the module
@@ -4249,7 +4292,7 @@ exports.default = (Core) => {
        * @type {ToxenModule_module}
        */
       let module = {
-        "author": "<Put your name here>",
+        "author": "Anonymous",
         "name": moduleName,
         "main": "index.js",
         "description": "A Toxen Module",
@@ -4273,6 +4316,7 @@ exports.default = (Core) => {
    * @param {boolean} activate
    */
   static loadAllModules(activate = true) {
+    ToxenModule.installedModules = [];
     let modules = ToxenModule.listModules().map(m => new ToxenModule(m));
     /**
      * @type {HTMLDivElement}
@@ -4304,6 +4348,7 @@ exports.default = (Core) => {
 
       input.addEventListener("click", () => {
         m.activation(input.checked);
+        Effect.flashElement(document.getElementById("restartToxenButton"), "green", 500)
       });
 
       if (activate === true) {
@@ -4316,10 +4361,11 @@ exports.default = (Core) => {
           console.log("[Module: \""+ m.moduleName +"\"] Inactive, not loaded");
         }
         else {
-          console.log("[Module: \""+ m.moduleName +"\"] Invalid module function");
+          console.error("[Module: \""+ m.moduleName +"\"] Invalid module function");
         }
       }
     });
+    ToxenModule.installedModules = modules;
     return modules;
   }
 
@@ -4329,6 +4375,150 @@ exports.default = (Core) => {
    */
   static loadModule(moduleName) {
     return new ToxenModule(moduleName);
+  }
+
+  // static 
+
+  /**
+   * Public functions that can be used by other modules to interact with this module.
+   * @type {((...any) => any)[]}
+   */
+  publicFunctions = {
+
+  };
+
+  /**
+   * Returns an array of the names of the available public functions.
+   * 
+   * Helpful for other modules' debugging.
+   */
+  getPublicFunctions() {
+    return this.publicFunctions.map(v => v.name);
+  }
+}
+
+class Statistics {
+  /**
+   * Initialize a new statistics object.
+   * @param {Statistics} object 
+   */
+  constructor(object = {}) {
+    for (const key in this) {
+      if (this.hasOwnProperty(key) && object.hasOwnProperty(key)) {
+        this[key] = object[key];
+      }
+    }
+
+    Statistics.current = object;
+  }
+
+  /**
+   * @type {Statistics}
+   */
+  static current;
+
+  /**
+   * Save the statistics to the `stats.json` file.
+   */
+  save(statsFile = "./data/stats.json") {
+    fs.writeFileSync(statsFile, JSON.stringify(this));
+  }
+  /**
+   * Load the statistics from the `stats.json` file and return new object.
+   */
+  static loadFromFile(statsFile = "./data/stats.json") {
+    if (!fs.existsSync(statsFile)) {
+      console.error("No existing file! Creating file");
+      let s = new Statistics({});
+      s.save();
+      return s;
+    }
+    return new Statistics(JSON.parse(fs.readFileSync(statsFile, "utf-8")));
+  }
+  /**
+   * Load the statistics from the `stats.json` file.
+   */
+  load(statsFile = "./data/stats.json") {
+    if (!fs.existsSync(statsFile)) {
+      console.error("No existing file! Creating file");
+      this.save();
+      return;
+    }
+    let object = JSON.parse(fs.readFileSync(statsFile, "utf-8"));
+    for (const key in this) {
+      if (this.hasOwnProperty(key) && object.hasOwnProperty(key)) {
+        this[key] = object[key];
+      }
+    }
+  }
+
+  /**
+   * Start saving statistics every minute.
+   */
+  startSaveTimer() {
+    this.stopSaveTimer();
+    let int = setInterval(() => {
+      this.save();
+    }, 60000);
+
+    this.stopSaveTimer = () => {
+      clearInterval(int);
+      this.stopSaveTimer = function() {
+        // Do nothing again
+      }
+    }
+  }
+
+  stopSaveTimer() {
+    // Do nothing initially
+  }
+
+  /**
+   * Gets the song total count.
+   */
+  get songCount() {
+    return SongManager.songList.length;
+  }
+  
+  /**
+   * Gets the total length of all of the songs in your library.
+   * 
+   * `Note: A song must have been played at least once before it adds to this total`
+   */
+  get collectiveSongLength() {
+    let time = 0;
+    SongManager.songList.forEach(s => {
+      time += typeof s.details.songLength == "number" ? s.details.songLength : 0;
+    });
+    return time;
+  };
+  
+  /**
+   * Gets the total length of all of the songs in your library as timestamp format.
+   * 
+   * `Note: A song must have been played at least once before it adds to this total`
+   */
+  get collectiveSongLengthAsStamp() {
+    let time = 0;
+    SongManager.songList.forEach(s => {
+      time += typeof s.details.songLength == "number" ? s.details.songLength : 0;
+    });
+    return time;
+  };
+
+  songsPlayed = 0;
+
+  /**
+   * Returns the total amount of installed modules.
+   */
+  get modulesInstalled() {
+    return ToxenModule.listModules().length;
+  }
+  /**
+   * Returns the amount of enabled modules.
+   */
+  get modulesEnabled() {
+    return ToxenModule.installedModules.filter(m => m.module.active !== false).length;
   }
 }
 
@@ -4454,6 +4644,7 @@ function showTutorial() {
 }
 
 // Export Classes
+exports.Toxen = Toxen;
 exports.Settings = Settings;
 exports.HTMLSongElement = HTMLSongElement;
 exports.Song = Song;
@@ -4467,6 +4658,7 @@ exports.Update = Update;
 exports.ScriptEditor = ScriptEditor;
 exports.Effect = Effect;
 exports.ToxenModule = ToxenModule;
+exports.Statistics = Statistics;
 
 // Export Functions
 exports.showTutorial = showTutorial;

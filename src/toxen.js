@@ -3,6 +3,7 @@ const fs = require("fs");
 // const {Popup} = require("ionlib");
 const ToxenCore = require("./toxenCore");
 const {
+  Toxen,
   Settings,
   Song,
   SongManager,
@@ -13,6 +14,7 @@ const {
   Update,
   ScriptEditor,
   ToxenModule,
+  Statistics,
   showTutorial,
 } = ToxenCore;
 const process = require("process");
@@ -68,6 +70,12 @@ function discordApplicationLogin(attempts = 3) {
 let settings = new Settings();
 
 /**
+ * Global Statistics Object
+ */
+// This is automatically set to Statistics.current as well
+let stats = new Statistics();
+
+/**
  * Removes unnecessary extra "forward slashes" `/`
  * @param {string} path Path to fix
  */
@@ -91,15 +99,14 @@ async function initialize() {
         break;
     }
   }
-
-  if (settings.showTutorialOnStart) {
-    showTutorial();
-  }
+  if (settings.showTutorialOnStart) { showTutorial(); }
+  stats.load();
+  stats.startSaveTimer();
 
   // Check for update
   Update.check(version);
 
-  // Initialize Discord RPC
+  // Initialize onplay & Discord RPC
   SongManager.onplay = async function(song) {
     // Song Info
     song.displayInfo();
@@ -305,6 +312,7 @@ async function initialize() {
   // Load Settings
   settings.applySettingsToPanel();
   
+  // Apply visualizer coloring values from visualizer ranges
   (function() {
     let red = +document.getElementById("visualizercolor.redValue").value;
     let green = +document.getElementById("visualizercolor.greenValue").value;
@@ -324,9 +332,15 @@ async function initialize() {
   ToxenModule.initialize();
   ToxenModule.loadAllModules();
 
+  // Create "on" events.
+  Toxen.on("play", () => {
+    stats.songsPlayed++;
+  });
+
   // Finish
   settings.reloadPlaylists();
   SongManager.playRandom();
+
 }
 
 

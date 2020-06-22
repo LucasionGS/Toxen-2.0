@@ -254,8 +254,15 @@
       If you're experiencing low performance, try to disable this.
     </sup>
     <hr>
-    <input type="checkbox" name="advtoggle" id="advancedToggle" onclick="settings.advanced = this.checked">
-    <label for="advancedToggle">Advanced Settings</label>
+    <script>
+      function local_advSettingsToggle(checked) {
+        document.getElementById("advancedToggleId").innerHTML = (checked ? "▼" : "►") + ` <span style="text-decoration: underline;">Advanced Settings</span>`;
+      }
+    </script>
+    <input type="checkbox" name="advtoggle" id="advancedToggle" onclick="settings.advanced = this.checked; local_advSettingsToggle(this.checked)" hidden>
+    <label title="Click to toggle advanced settings view" style="text-decoration: none;" for="advancedToggle" id="advancedToggleId">
+      ► <span style="text-decoration: underline;">Advanced Settings</span>
+    </label>
     <div id="advancedoptions">
       <input type="checkbox" name="tntoggle" id="discordpresenceshowdetailsToggle" onclick="settings.discordPresenceShowDetails = this.checked; updateDiscordPresence(); settings.saveToFile();">
       <label for="discordpresenceshowdetailsToggle">Discord Presence: Show Details</label>
@@ -298,7 +305,7 @@
     <br>
     <div id="moduleActivation"></div>
     <br>
-    <button class="fancybutton" onclick="Settings.restartToxen()">Restart Toxen</button>
+    <button id="restartToxenButton" class="fancybutton" onclick="Toxen.restart()">Restart Toxen</button>
     <hr>
     <!-- <div id="changenotes">
       <label>Change Notes</label>
