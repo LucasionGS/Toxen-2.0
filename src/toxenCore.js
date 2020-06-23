@@ -4522,6 +4522,92 @@ class Statistics {
   }
 }
 
+class Theme {
+  /**
+   * CSS File this theme belongs to.
+   */
+  constructor(file) {
+    this.file = file;
+  }
+  /**
+   * Themeable objects referring to one specific object.
+   */
+  objects = {
+    "songPanel": Themeable.create("#songmenusidebar"),
+    "settingsPanel": Themeable.create("#settingsmenusidebar"),
+  }
+
+  /**
+   * Themeable classes. Can refer to multiple objects.
+   */
+  classes = {
+
+  }
+
+  /**
+   * Generate CSS markup from themeable objects in this object.
+   * @returns CSS string
+   */
+  generateCSS() {
+    // Generate CSS markup
+    return "";
+  }
+
+  /**
+   * A string of custom CSS to apply after the object create CSS.
+   * 
+   * Anything you can write in CSS, you can write to this.
+   */
+  customCSS = "";
+}
+
+class Themeable {
+  /**
+   * @typedef {(element: HTMLElement, selector: string) => Themeable} ThemeableConstructor1
+   * @typedef {(element: string) => Themeable} ThemeableConstructor2
+   * @typedef {ThemeableConstructor1 & ThemeableConstructor2} ThemeableConstructor
+   */
+
+  /**
+   * @type {ThemeableConstructor}
+   */
+  static create = (element, selector = null) => {
+    return new Themeable(element, selector);
+  }
+  /**
+   * @param {HTMLElement | string} element 
+   * @param {string} selector Only required if `element` is a DOM object and not a selector
+   * @see Themeable.create
+   */
+  constructor(element, selector = null) {
+    if (typeof element == "string") {
+      this.selector = element;
+      element = document.querySelector(element);
+    }
+    else {
+      this.selector = selector;
+    }
+    /**
+     * @type {HTMLElement}
+     */
+    this.element = element;
+  }
+  
+  /**
+   * @type {ThemeableConstructor}
+   */
+  getStyle = () => {
+    return this.element.style;
+  }
+  
+  /**
+   * Return the styling as a CSS string.
+   */
+  toString() {
+    return this.element.style + "";
+  }
+}
+
 /**
  * Start the tutorial prompts
  */
@@ -4659,6 +4745,7 @@ exports.ScriptEditor = ScriptEditor;
 exports.Effect = Effect;
 exports.ToxenModule = ToxenModule;
 exports.Statistics = Statistics;
+exports.Theme = Theme;
 
 // Export Functions
 exports.showTutorial = showTutorial;
