@@ -21,6 +21,9 @@ const Zip = require("adm-zip");
 const { EventEmitter } = require("events");
 const browserWindow = remote.getCurrentWindow();
 
+/**
+ * @type {"win"|"linux"|"mac"}
+ */
 var updatePlatform;
 switch (process.platform) {
   case "win32":
@@ -2113,6 +2116,7 @@ class SongManager {
  */
 class HTMLSongGroupElement extends HTMLDivElement {
   /**
+   * Song Group object that belongs to this element.
    * @type {SongGroup}
    */
   songGroup;
@@ -2211,7 +2215,7 @@ class SongGroup {
   }
 
   /**
-   * @param {boolean} collapsedCondition Omit to ignore and return all
+   * @param {boolean} collapsedCondition Whether it should return all with collapsed true, or collapsed false. Omit to ignore and return all.
    */
   static getAllGroups(collapsedCondition = null) {
     let _a = [...document.querySelectorAll(".songgroup")].map((e) => {
@@ -2445,13 +2449,13 @@ const menus = {
       {
         label: "Close all groups",
         click: (menuItem) => {
-          /**
-           * @type {SongGroup}
-           */
-          const songGroup = menuItem.songGroup;
-          if (songGroup instanceof SongGroup) {
-            SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
-          }
+          // /**
+          //  * @type {SongGroup}
+          //  */
+          // const songGroup = menuItem.songGroup;
+          // if (songGroup instanceof SongGroup) {
+          // }
+          SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
         }
       }
     ]
