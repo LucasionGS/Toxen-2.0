@@ -1713,59 +1713,7 @@ class SongManager {
         let files = e.dataTransfer.files;
         for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
           const file = files[fileIndex];
-          let ext;
-          let fileNoExt = (function() {
-            let a = file.name.split(".");
-            ext = a.pop();
-            return a.join(".");
-          })();
-          if (!validExtensions.includes(ext)) {
-            new Prompt("Invalid File", [
-              "You can only drag and drop in the following files:",
-              validExtensions.join(", ")
-            ]).addButtons("Close", "fancybutton");
-            continue;
-          }
-          let songPath = Settings.current.songFolder + "/" + fileNoExt;
-          let surfix = 0;
-          while (fs.existsSync(songPath)) {
-            let len = surfix.toString().length + 3;
-            if (surfix == 0) {
-              songPath += ` (${surfix.toString()})`;
-            }
-            else {
-              songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
-            }
-            surfix++;
-          }
-          fs.mkdirSync(songPath, {recursive: true});
-          // let ws = fs.createWriteStream(songPath + "/" + file.name);
-          fs.copyFileSync(file.path, songPath + "/" + file.name);
-          song.songId = SongManager.songList.length;
-          song.path = fileNoExt;
-          song.songPath = song.getFullPath("path") + "/" + file.name;
-          let parts = fileNoExt.split(" - ");
-          if (parts.length == 1) {
-            song.details.artist = "Unknown"
-            song.details.title = parts[0];
-          }
-          else if (parts.length >= 2) {
-            song.details.artist = parts.shift();
-            song.details.title = parts.join(" - ");
-          }
-
-          if (ext.toLowerCase() == "txs") {
-            let zip = new Zip(file.path);
-            zip.extractAllTo(songPath + "/", true);
-            fs.unlinkSync(file.path);
-            fs.unlinkSync(songPath + "/" + file.name);
-            // SongManager.scanDirectory();
-          }
-    
-          SongManager.songList.push(song);
-          // song.saveDetails();
-          p.close();
-          song.focus();
+          importFile(file);
         }
         setTimeout(() => {
           SongManager.scanDirectory();
@@ -1791,6 +1739,23 @@ class SongManager {
               name: files[fileIndex].split(/\\|\//g).pop(),
               path: files[fileIndex]
             }
+            importFile(file);
+          }
+
+          setTimeout(() => {
+            SongManager.scanDirectory();
+            // SongManager.saveToFile();
+            // SongManager.refreshList();
+          }, 100);
+        });
+      });
+
+      /**
+           * @param {File} file 
+           */
+          function importFile(file) {
+            console.log(file);
+            
             let ext;
             let fileNoExt = (function() {
               let a = file.name.split(".");
@@ -1841,17 +1806,11 @@ class SongManager {
             
             SongManager.songList.push(song);
             // song.saveDetails();
-            p.close();
             song.focus();
+            SongManager.refreshList();
+            p.close();
           }
-          setTimeout(() => {
-            SongManager.scanDirectory();
-            // SongManager.saveToFile();
-            // SongManager.refreshList();
-          }, 100);
-        });
-      });
-
+          
       const song = new Song();
       
       return main;
@@ -2456,6 +2415,19 @@ const menus = {
         }
       },
       {
+        label: "Open only this group",
+        click: (menuItem) => {
+          /**
+           * @type {SongGroup}
+           */
+          const songGroup = menuItem.songGroup;
+          if (songGroup instanceof SongGroup) {
+            SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
+            songGroup.collapsed = false;
+          }
+        }
+      },
+      {
         type: "separator"
       },
       {
@@ -2479,19 +2451,6 @@ const menus = {
           const songGroup = menuItem.songGroup;
           if (songGroup instanceof SongGroup) {
             SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
-          }
-        }
-      },
-      {
-        label: "Close all groups except this",
-        click: (menuItem) => {
-          /**
-           * @type {SongGroup}
-           */
-          const songGroup = menuItem.songGroup;
-          if (songGroup instanceof SongGroup) {
-            SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
-            songGroup.collapsed = false;
           }
         }
       }
@@ -4127,13 +4086,13 @@ class Prompt {
   close(ms = 0) {
     if (typeof ms == "number" && ms > 0) {
       setTimeout(() => {
-        if (typeof this.main == "object") {
+        if (typeof this.main == "object" && this.main.parentElement) {
           this.main.parentElement.removeChild(this.main);
         }
       }, ms);
     }
     else {
-      if (typeof this.main == "object") {
+      if (typeof this.main == "object" && this.main.parentElement) {
         this.main.parentElement.removeChild(this.main);
       }
     }
