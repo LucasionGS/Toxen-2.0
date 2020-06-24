@@ -1,6 +1,7 @@
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 const fs = require("fs");
+const rimraf = require("rimraf");
 const { Popup } = require("ionlib");
 // const fetch = require("node-fetch").default;
 const hue = require("node-hue-api").v3;
@@ -255,6 +256,7 @@ class Settings {
     if (document.getElementById("playlistselection").value != playlist) {
       document.getElementById("playlistselection").value = playlist;
     }
+    Settings.current.reloadPlaylists();
     new Prompt("", "Switched to playlist "+ (playlist != "%null%" ? "\"" + playlist + "\"" : "None" ) +"").close(1000);
     SongManager.search();
   }
@@ -311,19 +313,22 @@ class Settings {
       ],
       "message": "Select your song folder"
     })
-    .then(value => {
+    .then(async value => {
       if (value.filePaths.length == 0) {
         return;
       }
       document.querySelector("input#songfolderValue").value = value.filePaths[0];
       self.songFolder = value.filePaths[0];
       if (fs.existsSync(self.songFolder + "/db.json")) {
-        SongManager.loadFromFile();
+        await SongManager.loadFromFile();
       }
       else {
         SongManager.scanDirectory();
       }
       self.saveToFile();
+
+      SongManager.search();
+      SongManager.playRandom();
     });
   }
 
@@ -576,6 +581,7 @@ class Song {
     });
     this.element.addEventListener("contextmenu", function(e) {
       e.preventDefault();
+      e.stopPropagation();
       menus.songMenu.items.forEach(i => {
         i.songObject = self;
       });
@@ -858,7 +864,7 @@ class Song {
       const _d = document.createElement("div");
       _d.innerHTML = Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
       document.title = _d.innerText;
-      ToxenScriptManager.reloadCurrentScript();
+      ToxenScriptManager.loadCurrentScript();
       if (this.subtitlePath) {
         Subtitles.renderSubtitles(this.getFullPath("subtitlePath"));
         // Maybe await
@@ -1562,10 +1568,12 @@ class SongManager {
     }
 
     let song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
-    while (song.songId === SongManager.getCurrentlyPlayingSong().songId && SongManager.playableSongs.length > 1) {
+    let curSong = SongManager.getCurrentlyPlayingSong();
+    while (curSong && song.songId === curSong.songId && SongManager.playableSongs.length > 1) {
       song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
     }
-    song.play();
+    if (song instanceof Song) song.play();
+    else console.error("No songs are playable");
   }
 
   static playNext() {
@@ -1675,7 +1683,7 @@ class SongManager {
       main.style.height = "256px";
       
       // Text
-      text.innerText = "Drag mp3/mp4/txs here or click to select";
+      text.innerHTML = "Drag <code>mp3/mp4/txs</code> files here or click to select";
       text.style.textAlign = "center";
       text.style.boxSizing = "borderbox";
       text.style.paddingTop = "calc(128px - 1em)";
@@ -1703,38 +1711,36 @@ class SongManager {
         e.stopPropagation();
         
         let files = e.dataTransfer.files;
-        let file = files[0]
-        let ext;
-        let fileNoExt = (function() {
-          let a = file.name.split(".");
-          ext = a.pop();
-          return a.join(".");
-        })();
-        if (!validExtensions.includes(ext)) {
-          new Prompt("Invalid File", [
-            "You can only drag and drop in the following files:",
-            validExtensions.join(", ")
-          ]).addButtons("Close", "fancybutton");
-          return;
-        }
-        let songPath = Settings.current.songFolder + "/" + fileNoExt;
-        let surfix = 0;
-        while (fs.existsSync(songPath)) {
-          let len = surfix.toString().length + 3;
-          if (surfix == 0) {
-            songPath += ` (${surfix.toString()})`;
+        for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+          const file = files[fileIndex];
+          let ext;
+          let fileNoExt = (function() {
+            let a = file.name.split(".");
+            ext = a.pop();
+            return a.join(".");
+          })();
+          if (!validExtensions.includes(ext)) {
+            new Prompt("Invalid File", [
+              "You can only drag and drop in the following files:",
+              validExtensions.join(", ")
+            ]).addButtons("Close", "fancybutton");
+            continue;
           }
-          else {
-            songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
+          let songPath = Settings.current.songFolder + "/" + fileNoExt;
+          let surfix = 0;
+          while (fs.existsSync(songPath)) {
+            let len = surfix.toString().length + 3;
+            if (surfix == 0) {
+              songPath += ` (${surfix.toString()})`;
+            }
+            else {
+              songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
+            }
+            surfix++;
           }
-          surfix++;
-        }
-        fs.mkdirSync(songPath, {recursive: true});
-        // let ws = fs.createWriteStream(songPath + "/" + file.name);
-        fs.copyFile(file.path, songPath + "/" + file.name, (err) => {
-          if (err) {
-            return console.error(err);
-          }
+          fs.mkdirSync(songPath, {recursive: true});
+          // let ws = fs.createWriteStream(songPath + "/" + file.name);
+          fs.copyFileSync(file.path, songPath + "/" + file.name);
           song.songId = SongManager.songList.length;
           song.path = fileNoExt;
           song.songPath = song.getFullPath("path") + "/" + file.name;
@@ -1753,59 +1759,66 @@ class SongManager {
             zip.extractAllTo(songPath + "/", true);
             fs.unlinkSync(file.path);
             fs.unlinkSync(songPath + "/" + file.name);
-            SongManager.scanDirectory();
+            // SongManager.scanDirectory();
           }
     
           SongManager.songList.push(song);
-          song.saveDetails();
-          SongManager.refreshList();
-          SongManager.saveToFile();
+          // song.saveDetails();
           p.close();
           song.focus();
-        });
+        }
+        setTimeout(() => {
+          SongManager.scanDirectory();
+          // SongManager.saveToFile();
+          // SongManager.refreshList();
+        }, 100);
       }, false);
 
       top.addEventListener("click", () => {
-        dialog.showOpenDialog(browserWindow).then(ans => {
+        dialog.showOpenDialog(browserWindow, {"properties": [
+          "multiSelections"
+        ], "filters": [
+          {
+            "extensions": validExtensions
+          }
+        ]}).then(ans => {
           if (ans.canceled) {
             return;
           }
           let files = ans.filePaths;
-          let file = {
-            name: files[0].split(/\\|\//g).pop(),
-            path: files[0]
-          }
-          let ext;
-          let fileNoExt = (function() {
-            let a = file.name.split(".");
-            ext = a.pop();
-            return a.join(".");
-          })();
-          if (!validExtensions.includes(ext)) {
-            new Prompt("Invalid File", [
-              "You can only select files with the following extension:",
-              validExtensions.join(", ")
-            ]);
-            return;
-          }
-          let songPath = Settings.current.songFolder + "/" + fileNoExt;
-          let surfix = 0;
-          while (fs.existsSync(songPath)) {
-            let len = surfix.toString().length + 3;
-            if (surfix == 0) {
-              songPath += ` (${surfix.toString()})`;
+          for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+            const file = {
+              name: files[fileIndex].split(/\\|\//g).pop(),
+              path: files[fileIndex]
             }
-            else {
-              songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
+            let ext;
+            let fileNoExt = (function() {
+              let a = file.name.split(".");
+              ext = a.pop();
+              return a.join(".");
+            })();
+            if (!validExtensions.includes(ext)) {
+              new Prompt("Invalid File", [
+                "You can only select files with the following extension:",
+                validExtensions.join(", ")
+              ]);
+              return;
             }
-            surfix++;
-          }
-          fs.mkdirSync(songPath, {recursive: true});
-          // let ws = fs.createWriteStream(songPath + "/" + file.name);
-          fs.copyFile(file.path, songPath + "/" + file.name, (err) => {
-            if (err) {
-              return console.error(err);
+            let songPath = Settings.current.songFolder + "/" + fileNoExt;
+            let surfix = 0;
+            while (fs.existsSync(songPath)) {
+              let len = surfix.toString().length + 3;
+              if (surfix == 0) {
+                songPath += ` (${surfix.toString()})`;
+              }
+              else {
+                songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
+              }
+              surfix++;
             }
+            fs.mkdirSync(songPath, {recursive: true});
+            // let ws = fs.createWriteStream(songPath + "/" + file.name);
+            fs.copyFileSync(file.path, songPath + "/" + file.name);
             song.songId = SongManager.songList.length;
             song.path = fileNoExt;
             song.songPath = song.getFullPath("path") + "/" + file.name;
@@ -1824,17 +1837,19 @@ class SongManager {
               zip.extractAllTo(songPath + "/", true);
               fs.unlinkSync(file.path);
               fs.unlinkSync(songPath + "/" + file.name);
-              SongManager.scanDirectory();
             }
-      
+            
             SongManager.songList.push(song);
-            song.saveDetails();
-            SongManager.refreshList();
-            SongManager.saveToFile();
+            // song.saveDetails();
             p.close();
             song.focus();
-          });
-        })
+          }
+          setTimeout(() => {
+            SongManager.scanDirectory();
+            // SongManager.saveToFile();
+            // SongManager.refreshList();
+          }, 100);
+        });
       });
 
       const song = new Song();
@@ -1882,6 +1897,7 @@ class SongManager {
     }
 
     let p = new Prompt("Download YouTube Audio");
+    p.closeOnEscape();
     let ytInput = document.createElement("input");
     ytInput.classList.add("fancyinput");
     ytInput.style.display = "block";
@@ -1909,11 +1925,32 @@ class SongManager {
     ytProgressBar.style.display = "block";
     ytProgressBar.style.margin = "auto";
 
+
     p.addContent(ytInput);
+    ytInput.addEventListener("keydown", e => {
+      if (e.key == "Enter" && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        downloadYouTube.click();
+      }
+    });
+
     p.addContent(ytInputArtist);
+    ytInputArtist.addEventListener("keydown", e => {
+      if (e.key == "Enter" && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        downloadYouTube.click();
+      }
+    });
+
     p.addContent(ytInputTitle);
+    ytInputTitle.addEventListener("keydown", e => {
+      if (e.key == "Enter" && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+        downloadYouTube.click();
+      }
+    });
+
     p.addContent(ytProgressBar);
-    let downloadYouTube = document.createElement("button");
+
+    ytInput.focus();
+    var downloadYouTube = document.createElement("button");
     downloadYouTube.innerText = "Download";
     downloadYouTube.classList.add("color-green");
     downloadYouTube.onclick = async function() {
@@ -2146,6 +2183,19 @@ class SongGroup {
         this.collapse();
       }
     });
+
+    let self = this;
+    this.element.addEventListener("contextmenu", function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      menus.songGroupMenu.items.forEach(i => {
+        i.songGroup = self;
+      });
+      menus.songGroupMenu.popup({
+        "x": e.clientX,
+        "y": e.clientY
+      });
+    });
   }
   /**
    * @type {Song[]}
@@ -2361,18 +2411,18 @@ const menus = {
             SongManager.songList = SongManager.songList.filter(s => s.songId !== song.songId);
             SongManager.saveToFile();
             SongManager.refreshList();
+            function _removeSong() {
+              rimraf.sync(path);
+              console.log("remmoved");
+            }
             try {
-              fs.rmdirSync(path, {
-                "recursive": true
-              });
+              _removeSong();
             }
             catch (error) {
               console.error("Failed to deleting song... retrying in 1s... " + path, error);
               setTimeout(() => {
                 try {
-                  fs.rmdirSync(path, {
-                    "recursive": true
-                  });
+                  _removeSong();
                 } catch (error) {
                   console.error("Failed to delete " + path, error);
                 }
@@ -2380,9 +2430,73 @@ const menus = {
             }
           }
         }
+      },
+      {type: "separator"},
+      {
+        label: "Focus currently playing song.",
+        click: (menuItem) => {
+          Settings.current.revealSongPanel();
+          SongManager.getCurrentlyPlayingSong().focus();
+        }
+      },
+    ]
+  ),
+  "songGroupMenu": Menu.buildFromTemplate(
+    [
+      {
+        label: "Toggle group",
+        click: (menuItem) => {
+          /**
+           * @type {SongGroup}
+           */
+          const songGroup = menuItem.songGroup;
+          if (songGroup instanceof SongGroup) {
+            songGroup.collapse();
+          }
+        }
+      },
+      {
+        type: "separator"
+      },
+      {
+        label: "Open all groups",
+        click: (menuItem) => {
+          /**
+           * @type {SongGroup}
+           */
+          const songGroup = menuItem.songGroup;
+          if (songGroup instanceof SongGroup) {
+            SongGroup.getAllGroups(true).forEach(sg => sg.collapsed = false);
+          }
+        }
+      },
+      {
+        label: "Close all groups",
+        click: (menuItem) => {
+          /**
+           * @type {SongGroup}
+           */
+          const songGroup = menuItem.songGroup;
+          if (songGroup instanceof SongGroup) {
+            SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
+          }
+        }
+      },
+      {
+        label: "Close all groups except this",
+        click: (menuItem) => {
+          /**
+           * @type {SongGroup}
+           */
+          const songGroup = menuItem.songGroup;
+          if (songGroup instanceof SongGroup) {
+            SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
+            songGroup.collapsed = false;
+          }
+        }
       }
     ]
-  )
+  ),
 }
 
 /**
@@ -2760,8 +2874,10 @@ class Subtitles {
     }, 5);
   }
 }
-
-// Background Pulse
+//#region ToxenScript Objects
+/**
+ * ToxenScript: Background Pulse
+ */
 class Pulse {
   /**
    * @type {Pulse[]}
@@ -2840,6 +2956,44 @@ class Pulse {
 }
 
 /**
+ * ToxenScript: Storyboard Object
+ */
+class StoryboardObject {
+  /**
+   * @type {{[name: string]: StoryboardObject}}
+   */
+  static objects = {
+
+  }
+
+  /**
+   * Create a new Storyboard object.
+   * @param {string} name Identifier of this object
+   * @param {number} x Starting X Position
+   * @param {number} y Starting Y Position
+   * @param {string} fill Either a HEX color or an image URL. If it starts with a poundsign (`#`), it's used as HEX, URL otherwise.
+   */
+  constructor(name, x, y, fill) {
+    /**
+     * Identifier of this object
+     */
+    this.name = name;
+    /**
+     * Starting X Position
+     */
+    this.x = x;
+    /**
+     * Starting Y Position
+     */
+    this.y = y;
+    /**
+     * Either a HEX color or an image URL. If it starts with a poundsign (`#`), it's used as HEX, URL otherwise.
+     */
+    this.fill = fill;
+  }
+}
+
+/**
  * This is temporary plz
  * @type {Pulse}
  */
@@ -2848,14 +3002,20 @@ setTimeout(() => {
   testPulse = new Pulse();
 }, 10);
 
+/**
+ * Toxen Script Manager
+ * 
+ * Controls and manages Toxen's storyboard scripting.  
+ * All event types are stored in `eventFunctions` as an object.
+ */
 class ToxenScriptManager {
   static currentScriptFile = "";
   static isRunning = false;
 
   /**
-   * Reloads the script for the currently playing song.
+   * Loads or reloads the script for the currently playing song.
    */
-  static async reloadCurrentScript() {
+  static async loadCurrentScript() {
     ToxenScriptManager.events = [];
     ToxenScriptManager.variables = {};
     for (const key in ToxenScriptManager.defaultVariables) {
@@ -2928,14 +3088,29 @@ class ToxenScriptManager {
   }
 
   /**
-   * Parses ToxenScript files for storyboard effects.
+   * Parses ToxenScript files for storyboard effects and applies them to the current storyboard.
    * @param {string} scriptFile Path to script file.
    */
   static async scriptParser(scriptFile) {
     if (ToxenScriptManager.isRunning === false) {
-      ToxenScriptManager.isRunning = setInterval(() => {
-        
-        if (ToxenScriptManager.events.length > 0 && Settings.current.visualizer && Settings.current.storyboard) {
+      // ToxenScriptManager.isRunning = setInterval(() => {
+      //   if (ToxenScriptManager.events.length > 0 && Settings.current.storyboard) {
+      //     for (let i = 0; i < ToxenScriptManager.events.length; i++) {
+      //       /**
+      //        * @type {ToxenEvent}
+      //        */
+      //       const e = ToxenScriptManager.events[i];
+      //       if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
+      //         e.fn();
+      //       }
+      //     }
+      //   }
+      // }, 0);
+              
+      ToxenScriptManager.isRunning = true;
+      requestAnimationFrame(_gl);
+      function _gl() {
+        if (Settings.current.storyboard && ToxenScriptManager.events.length > 0) {
           for (let i = 0; i < ToxenScriptManager.events.length; i++) {
             /**
              * @type {ToxenEvent}
@@ -2946,13 +3121,14 @@ class ToxenScriptManager {
             }
           }
         }
-      }, 0);
+        requestAnimationFrame(_gl);
+      }
     }
 
     fs.unwatchFile(ToxenScriptManager.currentScriptFile);
     if (!Settings.current.remote) {
       fs.watchFile(scriptFile, () => {
-        ToxenScriptManager.reloadCurrentScript();
+        ToxenScriptManager.loadCurrentScript();
       });
     }
     ToxenScriptManager.currentScriptFile = scriptFile;
@@ -3206,7 +3382,7 @@ class ToxenScriptManager {
         fn = function () {
           if (maxPerSecond > 0 && !type.startsWith(":") && currentEvent.hasRun == false) {
             try {
-              ToxenScriptManager.eventFunctions[type](args);
+              ToxenScriptManager.eventFunctions[type](args, currentEvent);
             } catch (error) {
               console.error(error);
             }
@@ -3215,10 +3391,10 @@ class ToxenScriptManager {
             }, (1000 / maxPerSecond));
           }
           else if (maxPerSecond == 0 && !type.startsWith(":")) {
-            ToxenScriptManager.eventFunctions[type](args);
+            ToxenScriptManager.eventFunctions[type](args, currentEvent);
           }
           else if (type.startsWith(":") && currentEvent.hasRun == false) {
-            ToxenScriptManager.eventFunctions[type](args);
+            ToxenScriptManager.eventFunctions[type](args, currentEvent);
           }
           currentEvent.hasRun = true;
         };
@@ -3250,7 +3426,7 @@ class ToxenScriptManager {
 
   /**
    * Function Types for ToxenScript
-   * @type {{[eventName: string]: (args: string[])}}
+   * @type {{[eventName: string]: (args: string[], event: ToxenEvent) => void}}
    */
   static eventFunctions = {
     /**
@@ -3268,7 +3444,7 @@ class ToxenScriptManager {
      * Change the color of the visualizer
      * @param {[string | number, string | number, string | number]} args Arguments
      */
-    visualizercolor: function (args) {
+    visualizercolor: function (args, event) {
       for (let i = 0; i < 3; i++) {
         if (isNaN(args[i])) args[i] = 0;
       }
@@ -3431,8 +3607,23 @@ class ToxenScriptManager {
       }
     },
     ":log": function() {
-      console.log(...arguments);
+      console.log([...arguments]);
+    },
+    ":createobject": function([name, ], event) {
+      let o = new StoryboardObject();
+
+
+
+      StoryboardObject.objects[name] = o;
     }
+  }
+
+  /**
+   * Function Types for ToxenScript
+   * @type {{[eventName: string]: string}}
+   */
+  static eventDocs = {
+
   }
 
   /**
@@ -3928,7 +4119,7 @@ class Prompt {
   set headerText(value) {
     this.headerElement.innerText = value;
   }
-
+  
   /**
    * Close the prompt.
    * @param {number} ms Optionally, close in `ms` milliseconds.
@@ -3946,6 +4137,20 @@ class Prompt {
         this.main.parentElement.removeChild(this.main);
       }
     }
+    return this;
+  }
+
+  /**
+   * Run this to make this prompt close next time the user presses the escape key.
+   * 
+   * `Note: Only works if the prompt is focused somehow, be it an input field or something else.`
+   */
+  closeOnEscape() {
+    this.main.addEventListener("keydown", e => {
+      if (e.key == "Escape" && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+        this.close();
+      }
+    });
     return this;
   }
 }
@@ -4057,7 +4262,7 @@ class Update {
 }
 
 ipcRenderer.on("editor.save", () => {
-  ToxenScriptManager.reloadCurrentScript();
+  ToxenScriptManager.loadCurrentScript();
 });
 
 ipcRenderer.on("editor.request.data", () => {
