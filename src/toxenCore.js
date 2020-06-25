@@ -320,8 +320,8 @@ class Settings {
       if (value.filePaths.length == 0) {
         return;
       }
-      document.querySelector("input#songfolderValue").value = value.filePaths[0];
-      self.songFolder = value.filePaths[0];
+      self.songFolder = path.resolve(value.filePaths[0]);
+      document.querySelector("input#songfolderValue").value = self.songFolder;
       if (fs.existsSync(self.songFolder + "/db.json")) {
         await SongManager.loadFromFile();
       }
@@ -561,6 +561,7 @@ class Settings {
  */
 class HTMLSongElement extends HTMLDivElement {
   /**
+   * Song object that belongs to this element.
    * @type {Song}
    */
   song;
@@ -1437,8 +1438,9 @@ class SongManager {
           songs.push(song);
         }
       }
-      if (Settings.current.songFolder != location) {
-        Settings.current.songFolder = location;
+      let resolvedLocation = path.resolve(location);
+      if (Settings.current.songFolder != resolvedLocation) {
+        Settings.current.songFolder = resolvedLocation;
       }
       SongManager.songList = songs;
       for (let i = 0; i < SongManager.songList.length; i++) {
@@ -1753,7 +1755,7 @@ class SongManager {
         });
       });
 
-      /**
+          /**
            * @param {File} file 
            */
           function importFile(file) {
