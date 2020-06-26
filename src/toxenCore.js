@@ -494,6 +494,12 @@ class Settings {
    */
   repeat = false;
   /**
+   * Only play songs that are visible in the song panel.
+   * 
+   * (i.e doesn't have `display: none`)
+   */
+  onlyVisible = false;
+  /**
    * Shuffle to a random song instead of the next in the list.
    */
   shuffle = true;
@@ -672,6 +678,10 @@ class Song {
 
   getListIndex() {
     return SongManager.songList.findIndex(s => s.songId === this.songId);
+  }
+
+  getPlayableListIndex() {
+    return SongManager.playableSongs.findIndex(s => s.songId === this.songId);
   }
 
   click = function() {};
@@ -1068,6 +1078,32 @@ class Song {
     // see addToPlaylist above for reference.
     
   }
+
+  delete() {
+    while(SongManager.getCurrentlyPlayingSong().songId === this.songId && SongManager.songList.length > 1) {
+      SongManager.playNext();
+    }
+    SongManager.songList = SongManager.songList.filter(s => s.songId !== this.songId);
+    SongManager.saveToFile();
+    SongManager.refreshList();
+    function _removeSong() {
+      rimraf.sync(path);
+      console.log("removed");
+    }
+    try {
+      _removeSong();
+    }
+    catch (error) {
+      console.error("Failed to deleting song... retrying in 1s... " + path, error);
+      setTimeout(() => {
+        try {
+          _removeSong();
+        } catch (error) {
+          console.error("Failed to delete " + path, error);
+        }
+      }, 1000);
+    }
+  }
 }
 
 class SongManager {
@@ -1082,6 +1118,15 @@ class SongManager {
    * @type {Song[]}
    */
   static playableSongs = [];
+
+  /**
+   * If `Settings.onlyVisible` is `true`, returns only the physically visible songs in the song list.
+   * 
+   * If `Settings.onlyVisible` is `false`, returns the full `SongManager.playableSongs` list
+   */
+  static onlyVisibleSongList() {
+    return Settings.current.onlyVisible && Settings.current.songGrouping > 0 ? SongManager.playableSongs.filter(s => s.getGroup() == null || s.getGroup().collapsed == false) : SongManager.playableSongs;
+  }
 
   /**
    * Refresh the list with optional sorting.
@@ -1567,15 +1612,16 @@ class SongManager {
   }
 
   static playRandom() {
-    if (SongManager.playableSongs.length == 0) {
+    let _songs = SongManager.onlyVisibleSongList();
+    if (_songs.length == 0 && (_songs = SongManager.playableSongs).length == 0) {
       console.warn("No songs to play. SongManager.playableSongs is empty.")
       return;
     }
 
-    let song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
+    let song = _songs[Math.floor(Math.random() * _songs.length)];
     let curSong = SongManager.getCurrentlyPlayingSong();
-    while (curSong && song.songId === curSong.songId && SongManager.playableSongs.length > 1) {
-      song = SongManager.playableSongs[Math.floor(Math.random() * SongManager.playableSongs.length)];
+    while (curSong && song.songId === curSong.songId && _songs.length > 1) {
+      song = _songs[Math.floor(Math.random() * _songs.length)];
     }
     if (song instanceof Song) song.play();
     else console.error("No songs are playable");
@@ -1583,7 +1629,6 @@ class SongManager {
 
   static playNext() {
     const song = SongManager.getCurrentlyPlayingSong();
-    let id = song.getListIndex();
     if (Settings.current.repeat) {
       SongManager.player.currentTime = 0;
       SongManager.player.play();
@@ -1599,22 +1644,38 @@ class SongManager {
       //   // SongManager.playRandom();
       //   return;
       // }
-      if (SongManager.playableSongs.length > id + 1) {
-        SongManager.playableSongs[id + 1].play();
+      let _songs = SongManager.onlyVisibleSongList();
+      let id = _songs.findIndex(s => s.songId === song.songId);
+      if (_songs.length == 0) {
+        let g = song.getGroup();
+        if (g) g.collapsed = false;
+        if (SongManager.playableSongs.length > 0) SongManager.playNext();
+        return;
+      }
+      if (typeof id == "number" && _songs.length > id + 1) {
+        _songs[id + 1].play();
       }
       else {
-        SongManager.playableSongs[0].play();
+        _songs[0].play();
       }
     }
   }
 
   static playPrev() {
-    let id = SongManager.getCurrentlyPlayingSong().getListIndex();
+    let song = SongManager.getCurrentlyPlayingSong();
+    let _songs = SongManager.onlyVisibleSongList();
+    let id = _songs.findIndex(s => s.songId === song.songId);
+    if (_songs.length == 0) {
+      let g = song.getGroup();
+      if (g) g.collapsed = false;
+      if (SongManager.playableSongs.length > 0) SongManager.playPrev();
+      return;
+    }
     if (id - 1 >= 0) {
-      SongManager.playableSongs[id - 1].play();
+      _songs[id - 1].play();
     }
     else {
-      SongManager.playableSongs[SongManager.playableSongs.length - 1].play();
+      _songs[_songs.length - 1].play();
     }
   }
 
@@ -1666,6 +1727,31 @@ class SongManager {
 
     Settings.current.saveToFile();
     return Settings.current.repeat;
+  }
+
+  /**
+   * @param {boolean} force
+   */
+  static toggleOnlyVisible(force) {
+    /**
+     * @type {HTMLButtonElement}
+     */
+    const element = document.getElementById("toggleOnlyvisible");
+    if (typeof force == "boolean") {
+      Settings.current.onlyVisible = !force;
+    }
+
+    if (Settings.current.onlyVisible == false) {
+      element.classList.replace("color-red", "color-green");
+      Settings.current.onlyVisible = true;
+    }
+    else {
+      element.classList.replace("color-green", "color-red");
+      Settings.current.onlyVisible = false;
+    }
+
+    Settings.current.saveToFile();
+    return Settings.current.onlyVisible;
   }
 
   static addSong() {
@@ -2216,6 +2302,11 @@ class SongGroup {
     this.collapsed = !this.collapsed;
   }
 
+  focus() {
+    this.element.scrollIntoViewIfNeeded();
+    Settings.current.revealSongPanel();
+  }
+
   /**
    * @param {boolean} collapsedCondition Whether it should return all with collapsed true, or collapsed false. Omit to ignore and return all.
    */
@@ -2370,36 +2461,14 @@ const menus = {
             if (ans !== 0) {
               return;
             }
-            while(SongManager.getCurrentlyPlayingSong().songId === song.songId && SongManager.songList.length > 1) {
-              SongManager.playNext();
-            }
-            SongManager.songList = SongManager.songList.filter(s => s.songId !== song.songId);
-            SongManager.saveToFile();
-            SongManager.refreshList();
-            function _removeSong() {
-              rimraf.sync(path);
-              console.log("remmoved");
-            }
-            try {
-              _removeSong();
-            }
-            catch (error) {
-              console.error("Failed to deleting song... retrying in 1s... " + path, error);
-              setTimeout(() => {
-                try {
-                  _removeSong();
-                } catch (error) {
-                  console.error("Failed to delete " + path, error);
-                }
-              }, 1000);
-            }
+            song.delete();
           }
         }
       },
       {type: "separator"},
       {
         label: "Focus currently playing song.",
-        click: (menuItem) => {
+        click: () => {
           Settings.current.revealSongPanel();
           SongManager.getCurrentlyPlayingSong().focus();
         }
@@ -2443,23 +2512,37 @@ const menus = {
            * @type {SongGroup}
            */
           const songGroup = menuItem.songGroup;
+          SongGroup.getAllGroups(true).forEach(sg => sg.collapsed = false);
           if (songGroup instanceof SongGroup) {
-            SongGroup.getAllGroups(true).forEach(sg => sg.collapsed = false);
+            songGroup.focus();
+            Effect.flashElement(songGroup.element);
           }
         }
       },
       {
         label: "Close all groups",
         click: (menuItem) => {
-          // /**
-          //  * @type {SongGroup}
-          //  */
-          // const songGroup = menuItem.songGroup;
-          // if (songGroup instanceof SongGroup) {
-          // }
           SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
+          /**
+           * @type {SongGroup}
+           */
+          const songGroup = menuItem.songGroup;
+          if (songGroup instanceof SongGroup) {
+            songGroup.focus();
+            Effect.flashElement(songGroup.element);
+          }
         }
-      }
+      },
+      {
+        type: "separator"
+      },
+      {
+        label: "Focus currently playing song.",
+        click: () => {
+          Settings.current.revealSongPanel();
+          SongManager.getCurrentlyPlayingSong().focus();
+        }
+      },
     ]
   ),
 }
@@ -3058,6 +3141,7 @@ class ToxenScriptManager {
    */
   static async scriptParser(scriptFile) {
     if (ToxenScriptManager.isRunning === false) {
+      // Too many unnecessary updates
       // ToxenScriptManager.isRunning = setInterval(() => {
       //   if (ToxenScriptManager.events.length > 0 && Settings.current.storyboard) {
       //     for (let i = 0; i < ToxenScriptManager.events.length; i++) {
@@ -3071,7 +3155,8 @@ class ToxenScriptManager {
       //     }
       //   }
       // }, 0);
-              
+
+      // Updates only when required.
       ToxenScriptManager.isRunning = true;
       requestAnimationFrame(_gl);
       function _gl() {
@@ -3106,8 +3191,8 @@ class ToxenScriptManager {
     }
 
     for (let i = 0; i < data.length; i++) {
-      const line = data[i].trim();
-      if (typeof line == "string" && !line.startsWith("#") && !line.startsWith("//") && line != "") {
+      const line = data[i].trim().replace(/(#|\/\/).*/g, "");
+      if (typeof line == "string" && line != "") {
 
         let fb = lineParser(line);
         if (fb == undefined) continue;
@@ -3410,8 +3495,20 @@ class ToxenScriptManager {
      * @param {[string | number, string | number, string | number]} args Arguments
      */
     visualizercolor: function (args, event) {
-      for (let i = 0; i < 3; i++) {
-        if (isNaN(args[i])) args[i] = 0;
+      if (!isNaN(args[0])) {
+        for (let i = 1; i < 3; i++) {
+          if (isNaN(args[i])) args[i] = 0;
+        }
+      }
+      else {
+        try {
+          let rgb = Debug.cssColorToRgb(args[0]);
+          args[0] = rgb.red;
+          args[1] = rgb.green;
+          args[2] = rgb.blue;
+        } catch (error) {
+          
+        }
       }
       Storyboard.rgb(+args[0], +args[1], +args[2]);
     },
@@ -3491,6 +3588,23 @@ class ToxenScriptManager {
      * @param {[string | number, string | number, string | number, string | number, string | number]} args Arguments
      */
     huecolor: function (args) {
+      if (!isNaN(args[1])) {
+        for (let i = 2; i < 4; i++) {
+          if (isNaN(args[i])) args[i] = 0;
+        }
+      }
+      else {
+        try {
+          let rgb = Debug.cssColorToRgb(args[0]);
+          args[4] = args[2];
+          args[1] = rgb.red;
+          args[2] = rgb.green;
+          args[3] = rgb.blue;
+        } catch (error) {
+          
+        }
+      }
+
       let brightness = 100;
       let lights = args[0].split(",");
       if (args[4] !== undefined) {
@@ -3506,8 +3620,21 @@ class ToxenScriptManager {
      * @param {[string | number, string | number, string | number, string | number, string | number]} args Arguments
      */
     hueandvisualizercolor: function (args) {
-      for (let i = 1; i < 4; i++) {
-        if (isNaN(args[i])) args[i] = 0;
+      if (!isNaN(args[1])) {
+        for (let i = 2; i < 4; i++) {
+          if (isNaN(args[i])) args[i] = 0;
+        }
+      }
+      else {
+        try {
+          let rgb = Debug.cssColorToRgb(args[0]);
+          args[4] = args[2];
+          args[1] = rgb.red;
+          args[2] = rgb.green;
+          args[3] = rgb.blue;
+        } catch (error) {
+          
+        }
       }
       Storyboard.rgb(+args[1], +args[2], +args[3]);
       let brightness = 100;
@@ -3649,7 +3776,7 @@ class ToxenScriptManager {
         }
       },
       "comment": {
-        "expression": /#.*/g,
+        "expression": /(#|\/\/).*/g,
         "function": function($0) {
           let d = document.createElement("div");
           d.innerHTML = $0;
@@ -3658,9 +3785,10 @@ class ToxenScriptManager {
         }
       },
       "link": {
-        "expression": /https?:\/\/(.*\.)*.*\.\S*/g,
+        "expression": /https?:\/\/(.*\.)*.*\.[^\s<>]*/g,
         "function": function($0) {
-          return `<a class=toxenscript_number title='${$0}' onclick='shell.openExternal(this.title)' style='pointer-events: all;'>${$0}</a>`;
+          // $0 = $0.replace(/<\/?.*?>/g, "");
+          return `<a class=toxenscript_number title='${$0}' onclick='shell.openExternal(this.title)' style='pointer-events:all;'>${$0}</a>`;
         }
       },
     }
@@ -3851,20 +3979,46 @@ class Debug {
     return hex.length == 1 ? "0" + hex : hex;
   }
   
-  static rgbToHex(r, g, b) {
-    return "#" + Debug.componentToHex(r) + Debug.componentToHex(g) + Debug.componentToHex(b);
+  static rgbToHex(red, green, blue) {
+    return "#" + Debug.componentToHex(red) + Debug.componentToHex(green) + Debug.componentToHex(blue);
   }
 
   /**
+   * @typedef {{"red": number, "green": number, "blue": number}} RGB
    * @param {string} hex 
    */
   static hexToRgb(hex) {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : null;
+    /**
+     * @type {RGB}
+     */
+    let rgb = {
+      red: 0,
+      green: 0,
+      blue: 0,
+    }
+    let retrn = result ? (rgb = {
+      red: parseInt(result[1], 16),
+      green: parseInt(result[2], 16),
+      blue: parseInt(result[3], 16)
+    }) : null;
+    return retrn;
+  }
+
+  /**
+   * @param {string} str 
+   */
+  static cssColorToHex(str){
+    var ctx = document.createElement("canvas").getContext("2d");
+    ctx.fillStyle = str;
+    return ctx.fillStyle;
+  }
+
+  /**
+   * @param {string} str 
+   */
+  static cssColorToRgb(str){
+    return Debug.hexToRgb(Debug.cssColorToHex(str));
   }
 }
 

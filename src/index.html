@@ -23,14 +23,39 @@
     <input type="text" id="search" oninput="SongManager.search(this.value)" class="fancyinput">
     <div id="songselection"></div>
     <div class="flex">
-      <button class="fancybutton" title="Sort by Artist" id="sortByArtist" onclick="SongManager.refreshList('artist');">Artist</button>
-      <button class="fancybutton" title="Sort by Title" id="sortByTitle" onclick="SongManager.refreshList('title');">Title</button>
-      <button class="fancybutton" title="Sort by Length" id="sortByLength" onclick="SongManager.refreshList('length');">Length</button>
+      <button 
+      class="fancybutton"
+      title="Sort by Artist"
+      id="sortByArtist"
+      onclick="SongManager.refreshList('artist');">Artist</button>
+      <button 
+      class="fancybutton"
+      title="Sort by Title"
+      id="sortByTitle"
+      onclick="SongManager.refreshList('title');">Title</button>
+      <button 
+      class="fancybutton"
+      title="Sort by Length"
+      id="sortByLength"
+      onclick="SongManager.refreshList('length');">Length</button>
     </div>
     <hr>
 	  <div class="flex">
-      <button class="fancybutton color-red" id="toggleShuffle" onclick="SongManager.toggleShuffle()">Shuffle</button>
-      <button class="fancybutton color-red" id="toggleRepeat" onclick="SongManager.toggleRepeat()">Repeat</button>
+      <button
+      class="fancybutton color-red"
+      id="toggleShuffle"
+      title="Shuffle makes songs play randomly instead of in a list order"
+      onclick="SongManager.toggleShuffle()">Shuffle</button>
+      <button
+      class="fancybutton color-red"
+      id="toggleRepeat"
+      title="Repeat make the current song repeat forever"
+      onclick="SongManager.toggleRepeat()">Repeat</button>
+      <button
+      class="fancybutton color-red"
+      id="toggleOnlyvisible"
+      title="Only Visible makes sure only songs that are visible (i.e is inside an open Song Group)"
+      onclick="SongManager.toggleOnlyVisible()">Only Visible</button>
     </div>
     <div class="flex">
       <button class="fancybutton color-blue" onclick="SongManager.playPrev()">Previous Song</button>

@@ -218,8 +218,8 @@ input[type="checkbox"], input[type="radio"] {
 div.flex {
   display: flex;
   box-sizing: border-box;
-  /* padding-left: 8px; */
-  padding-right: 16px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 div.flex button{

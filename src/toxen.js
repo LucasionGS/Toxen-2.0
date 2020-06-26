@@ -125,6 +125,7 @@ async function initialize() {
 
   SongManager.toggleShuffle(settings.shuffle);
   SongManager.toggleRepeat(settings.repeat);
+  SongManager.toggleOnlyVisible(settings.onlyVisible);
   settings.toggleSongPanelLock(settings.songMenuLocked);
   Storyboard.rgb(settings.visualizerColor.red, settings.visualizerColor.green, settings.visualizerColor.blue);
 
