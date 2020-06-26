@@ -1,4 +1,5 @@
 const fs = require("fs");
+const { TextEditor } = require("./texteditor");
 
 // const {Popup} = require("ionlib");
 const ToxenCore = require("./toxenCore");

@@ -3,6 +3,7 @@
 const fs = require("fs");
 const rimraf = require("rimraf");
 const { Popup } = require("ionlib");
+const { TextEditor } = require("./texteditor");
 // const fetch = require("node-fetch").default;
 const hue = require("node-hue-api").v3;
 /**
@@ -1207,7 +1208,7 @@ class SongManager {
          * @param {string} name 
          * @param {Song} song 
          */
-        function addToGroup(name, song, missingText = "!Missing Group!") {
+        function addToGroup(name, song, missingText = "No group set") {
           if (name == null || (typeof name == "string" && name.trim() == "")) {
             name = missingText;
           }
@@ -1221,22 +1222,22 @@ class SongManager {
         switch (Settings.current.songGrouping) {
           case 1:
             SongManager.songList.forEach(s => {
-              addToGroup(s.details.artist, s, "!Missing artist!");
+              addToGroup(s.details.artist, s, "No artist set");
             });
             break;
           case 2:
             SongManager.songList.forEach(s => {
-              addToGroup(s.details.album, s, "!Missing album!");
+              addToGroup(s.details.album, s, "No album set");
             });
             break;
           case 3:
             SongManager.songList.forEach(s => {
-              addToGroup(s.details.source, s, "!Missing source!");
+              addToGroup(s.details.source, s, "No source set");
             });
             break;
           case 4:
             SongManager.songList.forEach(s => {
-              addToGroup(s.details.language, s, "!Missing Language!");
+              addToGroup(s.details.language, s, "No language set");
             });
             break;
           case 5:
