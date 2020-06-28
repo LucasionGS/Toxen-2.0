@@ -3205,6 +3205,7 @@ class ToxenScriptManager {
       }
     }
 
+    // Watching file for changes.
     fs.unwatchFile(ToxenScriptManager.currentScriptFile);
     if (!Settings.current.remote) {
       fs.watchFile(scriptFile, () => {
@@ -3256,7 +3257,7 @@ class ToxenScriptManager {
       try { // Massive trycatch for any error.
         let maxPerSecond = 0;
         
-        const checkVariable = /(?<=^\s*)(\$\w+)\s*=>?\s*"(.*?[^\\])"/g;
+        const checkVariable = /(?<=^\s*)(\$\w+)\s*(=>?|:)\s*"(.*?[^\\])"/g;
         if (checkVariable.test(line)) {
           line.replace(checkVariable, function(item, $1, $2) {
             $2 = $2.replace(/\\"/g, "\"");
@@ -3267,7 +3268,7 @@ class ToxenScriptManager {
           return;
         }
         
-        const checkRawVariable = /(?<=^\s*)(@\w+)\s*=>?\s*(.*)/g;
+        const checkRawVariable = /(?<=^\s*)(@\w+)\s*(?:=>?|:)\s*(.*)/g;
         if (checkRawVariable.test(line)) {
           line.replace(checkRawVariable, function(item, $1, $2) {
             // $2 = $2.replace(/\\"/g, "\"");
@@ -3281,7 +3282,8 @@ class ToxenScriptManager {
         // Replace variables
         line = ToxenScriptManager.applyVariables(line);
 
-        const checkMaxPerSecond = /^\b(once|twice|thrice)\b/g;
+        const checkMaxPerSecond = /^\b(once|twice|thrice|quad)\b/g;
+        const checkMaxPerSecondAlt = /^\b(\d+)\/(\d+)\b/g;
         if (checkMaxPerSecond.test(line)) {
           line.replace(checkMaxPerSecond, function(item) {
             switch (item) {
@@ -3298,9 +3300,18 @@ class ToxenScriptManager {
             return "";
           });
         }
+        else if (checkMaxPerSecondAlt.test(line)) {
+          var returnError = "";
+          line.replace(checkMaxPerSecondAlt, function(item, num1, num2) {
+            if (+num1 > 0 && +num2 > 0) maxPerSecond = 1 / (+num1 / +num2);
+            else returnError = "Limiter prefix cannot include a 0.";
+            return "";
+          });
+          if (returnError !== "") return returnError;
+        }
 
         // Check if non-time function
-        const checkFunction = /:\S*\s*=>\s*.*/g;
+        const checkFunction = /:(\S*?)\s*(=>?|:)s*.*/g;
         if (checkFunction.test(line)) {
           line = "[0 - 1]" + line;
         }
@@ -3312,17 +3323,18 @@ class ToxenScriptManager {
         }
         // Regexes
         const timeReg = /(?<=\[).+\s*-\s*\S+(?=\])/g;
-        const typeReg = /(?<=\[.+\s*-\s*\S+\]\s*)\S*(?=\s*=>?)/g;
-        const argReg = /(?<=\[.+\s*-\s*\S+\]\s*\S*\s*=>?\s*).*/g;
+        const typeReg = /(?<=\[.+\s*-\s*\S+\]\s*)\S*(?=\s*(=>?|:))/g;
+        const argReg = /(?<=\[.+\s*-\s*\S+\]\s*\S*\s*(=>?|:)\s*).*/g;
 
         // Variables
         var startPoint = 0;
         var endPoint = 0;
         var args = [];
-        var fn = (args) => { };
+        var fn = (args = []) => { };
 
         // Parsing...
         var timeRegResult = line.match(timeReg)[0];
+        
         timeRegResult = timeRegResult.replace(/\s/g, "");
         var tP = timeRegResult.split("-");
         startPoint = tP[0];
@@ -3374,7 +3386,11 @@ class ToxenScriptManager {
           console.warn("Irrelevant limiter.\n"+type+" cannot use a limiter prefix and has been ignored.");
         }
 
-        var argString = line.match(argReg)[0].trim();
+        let _matches = line.match(argReg);
+        if (_matches == null) {
+          _matches = [];
+        }
+        var argString = _matches[0];
 
         if (typeof argString != "string") {
           return `Arguments are not in a valid format.`;
@@ -3419,7 +3435,8 @@ class ToxenScriptManager {
           return argList;
         }
 
-        args = parseArgumentsFromString(argString);
+        if (typeof argString == "string") args = parseArgumentsFromString(argString.trim());
+        else args = [];
 
         // Special treatments
         if (type == "bpmpulse") {
@@ -3694,6 +3711,9 @@ class ToxenScriptManager {
       // This function doesn't do anything.
       // BPMPulse is converted to Pulses when parsed.
     },
+    log: function() {
+      console.log([...arguments[0]]);
+    },
     // :Functions
     /**
      * Connect to a hue bridge.
@@ -3729,9 +3749,9 @@ class ToxenScriptManager {
       }
     },
     ":log": function() {
-      console.log([...arguments]);
+      console.log([...arguments[0]]);
     },
-    ":createobject": function([name, ], event) {
+    ":createobject": function([name], event) {
       let o = new StoryboardObject();
 
 
@@ -3779,7 +3799,7 @@ class ToxenScriptManager {
         }
       },
       "limiter": {
-        "expression": /(?<=\s*)(once|twice|thrice)/gm,
+        "expression": /(?<=\s*)(once|twice|thrice|quad|(\d+)\/(\d+))/gm,
         "function": function($0) {
           return `<span class=toxenscript_limiter>${$0}</span>`;
         }
