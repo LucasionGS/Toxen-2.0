@@ -8,382 +8,384 @@
   <title>Toxen 2.0</title>
 </head>
 <body>
-  <canvas id="storyboard"></canvas>
-  <video id="musicObject"></video>
-  <div class="sidebar left" id="songmenusidebar">
-    <div id="progress">
-      <label id="progresstext"></label>
+  <div id="mainbody">
+    <canvas id="storyboard"></canvas>
+    <video id="musicObject"></video>
+    <div class="sidebar left" id="songmenusidebar">
+      <div id="progress">
+        <label id="progresstext"></label>
+        <br>
+        <progress id="progressbar" class="fancyprogress"></progress>
+      </div>
+      <hr>
+      <div id="lockPanel" onclick="Settings.current.toggleSongPanelLock()" title="Toggle lock Panel">🔓</div>
+      <label for="search">Search</label>
       <br>
-      <progress id="progressbar" class="fancyprogress"></progress>
-    </div>
-    <hr>
-    <div id="lockPanel" onclick="Settings.current.toggleSongPanelLock()" title="Toggle lock Panel">🔓</div>
-    <label for="search">Search</label>
-    <br>
-    <input type="text" id="search" oninput="SongManager.search(this.value)" class="fancyinput">
-    <div id="songselection"></div>
-    <div class="flex">
-      <button 
-      class="fancybutton"
-      title="Sort by Artist"
-      id="sortByArtist"
-      onclick="SongManager.refreshList('artist');">Artist</button>
-      <button 
-      class="fancybutton"
-      title="Sort by Title"
-      id="sortByTitle"
-      onclick="SongManager.refreshList('title');">Title</button>
-      <button 
-      class="fancybutton"
-      title="Sort by Length"
-      id="sortByLength"
-      onclick="SongManager.refreshList('length');">Length</button>
-    </div>
-    <hr>
-	  <div class="flex">
-      <button
-      class="fancybutton color-red"
-      id="toggleShuffle"
-      title="Shuffle makes songs play randomly instead of in a list order"
-      onclick="SongManager.toggleShuffle()">Shuffle</button>
-      <button
-      class="fancybutton color-red"
-      id="toggleRepeat"
-      title="Repeat make the current song repeat forever"
-      onclick="SongManager.toggleRepeat()">Repeat</button>
-      <button
-      class="fancybutton color-red"
-      id="toggleOnlyvisible"
-      title="Only Visible makes sure only songs that are visible (i.e is inside an open Song Group)"
-      onclick="SongManager.toggleOnlyVisible()">Only Visible</button>
-    </div>
-    <div class="flex">
-      <button class="fancybutton color-blue" onclick="SongManager.playPrev()">Previous Song</button>
-      <button class="fancybutton color-blue" onclick="local_playNext()">Next Song</button>
-      <script>
-        function local_playNext() {
-          if (settings.repeat == true) {
-            settings.repeat = false;
-            SongManager.playNext()
-            settings.repeat = true;
+      <input type="text" id="search" oninput="SongManager.search(this.value)" class="fancyinput">
+      <div id="songselection"></div>
+      <div class="flex">
+        <button 
+        class="fancybutton"
+        title="Sort by Artist"
+        id="sortByArtist"
+        onclick="SongManager.refreshList('artist');">Artist</button>
+        <button 
+        class="fancybutton"
+        title="Sort by Title"
+        id="sortByTitle"
+        onclick="SongManager.refreshList('title');">Title</button>
+        <button 
+        class="fancybutton"
+        title="Sort by Length"
+        id="sortByLength"
+        onclick="SongManager.refreshList('length');">Length</button>
+      </div>
+      <hr>
+      <div class="flex">
+        <button
+        class="fancybutton color-red"
+        id="toggleShuffle"
+        title="Shuffle makes songs play randomly instead of in a list order"
+        onclick="SongManager.toggleShuffle()">Shuffle</button>
+        <button
+        class="fancybutton color-red"
+        id="toggleRepeat"
+        title="Repeat make the current song repeat forever"
+        onclick="SongManager.toggleRepeat()">Repeat</button>
+        <button
+        class="fancybutton color-red"
+        id="toggleOnlyvisible"
+        title="Only Visible makes sure only songs that are visible (i.e is inside an open Song Group)"
+        onclick="SongManager.toggleOnlyVisible()">Only Visible</button>
+      </div>
+      <div class="flex">
+        <button class="fancybutton color-blue" onclick="SongManager.playPrev()">Previous Song</button>
+        <button class="fancybutton color-blue" onclick="local_playNext()">Next Song</button>
+        <script>
+          function local_playNext() {
+            if (settings.repeat == true) {
+              settings.repeat = false;
+              SongManager.playNext()
+              settings.repeat = true;
+            }
+            else {
+              SongManager.playNext()
+            }
           }
-          else {
-            SongManager.playNext()
-          }
-        }
-      </script>
-    </div>
-    <hr>
-    <div class="flex">
-      <button class="fancybutton" onclick="SongManager.scanDirectory();" title="Refresh the music library">Update Music Library</button>
-      <button id="addsongbutton" class="fancybutton" onclick="SongManager.addSong()" title="Add a new song to your library">Add Song</button>
-      <button disabled id="setdefaultbackgroundbutton" class="fancybutton" onclick="SongManager.selectDefaultBackground()" title="Set the default background for all songs that doesn't have a custom background">Set Default Background</button>
-    </div>
-    <hr>
-    <div class="flex">
-      <button id="setbackgroundbutton" class="fancybutton" onclick="SongManager.selectBackground()" title="Set the background for the currently playing song">Set Background</button>
-      <button disabled id="setsubtitlesbutton" class="fancybutton" onclick="SongManager.selectSubtitles()" title="Set the subtitles file for the currently playing song">Set Subtitles</button>
-      <button disabled id="setstoryboardbutton" class="fancybutton" onclick="SongManager.selectStoryboard()" title="Set the storyboard file for the currently playing song">Set Storyboard</button>
-    </div>
-    <div id="songinfo">
-      <h2>Song Info</h2>
-      <div class="pinput" title="Click to edit">
-        <input type="search" name="title">
-        <p name="title"></p>
+        </script>
       </div>
-      <br>
-      <div class="pinput" title="Click to edit">
-        <input type="search" name="artist">
-        <p name="artist"></p>
+      <hr>
+      <div class="flex">
+        <button class="fancybutton" onclick="SongManager.scanDirectory();" title="Refresh the music library">Update Music Library</button>
+        <button id="addsongbutton" class="fancybutton" onclick="SongManager.addSong()" title="Add a new song to your library">Add Song</button>
+        <button disabled id="setdefaultbackgroundbutton" class="fancybutton" onclick="SongManager.selectDefaultBackground()" title="Set the default background for all songs that doesn't have a custom background">Set Default Background</button>
       </div>
-      <br>
-      <div class="pinput" title="Click to edit">
-        <input type="search" name="album">
-        <p name="album"></p>
+      <hr>
+      <div class="flex">
+        <button id="setbackgroundbutton" class="fancybutton" onclick="SongManager.selectBackground()" title="Set the background for the currently playing song">Set Background</button>
+        <button disabled id="setsubtitlesbutton" class="fancybutton" onclick="SongManager.selectSubtitles()" title="Set the subtitles file for the currently playing song">Set Subtitles</button>
+        <button disabled id="setstoryboardbutton" class="fancybutton" onclick="SongManager.selectStoryboard()" title="Set the storyboard file for the currently playing song">Set Storyboard</button>
       </div>
-      <br>
-      <div class="pinput" title="Click to edit">
-        <input type="search" name="source">
-        <p name="source"></p>
-      </div>
-      <br>
-      <div class="pinput" title="Click to edit">
-        <input type="search" name="sourceLink">
-        <p name="sourceLink"></p>
-      </div>
-      <br>
-      <div class="pinput" title="Click to edit">
-        <input type="search" name="language">
-        <p name="language"></p>
-      </div>
-      <br>
-      <div class="pinput" title="Click to edit">
-        <input type="search" name="tags">
-        <p name="tags"></p>
-      </div>
-
-      <!-- <div class="pinput">
-        <input type="search" name="artist">
-        <p name="artist"></p>
-      </div> -->
-    </div>
-  </div>
-  <div class="sidebar right" id="settingsmenusidebar">
-    <h2>Settings</h2>
-    <sup id="currentversion"></sup>
-    <button id="updatetoxen" class="fancybutton">Loading...</button>
-    <hr>
-    <label for="volumeValue">Volume</label>
-    <input type="range" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.setVolume(this.value);" onmouseup="settings.saveToFile();">
-    <hr>
-    <label for="songFolder">Song Folder</label>
-    <input type="text" name="songFolder" id="songfolderValue" readonly class="fancyinput">
-    <button class="fancybutton" onclick="Settings.current.selectSongFolder();">Select</button>
-    <br>
-    <br>
-    <label for="playlist">Playlist</label>
-    <select name="playlist" id="playlistselection" class="fancyselect" onchange="Settings.current.selectPlaylist(this.value); Settings.current.saveToFile();">
-      <option value="%null%">None</option>
-    </select>
-    <button class="fancybutton" onclick="Settings.current.addPlaylist();">New Playlist</button>
-    <hr>
-    <!-- <h3>Song Grouping</h3> -->
-    <label>Song Grouping</label>
-    <sup>Group songs into smaller folders in the song menu.</sup>
-    <input type="radio" name="sgstyle" id="songgrouping=0" value="0" onclick="settings.songGrouping = 0; settings.saveToFile(); SongManager.refreshList();">
-    <label for="songgrouping=0">No grouping</label><br>
-    <input type="radio" name="sgstyle" id="songgrouping=1" value="1" onclick="settings.songGrouping = 1; settings.saveToFile(); SongManager.refreshList();">
-    <label for="songgrouping=1">By Artist</label><br>
-    <input type="radio" name="sgstyle" id="songgrouping=2" value="2" onclick="settings.songGrouping = 2; settings.saveToFile(); SongManager.refreshList();">
-    <label for="songgrouping=2">By Album</label><br>
-    <input type="radio" name="sgstyle" id="songgrouping=3" value="3" onclick="settings.songGrouping = 3; settings.saveToFile(); SongManager.refreshList();">
-    <label for="songgrouping=3">By Source</label><br>
-    <input type="radio" name="sgstyle" id="songgrouping=4" value="4" onclick="settings.songGrouping = 4; settings.saveToFile(); SongManager.refreshList();">
-    <label for="songgrouping=4">By Language</label><br>
-    <input type="radio" name="sgstyle" id="songgrouping=5" value="5" onclick="settings.songGrouping = 5; settings.saveToFile(); SongManager.refreshList();">
-    <label for="songgrouping=5">Alphabetically (Artist)</label><br>
-    <input type="radio" name="sgstyle" id="songgrouping=6" value="6" onclick="settings.songGrouping = 6; settings.saveToFile(); SongManager.refreshList();">
-    <label for="songgrouping=6">Alphabetically (Title)</label>
-    <hr>
-    <h3>Visual Settings</h3>
-    <label>Visualizer Style</label>
-    <sup>Customize how the visualizer is shown.</sup>
-    <input type="radio" name="avstyle" id="visualizerstyle=0" value="0" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 0; settings.saveToFile();">
-    <label for="visualizerstyle=0">Bottom</label><br>
-    <input type="radio" name="avstyle" id="visualizerstyle=1" value="1" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 1; settings.saveToFile();">
-    <label for="visualizerstyle=1">Top</label><br>
-    <input type="radio" name="avstyle" id="visualizerstyle=2" value="2" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 2; settings.saveToFile();">
-    <label for="visualizerstyle=2">Top and bottom (Identical)</label><br>
-    <input type="radio" name="avstyle" id="visualizerstyle=3" value="3" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 3; settings.saveToFile();">
-    <label for="visualizerstyle=3">Center</label><br>
-    <input type="radio" name="avstyle" id="visualizerstyle=4" value="4" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 4; settings.saveToFile();">
-    <label for="visualizerstyle=4">Top and bottom (Alternating)</label>
-    <!-- <hr> -->
-    <br>
-    <br>
-    <input type="checkbox" name="avtoggle" id="visualizerToggle" onclick="settings.visualizer = this.checked; settings.saveToFile();">
-    <label for="visualizerToggle">Visualizer</label>
-    <sup>
-      Display audio visualizer.
-    </sup>
-    <br>
-    <input type="checkbox" name="sbtoggle" id="storyboardToggle" onclick="settings.storyboard = this.checked; settings.saveToFile();">
-    <label for="storyboardToggle">Storyboard</label>
-    <sup>
-      Display ToxenScript storyboards.<br>
-      If you're experiencing low performance, try to disable this.
-    </sup>
-    <label for="backgrounddimValue">Visualizer Color</label>
-    <div class="flex">
-      <div style="width: 48px;">
-        <label for="visualizercolor.redValue" style="text-align: center; width: 100%; display: block">Red</label>
-        <input type="range" id="visualizercolor.redValue" orient="vertical" value="0" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.red = +this.value" onmouseup="settings.saveToFile();">
-        <div id="redColorBlock" style="width: 48px; height: 48px">
-          <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+      <div id="songinfo">
+        <h2>Song Info</h2>
+        <div class="pinput" title="Click to edit">
+          <input type="search" name="title">
+          <p name="title"></p>
         </div>
-      </div>
-      <div style="width: 48px;">
-        <label for="visualizercolor.greenValue" style="text-align: center; width: 100%; display: block">Green</label>
-        <input type="range" id="visualizercolor.greenValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.green = +this.value" onmouseup="settings.saveToFile();">
-        <div id="greenColorBlock" style="width: 48px; height: 48px">
-          <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+        <br>
+        <div class="pinput" title="Click to edit">
+          <input type="search" name="artist">
+          <p name="artist"></p>
         </div>
-      </div>
-      <div style="width: 48px;">
-        <label for="visualizercolor.blueValue" style="text-align: center; width: 100%; display: block">Blue</label>
-        <input type="range" id="visualizercolor.blueValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.blue = +this.value" onmouseup="settings.saveToFile();">
-        <div id="blueColorBlock" style="width: 48px; height: 48px">
-          <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+        <br>
+        <div class="pinput" title="Click to edit">
+          <input type="search" name="album">
+          <p name="album"></p>
         </div>
-      </div>
-      <div>
-        <input id="colorPicker" type="color" style="width: 64px; height: 64px; padding: 0" oninput="local_setColorsFromSelector(this.value)" title="Select from color picker...">
-        <!-- <div id="totalColorBlock" style="width: 64px; height: 64px"></div> -->
-        <!-- <br> -->
-      </div>
-      <script>
-        function local_setColors() {
-          let red = +document.getElementById("visualizercolor.redValue").value;
-          let green = +document.getElementById("visualizercolor.greenValue").value;
-          let blue = +document.getElementById("visualizercolor.blueValue").value;
-          Storyboard.rgb(red, green, blue);
-          document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
-          document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
-          document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
+        <br>
+        <div class="pinput" title="Click to edit">
+          <input type="search" name="source">
+          <p name="source"></p>
+        </div>
+        <br>
+        <div class="pinput" title="Click to edit">
+          <input type="search" name="sourceLink">
+          <p name="sourceLink"></p>
+        </div>
+        <br>
+        <div class="pinput" title="Click to edit">
+          <input type="search" name="language">
+          <p name="language"></p>
+        </div>
+        <br>
+        <div class="pinput" title="Click to edit">
+          <input type="search" name="tags">
+          <p name="tags"></p>
+        </div>
 
-          document.getElementById("redColorBlock").firstElementChild.innerText = red;
-          document.getElementById("greenColorBlock").firstElementChild.innerText = green;
-          document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
-          
-          document.getElementById("colorPicker").value = Debug.rgbToHex(red, green, blue);
-        }
-        function local_setColorsFromSelector(value) {
-          let rgb = Debug.hexToRgb(value);
-          let red = +(document.getElementById("visualizercolor.redValue").value = rgb.r);
-          let green = +(document.getElementById("visualizercolor.greenValue").value = rgb.g);
-          let blue = +(document.getElementById("visualizercolor.blueValue").value = rgb.b);
-          Storyboard.rgb(red, green, blue);
-          document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
-          document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
-          document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
-
-          document.getElementById("redColorBlock").firstElementChild.innerText = red;
-          document.getElementById("greenColorBlock").firstElementChild.innerText = green;
-          document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
-        }
-      </script>
+        <!-- <div class="pinput">
+          <input type="search" name="artist">
+          <p name="artist"></p>
+        </div> -->
+      </div>
     </div>
-    <hr>
-    <label for="backgrounddimValue">Background Dimming</label>
-    <input type="range" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = this.value" onmouseup="settings.saveToFile();">
-    <hr>
-    <input type="checkbox" name="sptrtoggle" id="songmenutorightToggle" onclick="settings.toggleSongPanelToRight(this.checked); settings.saveToFile();">
-    <label for="songmenutorightToggle">Right-hand Song Menu</label>
-    <sup>
-      Display the song menu to the right side of the screen and settings to the left.
-    </sup>
-    <hr>
-    <label>Song Thumbnail Style</label><br>
-    <input type="radio" name="tnstyle" id="thumbnails=0" onclick="settings.thumbnails = 0; SongManager.refreshList(); settings.saveToFile();">
-    <label for="thumbnails=0">No Images</label><br>
-    <input type="radio" name="tnstyle" id="thumbnails=1" onclick="settings.thumbnails = 1; SongManager.refreshList(); settings.saveToFile();">
-    <label for="thumbnails=1">Thumbnails</label><br>
-    <sup>
-      Display background image next to the song name in the song list.<br>
-      If you're experiencing low performance, try to disable this.
-    </sup>
-    <input type="radio" name="tnstyle" id="thumbnails=2" onclick="settings.thumbnails = 2; SongManager.refreshList(); settings.saveToFile();">
-    <label for="thumbnails=2">Background Images</label>
-    <sup>
-      Display background image as the background behind the song name in the song list.<br>
-      If you're experiencing low performance, try to disable this.
-    </sup>
-    <hr>
-    <script>
-      function local_advSettingsToggle(checked) {
-        document.getElementById("advancedToggleId").innerHTML = (checked ? "▼" : "►") + ` <span style="text-decoration: underline;">Advanced Settings</span>`;
-      }
-    </script>
-    <input type="checkbox" name="advtoggle" id="advancedToggle" onclick="settings.advanced = this.checked; local_advSettingsToggle(this.checked)" hidden>
-    <label title="Click to toggle advanced settings view" style="text-decoration: none;" for="advancedToggle" id="advancedToggleId">
-      ► <span style="text-decoration: underline;">Advanced Settings</span>
-    </label>
-    <div id="advancedoptions">
-      <input type="checkbox" name="tntoggle" id="discordpresenceshowdetailsToggle" onclick="settings.discordPresenceShowDetails = this.checked; updateDiscordPresence(); settings.saveToFile();">
-      <label for="discordpresenceshowdetailsToggle">Discord Presence: Show Details</label>
+    <div class="sidebar right" id="settingsmenusidebar">
+      <h2>Settings</h2>
+      <sup id="currentversion"></sup>
+      <button id="updatetoxen" class="fancybutton">Loading...</button>
+      <hr>
+      <label for="volumeValue">Volume</label>
+      <input type="range" class="fancyrange" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.setVolume(this.value);" onmouseup="settings.saveToFile();">
+      <hr>
+      <label for="songFolder">Song Folder</label>
+      <input type="text" name="songFolder" id="songfolderValue" readonly class="fancyinput">
+      <button class="fancybutton" onclick="Settings.current.selectSongFolder();">Select</button>
+      <br>
+      <br>
+      <label for="playlist">Playlist</label>
+      <select name="playlist" id="playlistselection" class="fancyselect" onchange="Settings.current.selectPlaylist(this.value); Settings.current.saveToFile();">
+        <option value="%null%">None</option>
+      </select>
+      <button class="fancybutton" onclick="Settings.current.addPlaylist();">New Playlist</button>
+      <hr>
+      <!-- <h3>Song Grouping</h3> -->
+      <label>Song Grouping</label>
+      <sup>Group songs into smaller folders in the song menu.</sup>
+      <input type="radio" name="sgstyle" id="songgrouping=0" value="0" onclick="settings.songGrouping = 0; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=0">No grouping</label><br>
+      <input type="radio" name="sgstyle" id="songgrouping=1" value="1" onclick="settings.songGrouping = 1; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=1">By Artist</label><br>
+      <input type="radio" name="sgstyle" id="songgrouping=2" value="2" onclick="settings.songGrouping = 2; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=2">By Album</label><br>
+      <input type="radio" name="sgstyle" id="songgrouping=3" value="3" onclick="settings.songGrouping = 3; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=3">By Source</label><br>
+      <input type="radio" name="sgstyle" id="songgrouping=4" value="4" onclick="settings.songGrouping = 4; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=4">By Language</label><br>
+      <input type="radio" name="sgstyle" id="songgrouping=5" value="5" onclick="settings.songGrouping = 5; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=5">Alphabetically (Artist)</label><br>
+      <input type="radio" name="sgstyle" id="songgrouping=6" value="6" onclick="settings.songGrouping = 6; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=6">Alphabetically (Title)</label>
+      <hr>
+      <h3>Visual Settings</h3>
+      <label>Visualizer Style</label>
+      <sup>Customize how the visualizer is shown.</sup>
+      <input type="radio" name="avstyle" id="visualizerstyle=0" value="0" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 0; settings.saveToFile();">
+      <label for="visualizerstyle=0">Bottom</label><br>
+      <input type="radio" name="avstyle" id="visualizerstyle=1" value="1" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 1; settings.saveToFile();">
+      <label for="visualizerstyle=1">Top</label><br>
+      <input type="radio" name="avstyle" id="visualizerstyle=2" value="2" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 2; settings.saveToFile();">
+      <label for="visualizerstyle=2">Top and bottom (Identical)</label><br>
+      <input type="radio" name="avstyle" id="visualizerstyle=3" value="3" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 3; settings.saveToFile();">
+      <label for="visualizerstyle=3">Center</label><br>
+      <input type="radio" name="avstyle" id="visualizerstyle=4" value="4" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 4; settings.saveToFile();">
+      <label for="visualizerstyle=4">Top and bottom (Alternating)</label>
+      <!-- <hr> -->
+      <br>
+      <br>
+      <input type="checkbox" name="avtoggle" id="visualizerToggle" onclick="settings.visualizer = this.checked; settings.saveToFile();">
+      <label for="visualizerToggle">Visualizer</label>
       <sup>
-        Display the details of the current song playing in Discord Presence.
-        Details include Artist, Title, and current time.
+        Display audio visualizer.
       </sup>
-      <input type="checkbox" name="avtoggle" id="frezevisualizerToggle" onclick="settings.freezeVisualizer = this.checked; settings.saveToFile();">
-      <label for="frezevisualizerToggle">Freeze Visualizer</label>
+      <br>
+      <input type="checkbox" name="sbtoggle" id="storyboardToggle" onclick="settings.storyboard = this.checked; settings.saveToFile();">
+      <label for="storyboardToggle">Storyboard</label>
       <sup>
-        Freeze the audio visualizer when the current song is paused.
+        Display ToxenScript storyboards.<br>
+        If you're experiencing low performance, try to disable this.
+      </sup>
+      <label for="backgrounddimValue">Visualizer Color</label>
+      <div class="flex">
+        <div style="width: 48px;">
+          <label for="visualizercolor.redValue" style="text-align: center; width: 100%; display: block">Red</label>
+          <input type="range" class="fancyrange" id="visualizercolor.redValue" orient="vertical" value="0" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.red = +this.value" onmouseup="settings.saveToFile();">
+          <div id="redColorBlock" style="width: 48px; height: 48px">
+            <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+          </div>
+        </div>
+        <div style="width: 48px;">
+          <label for="visualizercolor.greenValue" style="text-align: center; width: 100%; display: block">Green</label>
+          <input type="range" class="fancyrange" id="visualizercolor.greenValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.green = +this.value" onmouseup="settings.saveToFile();">
+          <div id="greenColorBlock" style="width: 48px; height: 48px">
+            <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+          </div>
+        </div>
+        <div style="width: 48px;">
+          <label for="visualizercolor.blueValue" style="text-align: center; width: 100%; display: block">Blue</label>
+          <input type="range" class="fancyrange" id="visualizercolor.blueValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.blue = +this.value" onmouseup="settings.saveToFile();">
+          <div id="blueColorBlock" style="width: 48px; height: 48px">
+            <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+          </div>
+        </div>
+        <div>
+          <input id="colorPicker" type="color" style="width: 64px; height: 64px; padding: 0" oninput="local_setColorsFromSelector(this.value)" title="Select from color picker...">
+          <!-- <div id="totalColorBlock" style="width: 64px; height: 64px"></div> -->
+          <!-- <br> -->
+        </div>
+        <script>
+          function local_setColors() {
+            let red = +document.getElementById("visualizercolor.redValue").value;
+            let green = +document.getElementById("visualizercolor.greenValue").value;
+            let blue = +document.getElementById("visualizercolor.blueValue").value;
+            Storyboard.rgb(red, green, blue);
+            document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
+            document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
+            document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
+
+            document.getElementById("redColorBlock").firstElementChild.innerText = red;
+            document.getElementById("greenColorBlock").firstElementChild.innerText = green;
+            document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
+            
+            document.getElementById("colorPicker").value = Debug.rgbToHex(red, green, blue);
+          }
+          function local_setColorsFromSelector(value) {
+            let rgb = Debug.hexToRgb(value);
+            let red = +(document.getElementById("visualizercolor.redValue").value = rgb.r);
+            let green = +(document.getElementById("visualizercolor.greenValue").value = rgb.g);
+            let blue = +(document.getElementById("visualizercolor.blueValue").value = rgb.b);
+            Storyboard.rgb(red, green, blue);
+            document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
+            document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
+            document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
+
+            document.getElementById("redColorBlock").firstElementChild.innerText = red;
+            document.getElementById("greenColorBlock").firstElementChild.innerText = green;
+            document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
+          }
+        </script>
+      </div>
+      <hr>
+      <label for="backgrounddimValue">Background Dimming</label>
+      <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = this.value" onmouseup="settings.saveToFile();">
+      <hr>
+      <input type="checkbox" name="sptrtoggle" id="songmenutorightToggle" onclick="settings.toggleSongPanelToRight(this.checked); settings.saveToFile();">
+      <label for="songmenutorightToggle">Right-hand Song Menu</label>
+      <sup>
+        Display the song menu to the right side of the screen and settings to the left.
       </sup>
       <hr>
-      <h2>Hue Bridge</h2>
-      <sup>If you own a Philips Hue Bridge, you can allow connection to your lights to be used in the storyboard.</sup>
-      <label>Bridge IP / Hostname</label>
-      <input type="text" name="huebridgeip" id="huebridgeipValue" placeholder="Bridge IP / Hostname" class="fancyinput">
-      <br>
-      <label>Bridge Username</label>
-      <input type="text" name="huebridgeuser" id="huebridgeuserValue" placeholder="Bridge Username" class="fancyinput">
-      <br>
-      <label>Bridge Client Key</label>
-      <input type="password" name="huebridgeclientkey" id="huebridgeclientkeyValue" placeholder="Bridge Client Key" class="fancyinput">
-      <button class="fancybutton" onclick="local_saveHue();">Save Hue Settings</button>
+      <label>Song Thumbnail Style</label><br>
+      <input type="radio" name="tnstyle" id="thumbnails=0" onclick="settings.thumbnails = 0; SongManager.refreshList(); settings.saveToFile();">
+      <label for="thumbnails=0">No Images</label><br>
+      <input type="radio" name="tnstyle" id="thumbnails=1" onclick="settings.thumbnails = 1; SongManager.refreshList(); settings.saveToFile();">
+      <label for="thumbnails=1">Thumbnails</label><br>
+      <sup>
+        Display background image next to the song name in the song list.<br>
+        If you're experiencing low performance, try to disable this.
+      </sup>
+      <input type="radio" name="tnstyle" id="thumbnails=2" onclick="settings.thumbnails = 2; SongManager.refreshList(); settings.saveToFile();">
+      <label for="thumbnails=2">Background Images</label>
+      <sup>
+        Display background image as the background behind the song name in the song list.<br>
+        If you're experiencing low performance, try to disable this.
+      </sup>
+      <hr>
       <script>
-        function local_saveHue() {
-          Settings.current.hueBridgeIp = document.getElementById('huebridgeipValue').value;
-          Settings.current.hueBridgeUser = document.getElementById('huebridgeuserValue').value;
-          Settings.current.hueBridgeClientKey = document.getElementById('huebridgeclientkeyValue').value;
-          Settings.current.saveToFile();
+        function local_advSettingsToggle(checked) {
+          document.getElementById("advancedToggleId").innerHTML = (checked ? "▼" : "►") + ` <span style="text-decoration: underline;">Advanced Settings</span>`;
         }
       </script>
-    </div>
-    <hr>
-    <h2>Module Toggling</h2>
-    <sup>
-      If you have any modules installed, they will appear here. You can enable them and disable them by changing the checkbox.<br>
-      Restarting Toxen is required to update the modules' state.
-    </sup>
-    <br>
-    <div id="moduleActivation"></div>
-    <br>
-    <button id="restartToxenButton" class="fancybutton" onclick="Toxen.restart()">Restart Toxen</button>
-    <hr>
-    <!-- <div id="changenotes">
-      <label>Change Notes</label>
+      <input type="checkbox" name="advtoggle" id="advancedToggle" onclick="settings.advanced = this.checked; local_advSettingsToggle(this.checked)" hidden>
+      <label title="Click to toggle advanced settings view" style="text-decoration: none;" for="advancedToggle" id="advancedToggleId">
+        ► <span style="text-decoration: underline;">Advanced Settings</span>
+      </label>
+      <div id="advancedoptions">
+        <input type="checkbox" name="tntoggle" id="discordpresenceshowdetailsToggle" onclick="settings.discordPresenceShowDetails = this.checked; updateDiscordPresence(); settings.saveToFile();">
+        <label for="discordpresenceshowdetailsToggle">Discord Presence: Show Details</label>
+        <sup>
+          Display the details of the current song playing in Discord Presence.
+          Details include Artist, Title, and current time.
+        </sup>
+        <input type="checkbox" name="avtoggle" id="frezevisualizerToggle" onclick="settings.freezeVisualizer = this.checked; settings.saveToFile();">
+        <label for="frezevisualizerToggle">Freeze Visualizer</label>
+        <sup>
+          Freeze the audio visualizer when the current song is paused.
+        </sup>
+        <hr>
+        <h2>Hue Bridge</h2>
+        <sup>If you own a Philips Hue Bridge, you can allow connection to your lights to be used in the storyboard.</sup>
+        <label>Bridge IP / Hostname</label>
+        <input type="text" name="huebridgeip" id="huebridgeipValue" placeholder="Bridge IP / Hostname" class="fancyinput">
+        <br>
+        <label>Bridge Username</label>
+        <input type="text" name="huebridgeuser" id="huebridgeuserValue" placeholder="Bridge Username" class="fancyinput">
+        <br>
+        <label>Bridge Client Key</label>
+        <input type="password" name="huebridgeclientkey" id="huebridgeclientkeyValue" placeholder="Bridge Client Key" class="fancyinput">
+        <button class="fancybutton" onclick="local_saveHue();">Save Hue Settings</button>
+        <script>
+          function local_saveHue() {
+            Settings.current.hueBridgeIp = document.getElementById('huebridgeipValue').value;
+            Settings.current.hueBridgeUser = document.getElementById('huebridgeuserValue').value;
+            Settings.current.hueBridgeClientKey = document.getElementById('huebridgeclientkeyValue').value;
+            Settings.current.saveToFile();
+          }
+        </script>
+      </div>
+      <hr>
+      <h2>Module Toggling</h2>
       <sup>
-        Version ID format: YYYYMMDDHHMM<br>
-        Newest Update First, descending.
+        If you have any modules installed, they will appear here. You can enable them and disable them by changing the checkbox.<br>
+        Restarting Toxen is required to update the modules' state.
       </sup>
+      <br>
+      <div id="moduleActivation"></div>
+      <br>
+      <button id="restartToxenButton" class="fancybutton" onclick="Toxen.restart()">Restart Toxen</button>
+      <hr>
+      <!-- <div id="changenotes">
+        <label>Change Notes</label>
+        <sup>
+          Version ID format: YYYYMMDDHHMM<br>
+          Newest Update First, descending.
+        </sup>
 
-      <p>202006040235</p>
-      <ul>
-        <li>Auto Updator!</li>
-        <li>Song Grouping</li>
-        <li>In-app editable Song Details: Artist, Title, Album, Source, Source Link, Language, and other Tags</li>
-        <li>Background Dim adjustments</li>
-        <li>New thumbnail option: Background Image</li>
-      </ul>
+        <p>202006040235</p>
+        <ul>
+          <li>Auto Updator!</li>
+          <li>Song Grouping</li>
+          <li>In-app editable Song Details: Artist, Title, Album, Source, Source Link, Language, and other Tags</li>
+          <li>Background Dim adjustments</li>
+          <li>New thumbnail option: Background Image</li>
+        </ul>
 
-      <p>202005310640</p>
-      <ul>
-        <li>Added YouTube Download feature
-          <ul>
-            <li>
-              Press on the <code>Add Song</code> button and press <code>Download YouTube Audio</code> when the prompt appears.<br>
-              Insert the required information such as URL and title. The required fields are marked with <code>*</code> in the placeholders.
-            </li>
-          </ul>
-        </li>
-        <li>Added <code>Discord Presense: Show Details</code> setting in <code>Advanced Settings</code></li>
-        <li>Added <code>Delete song</code> to the song context menu</li>
-        <li>Re-styled the text fields and progress bars, including the <code>Song Progress</code> bar</li>
-      </ul>
+        <p>202005310640</p>
+        <ul>
+          <li>Added YouTube Download feature
+            <ul>
+              <li>
+                Press on the <code>Add Song</code> button and press <code>Download YouTube Audio</code> when the prompt appears.<br>
+                Insert the required information such as URL and title. The required fields are marked with <code>*</code> in the placeholders.
+              </li>
+            </ul>
+          </li>
+          <li>Added <code>Discord Presense: Show Details</code> setting in <code>Advanced Settings</code></li>
+          <li>Added <code>Delete song</code> to the song context menu</li>
+          <li>Re-styled the text fields and progress bars, including the <code>Song Progress</code> bar</li>
+        </ul>
 
-      <p>202005281449</p>
-      <ul>
-        <li>Added <code>Set Background</code> functionality</li>
-        <li>Added <code>Song Info</code> to song context menu and editable information</li>
-        <li>Fixed <code>Currently playing</code> being deselected on <code>Update Music Library</code></li>
-      </ul>
-      
-      <p>202005280316</p>
-      <ul>
-        <li>Added Change notes under <code>Settings</code></li>
-        <li>Added multiple new settings along with descriptions
-          <ul>
-            <li>Volume Bar</li>
-            <li>Song Folder Selector</li>
-            <li>Right-hand Song Menu</li>
-          </ul>
-        </li>
-      </ul>
-      
-    </div> -->
+        <p>202005281449</p>
+        <ul>
+          <li>Added <code>Set Background</code> functionality</li>
+          <li>Added <code>Song Info</code> to song context menu and editable information</li>
+          <li>Fixed <code>Currently playing</code> being deselected on <code>Update Music Library</code></li>
+        </ul>
+        
+        <p>202005280316</p>
+        <ul>
+          <li>Added Change notes under <code>Settings</code></li>
+          <li>Added multiple new settings along with descriptions
+            <ul>
+              <li>Volume Bar</li>
+              <li>Song Folder Selector</li>
+              <li>Right-hand Song Menu</li>
+            </ul>
+          </li>
+        </ul>
+        
+      </div> -->
+    </div>
+    <p id="subtitles"></p>
   </div>
-  <p id="subtitles"></p>
 </body>
 </html>

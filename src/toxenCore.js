@@ -2,7 +2,7 @@
 // It is NOT relative to the HTML file or script file.
 const fs = require("fs");
 const rimraf = require("rimraf");
-const { Popup } = require("ionlib");
+// const { Popup } = require("ionlib");
 const { TextEditor } = require("./texteditor");
 // const fetch = require("node-fetch").default;
 const hue = require("node-hue-api").v3;
@@ -54,6 +54,13 @@ class Toxen {
   static restart() {
     app.relaunch();
     app.exit();
+  }
+
+  /**
+   * Reloads the Toxen window immediately.
+   */
+  static reload() {
+    browserWindow.reload();
   }
 
   static eventEmitter = new EventEmitter({
@@ -331,8 +338,11 @@ class Settings {
       }
       self.saveToFile();
 
+      // Toxen.reload();
       SongManager.search();
-      SongManager.playRandom();
+      setTimeout(() => {
+        SongManager.playRandom();
+      }, 10);
     });
   }
 
@@ -808,7 +818,7 @@ class Song {
     this.focus();
 
     // if (SongManager.player.getAttribute("songid") != id) {
-    if (cur && cur.songId != id) {
+    if (cur == null || cur.songId != id) {
       Toxen.emit("play", this);
       SongManager.player.setAttribute("songid", id);
       if (this.isVideo) {
@@ -1432,7 +1442,7 @@ class SongManager {
               song.txnScript = file.name + "/" + item;
             }
             // Graphical background file
-            if (item.endsWith(".png") || item.endsWith(".jpg") || item.endsWith(".jpeg")) {
+            if (item.endsWith(".png") || item.endsWith(".jpg") || item.endsWith(".jpeg") || item.endsWith(".gif")) {
               song.background = file.name + "/" + item;
             }
             if (item == "details.json") {
@@ -1623,7 +1633,10 @@ class SongManager {
     let curSong = SongManager.getCurrentlyPlayingSong();
     while (curSong && song.songId === curSong.songId && _songs.length > 1) {
       song = _songs[Math.floor(Math.random() * _songs.length)];
+      console.log("Check: " + song.details.title);
+      
     }
+    console.log("Final: " + song.details.title);
     if (song instanceof Song) song.play();
     else console.error("No songs are playable");
   }
@@ -2171,7 +2184,8 @@ class SongManager {
           "extensions": [
             "jpg",
             "jpeg",
-            "png"
+            "png",
+            "gif"
           ]
         }
       ]
@@ -2500,6 +2514,8 @@ const menus = {
           if (songGroup instanceof SongGroup) {
             SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
             songGroup.collapsed = false;
+            songGroup.focus();
+            Effect.flashElement(songGroup.element);
           }
         }
       },
@@ -2565,6 +2581,17 @@ function reloadMenu() {
             Toxen.restart();
           },
           accelerator: "CTRL + F5"
+        },
+        {
+          type: "separator"
+        },
+        {
+          label:"Statistics",
+          click(){
+            console.log(Statistics.current);
+            
+            Statistics.current.display();
+          }
         },
         {
           type: "separator"
@@ -2942,7 +2969,9 @@ class Pulse {
 
     this.left = leftDiv;
 
-    document.body.insertBefore(leftDiv, SongManager.player);
+    console.log(SongManager.player);
+    
+    SongManager.player.parentElement.insertBefore(leftDiv, SongManager.player);
 
     const rightDiv = document.createElement("div");
     rightDiv.style.position = "absolute";
@@ -2953,7 +2982,7 @@ class Pulse {
 
     this.right = rightDiv;
 
-    document.body.insertBefore(rightDiv, SongManager.player);
+    SongManager.player.parentElement.insertBefore(rightDiv, SongManager.player);
 
     this.allPulses.push(this);
   }
@@ -3832,8 +3861,12 @@ class ToxenScriptManager {
       return seconds;
     }
     catch (error) {
-      var n = new Popup("Music Script Error", "Unable to convert timestamp \"" + timestamp + "\" to a valid timing point.");
-      n.setButtonText("welp, fuck");
+      var p = new Prompt("Music Script Error", "Unable to convert timestamp \"" + timestamp + "\" to a valid timing point.");
+      const [btn] = p.addButtons("welp, fuck", "fancybutton");
+      btn.addEventListener("click", () => {
+        p.closeOnEscape();
+        p.close();
+      })
     }
   }
 
@@ -4027,7 +4060,7 @@ class Prompt {
   /**
    * 
    * @param {string} title 
-   * @param {HTMLElement | HTMLElement[] | string} description 
+   * @param {HTMLElement | HTMLElement[] | string | string[]} description 
    */
   constructor(title = null, description = null) {
     this.main = document.createElement("div");
@@ -4271,6 +4304,7 @@ class Prompt {
         this.close();
       }
     });
+    this.main.focus();
     return this;
   }
 }
@@ -4734,7 +4768,7 @@ class Statistics {
       }
     }
 
-    Statistics.current = object;
+    Statistics.current = this;
   }
 
   /**
@@ -4774,7 +4808,19 @@ class Statistics {
       if (this.hasOwnProperty(key) && object.hasOwnProperty(key)) {
         this[key] = object[key];
       }
-    }
+    }    
+  }
+
+  display() {
+    let p = new Prompt("Statistics", [
+      `Songs: ${this.songCount}`,
+      `Song length: ${this.collectiveSongLengthAsStamp}`,
+      `Songs played: ${this.songsPlayed}`,
+      `Modules installed: ${this.modulesInstalled}`,
+      `Modules enabled: ${this.modulesEnabled}`
+    ]);
+    p.closeOnEscape();
+    p.addButtons("Close", "fancybutton", true);
   }
 
   /**
@@ -4828,7 +4874,7 @@ class Statistics {
     SongManager.songList.forEach(s => {
       time += typeof s.details.songLength == "number" ? s.details.songLength : 0;
     });
-    return time;
+    return ToxenScriptManager.convertSecondsToDigitalClock(time);
   };
 
   songsPlayed = 0;

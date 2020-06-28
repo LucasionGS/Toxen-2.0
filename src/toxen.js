@@ -231,8 +231,13 @@ async function initialize() {
     
     if (ctrl && !shift && key == "s" || ctrl && !shift && key == "f") {
       settings.revealSongPanel();
-      document.getElementById("search").focus();
-      document.getElementById("search").scrollIntoViewIfNeeded();
+      /**
+       * @type {HTMLInputElement}
+       */
+      let search = document.getElementById("search");
+      search.focus();
+      search.setSelectionRange(0, search.value.length)
+      search.scrollIntoViewIfNeeded();
     }
 
     if (ctrl && key == " ") {
