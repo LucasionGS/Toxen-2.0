@@ -26,6 +26,7 @@ exports.TextEditor = class TextEditor {
         e.stopPropagation();
         let word = this.getWord();
         this.insert(this.currentSuggestion, word.start, word.end);
+        this.emit("finish", this.currentSuggestion);
         this.currentSuggestion = null;
         return;
       }
@@ -33,6 +34,42 @@ exports.TextEditor = class TextEditor {
       this.currentSuggestion = this.suggest();
       console.log(this.currentSuggestion);
     });
+  }
+
+  /**
+   * @typedef { "finish", "suggestion" } TextEditorEvents
+   * @type {{[eventName: string]: ((...any) => void)[]}}
+   */
+  _events = [];
+
+  /**
+   * Listen for an event
+   * @param {TextEditorEvents} event 
+   * @param {(...any) => void} cb 
+   */
+  on(event, cb) {
+    if (Array.isArray(this._events[event])) {
+      this._events[event].push(cb);
+    }
+    else {
+      this._events[event] = [cb];
+    }
+    return this;
+  }
+
+  /**
+   * Emit an event
+   * @param {TextEditorEvents} event 
+   * @param  {...any} args 
+   */
+  emit(event, ...args) {
+    if (Array.isArray(this._events[event])) {
+      for (let i = 0; i < this._events[event].length; i++) {
+        const cb = this._events[event][i];
+        cb(...args);
+      }
+    }
+    return this;
   }
   
   get isTextarea() {
@@ -58,32 +95,47 @@ exports.TextEditor = class TextEditor {
     let ss = this.textarea.selectionStart;
     let se = this.textarea.selectionEnd;
     let text = this.value;
-    // Starting
-    while(ss > 0 && /[\S]/g.test(text[ss])) {
-      ss--;
-    }
-    if (/[\s]/g.test(text[ss])) {
-      ss++;
-    }
-    
-    // Ending
-    while(se < text.length && /[\S]/g.test(text[se])) {
-      se++;
-    }
-    if (/[\s]/g.test(text[se])) {
-      se--;
-    }
+    if (ss == se) {
+      // Starting
+      if (/[\s]/g.test(text[ss])) ss--;
+      while(ss > 0 && /[\S]/g.test(text[ss])) {
+        ss--;
+      }
+      if (/[\s]/g.test(text[ss])) {
+        ss++;
+      }
+      
+      // Ending
+      while(se > ss && se < text.length && /[\S]/g.test(text[se])) {
+        se++;
+      }
+      // if (/[\s]/g.test(text[se])) {
+      //   se--;
+      // }
 
-    /**
-     * @type {Word}
-     */
-    let word = {
-      "word": text.substring(ss, se),
-      "start": ss,
-      "end": se,
-    };
+      /**
+       * @type {Word}
+       */
+      let word = {
+        "word": text.substring(ss, se),
+        "start": ss,
+        "end": se,
+      };
 
-    return word;
+      return word;
+    }
+    else {
+      /**
+       * @type {Word}
+       */
+      let word = {
+        "word": text.substring(ss, se),
+        "start": ss,
+        "end": se,
+      };
+
+      return word;
+    }
   }
 
   suggest() {
@@ -93,6 +145,9 @@ exports.TextEditor = class TextEditor {
       end
     } = this.getWord();
 
+    console.log(word, start, end);
+    
+
     if (word == "") {
       return null;
     }
@@ -100,6 +155,7 @@ exports.TextEditor = class TextEditor {
     for (let i = 0; i < this.suggestions.length; i++) {
       const suggestion = this.suggestions[i];
       if (suggestion.toLowerCase().startsWith(word.toLowerCase())) {
+        this.emit("suggestion", suggestion)
         return suggestion;
       }
     }
@@ -127,5 +183,6 @@ exports.TextEditor = class TextEditor {
     let part2 = value.substring(end, value.length);
 
     this.value = part1 + text + part2;
+    this.textarea.setSelectionRange(start + text.length, start + text.length);
   }
 }

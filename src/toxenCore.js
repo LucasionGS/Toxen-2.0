@@ -670,9 +670,6 @@ class Song {
       if (process.platform == "win32") {
         _path = _path.replace(/\\+/g, "/");
       }
-      // console.log(`url("${_path}")`);
-      
-      // this.element.style.backgroundImage = `url("${_path}")`;
       this.element.style.background = "linear-gradient(to right,  rgba(0, 0, 0, 1), rgba(0, 0, 0, 0) ), "
       +`url("${_path}"),` + "center center / cover no-repeat fixed";
     }
@@ -866,12 +863,10 @@ class Song {
               return;
             }
             let newName = fp.substring(0, fp.length - format.length) + "mp3";
-            console.log("Converting the file...");
             let p = new Prompt("First Time Convertion", "This song is in a different format than supported, "
             + "so it is being converted to a usable format.<br>Please allow a moment until it has been converted...");
             p.addButtons("Close", null, true);
             src.toFormat("mp3").saveToFile(newName).on("end", () => {
-              console.log("Finished!");
               SongManager.player.src = newName;
               p.close();
               new Prompt("Convertion Completed.");
@@ -884,7 +879,7 @@ class Song {
           }
         }
       }
-      SongManager.player.play().catch(err => console.log(err));
+      SongManager.player.play().catch(err => console.error(err));
       Storyboard.setBackground(this.getFullPath("background"));
       const _d = document.createElement("div");
       _d.innerHTML = Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
@@ -1057,7 +1052,6 @@ class Song {
     if (!Array.isArray(this.details.playlists)) {
       this.details.playlists = [];
     }
-    console.log(list.childNodes);
     
     // Removing already in.
     for (let i = 0; i < list.childNodes.length; i++) {
@@ -1097,9 +1091,9 @@ class Song {
     SongManager.songList = SongManager.songList.filter(s => s.songId !== this.songId);
     SongManager.saveToFile();
     SongManager.refreshList();
+    let self = this;
     function _removeSong() {
-      rimraf.sync(path);
-      console.log("removed");
+      rimraf.sync(self.getFullPath("path"));
     }
     try {
       _removeSong();
@@ -1632,11 +1626,8 @@ class SongManager {
     let song = _songs[Math.floor(Math.random() * _songs.length)];
     let curSong = SongManager.getCurrentlyPlayingSong();
     while (curSong && song.songId === curSong.songId && _songs.length > 1) {
-      song = _songs[Math.floor(Math.random() * _songs.length)];
-      console.log("Check: " + song.details.title);
-      
+      song = _songs[Math.floor(Math.random() * _songs.length)]; 
     }
-    console.log("Final: " + song.details.title);
     if (song instanceof Song) song.play();
     else console.error("No songs are playable");
   }
@@ -1859,8 +1850,6 @@ class SongManager {
            * @param {File} file 
            */
           function importFile(file) {
-            console.log(file);
-            
             let ext;
             let fileNoExt = (function() {
               let a = file.name.split(".");
@@ -2103,7 +2092,6 @@ class SongManager {
         if (cancelledByUser == true) {
           return;
         }
-        console.log("Finshed");
         SongManager.songList.push(song);
         SongManager.refreshList();
         song.play();
@@ -2126,9 +2114,7 @@ class SongManager {
       })
 
       audio.on("progress", (chunk, downloaded, total) => {
-        const percent = downloaded / total;
-        // console.log(`${(percent * 100).toFixed(2)}% downloaded `);
-        // let percentText = (percent * 100).toFixed(2);
+        // const percent = downloaded / total;
         ytProgressBar.max = total;
         ytProgressBar.value = downloaded;
       });
@@ -2588,8 +2574,6 @@ function reloadMenu() {
         {
           label:"Statistics",
           click(){
-            console.log(Statistics.current);
-            
             Statistics.current.display();
           }
         },
@@ -2968,8 +2952,6 @@ class Pulse {
     leftDiv.style.height = "100vh";
 
     this.left = leftDiv;
-
-    console.log(SongManager.player);
     
     SongManager.player.parentElement.insertBefore(leftDiv, SongManager.player);
 
@@ -3450,18 +3432,11 @@ class ToxenScriptManager {
           maxPerSecond = 1;
           let mspb = 1000 / bps;
           let beatCount = (endPoint - startPoint) * 1000 / mspb;
-          // console.log(
-          //   bpm,
-          //   bps,
-          //   mspb,
-          //   beatCount
-          // );
           
           for (let i = 0; i < beatCount; i++) {
             let st = +(startPoint + (i * (mspb / 1000))).toFixed(3);
             let et = +(startPoint + ((i + 1) * (mspb / 1000))).toFixed(3);
             let cmd = `[${st} - ${et}] Pulse => "${intensity}"`;
-            // console.log(cmd);
             lineParser(cmd);
           }
 
@@ -3741,7 +3716,6 @@ class ToxenScriptManager {
       if (ipAddress && hueUser && hueUser.username && hueUser.clientKey) {
         hueApi = await hue.api.createInsecureLocal(ipAddress).connect(hueUser.username, hueUser.clientKey);
         console.log("Hue is now connected.");
-        console.log(hueApi);
       }
       else {
         console.error("Missing arguments. Please make sure all the data is correct.\n" +
@@ -3847,7 +3821,6 @@ class ToxenScriptManager {
       if (regex.hasOwnProperty(key)) {
         const obj = regex[key];
         code = code.replace(obj.expression, obj.function);
-        // console.log("Checking " + obj.expression.source);
       }
     }
 
@@ -4409,11 +4382,8 @@ class Update {
             try {
               if (!e.isDirectory) {
                 file.extractEntryTo(e, "./", true, true);
-                console.log(e.entryName);
               }
-            } catch (error) {
-              // console.log(e.entryName + " ignored");
-            }
+            } catch (error) { /* Ignored */ }
           });
         } catch (err) {
           console.error(err);
@@ -4471,7 +4441,6 @@ class ScriptEditor {
         ScriptEditor.window = null;
         browserWindow.webContents.send("updatediscordpresence");
       });
-      // console.log("Made window");
     }
     if (ScriptEditor.window.isVisible()) {
       dialog.showErrorBox("Editor already open", "Close down the previous editor before opening a new one.");
@@ -5016,9 +4985,6 @@ function showTutorial() {
   end.classList.add("color-red");
   next.addEventListener("click", () => {
     showStep(++currentStep);
-  });
-  prompt.main.addEventListener("keydown", (e) => {
-    console.log(e.key);
   });
   end.addEventListener("click", () => {
     Settings.current.showTutorialOnStart = false;

@@ -1,6 +1,7 @@
 const fs = require("fs");
 const { Popup } = require("ionlib");
 const electron = require("electron");
+const { TextEditor } = require("../texteditor");
 const { ScriptEditor, Song, ToxenScriptManager } = require("../toxenCore.js");
 const Imd = require("../ionMarkDown").Imd;
 const { remote, shell, ipcRenderer } = electron;
@@ -17,6 +18,11 @@ var song;
  */
 var editor;
 
+/**
+ * @type {TextEditor}
+ */
+var textEditor;
+
 window.addEventListener("load", () => {
   browserWindow.getParentWindow().webContents.send("editor.request.data", true);
 });
@@ -32,7 +38,9 @@ ipcRenderer.on("editor.song",
   let _eventFunctions = {};
   validSyntax.forEach(v => {
     _eventFunctions[v] = null;
-  })
+  });
+
+  
   ToxenScriptManager.eventFunctions = _eventFunctions;
   song = JSON.parse(_song);
   document.getElementById("info").innerHTML = Imd.MarkDownToHTML(song.details.artist + " - " + song.details.title) + "<br>" + `<code>${song.txnScript}</code>`;
@@ -46,6 +54,19 @@ ipcRenderer.on("editor.song",
   editor.textarea.disabled = false;
   editor.updateOverlay();
   editor.focus();
+
+  // Audio Completer
+  textEditor = new TextEditor(editor.textarea);
+
+  textEditor.suggestions = validSyntax;
+
+  textEditor.on("finish", () => {
+    setTimeout(() => {
+      console.log("Called!");
+      
+      editor.updateOverlay();
+    }, 1);
+  })
 
   // Create Menu
   browserWindow.setMenu(Menu.buildFromTemplate([
