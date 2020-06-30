@@ -125,6 +125,9 @@ class Settings {
 
   loadFromFile(fileLocation = "./data/settings.json") {
     try {
+      if (!fs.existsSync(path.dirname(fileLocation))) {
+        fs.mkdirSync(path.dirname(fileLocation), {recursive: true});
+      }
       if (!fs.existsSync(fileLocation)) {
         fs.writeFileSync(fileLocation, "{}");
       }
@@ -4775,8 +4778,11 @@ class Statistics {
    * Load the statistics from the `stats.json` file and return new object.
    */
   static loadFromFile(statsFile = "./data/stats.json") {
+    if (!fs.existsSync(path.dirname(statsFile))) {
+      fs.mkdirSync(path.dirname(statsFile), {recursive: true});
+    }
     if (!fs.existsSync(statsFile)) {
-      console.error("No existing file! Creating file");
+      console.log("No existing file! Creating file");
       let s = new Statistics({});
       s.save();
       return s;
