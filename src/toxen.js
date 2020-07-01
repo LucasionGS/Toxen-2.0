@@ -22,7 +22,7 @@ const process = require("process");
 const rpc = require("discord-rpc");
 // const Imd = require("./ionMarkDown").Imd;
 const version = require("./version.json");
-const { remote, ipcRenderer } = require("electron");
+const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;
 
 // Discord RPC

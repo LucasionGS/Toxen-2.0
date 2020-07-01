@@ -21,6 +21,7 @@ const ion = require("ionodelib");
 const Zip = require("adm-zip");
 const { EventEmitter } = require("events");
 const browserWindow = remote.getCurrentWindow();
+const commandExists = require("command-exists");
 
 /**
  * @type {"win"|"linux"|"mac"}
@@ -63,21 +64,109 @@ class Toxen {
     browserWindow.reload();
   }
 
+  static ffmpegAvailable() {
+    return !Settings.current.ffmpegPath && !commandExists.sync("ffmpeg");
+  }
+
+  static ffmpegPath() {
+    return Settings.current.ffmpegPath ? Settings.current.ffmpegPath : commandExists.sync("ffmpeg") ? "ffmpeg" : null;
+  }
+
+  /**
+   * Prompts you for installation of ffmpeg to your system.
+   * 
+   * Windows: `\Users\%User%\ffmpeg`  
+   * Linux && Mac: `/home/%user%/ffmpeg`
+   */
+  static async ffmpegDownload() {
+    Prompt.close("ffmpegdownload");
+    let p = new Prompt(
+      "Install FFMPEG",
+      "FFMPEG is a tool for media conversion and editing, and Toxen is dependent on this software to modify media files.",
+    );
+    p.name = "ffmpegdownload";
+    p.addContent(updatePlatform === "win" ?
+    "Do you want Toxen to install FFMPEG automatically?<br><br><code>If you already have it installed in the correct location, it'll just be applied and used instead.</code>":
+`You'll need to go to <a href="#ffmpeg" onclick="shell.openExternal(this.innerText)">https://ffmpeg.org/download.html</a> to install FFMPEG and you should either set it as a global command, or open the settings panel, go under <b>Advanced Settings</b>, and find the executable ffmpeg file after installation.
+<br><br>
+<code>If you already have FFMPEG installed elsewhere on this computer, find it and set it's path in settings as described above.</code>`)
+    let [install, cancel] = p.addButtons(["Install", "Cancel"], "fancybutton", true);
+    install.classList.add("color-green");
+    install.addEventListener("click", () => {
+      p.return("Install!", false);
+      install.disabled = true;
+      cancel.disabled = true;
+    });
+    cancel.addEventListener("click", () => {
+      p.close();
+    });
+
+    return p.promise.then(async v => {
+      let installationPath = process.env.HOME ? path.resolve(process.env.HOME + "/.ffmpeg/ffmpeg.exe") : null;
+      let installationUrl = "https://toxen.net/download/extra/ffmpeg/win/ffmpeg.exe";
+      if (fs.existsSync(installationPath)) {
+        p.headerText = "FFMPEG found";
+        p.setContent("FFMPEG found and applied");
+        Settings.current.ffmpegPath = installationPath;
+        await Settings.current.saveToFile();
+        Settings.current.applySettingsToPanel();
+        p.clearButtons();
+        p.close(2000);
+        return true;
+      }
+      else {
+        fs.mkdirSync(path.dirname(installationPath), { recursive: true });
+        let dl = new ion.Download(installationUrl, installationPath);
+        dl.start();
+
+        dl.onData = () => {
+          p.setContent(`Downloading FFMPEG... ${dl.downloadPercent().toFixed(2)}%`)
+        }
+        dl.onEnd = async () => {
+          p.addContent(`Download Finished! You can now use FFMPEG functionality with Toxen`);
+          Settings.current.ffmpegPath = installationPath;
+          await Settings.current.saveToFile();
+          Settings.current.applySettingsToPanel();
+          p.clearButtons();
+          p.close(2000);
+        }
+      }
+      if (installationPath === null) {
+        p.close();
+        new Prompt("Unable to install", "No suitable location found." /* Change this to ask for location later */)
+        .addButtons("Close", "fancybutton", true);
+        return;
+      }
+    }).catch(console.error);
+  }
+
   static eventEmitter = new EventEmitter({
     "captureRejections": true
   });
 
   /**
    * Listen for an event
-   * @type {import("./toxenOnEvent")["on"]}
+   * @type {{
+      (event: string, callback: (...any: any[]) => void): void;
+      (event: "play", callback: (song: Song) => void): void;
+      (event: "pause", callback: () => void): void;
+      (event: "unpause", callback: () => void): void;
+    }}
    */
   static on = (event, callback) => {
-    Toxen.eventEmitter.on(event, callback)
+    Toxen.eventEmitter.on(event, callback);
   }
   
   /**
    * Emit an event.
-   * @type {import("./toxenOnEvent")["emit"]}
+   * @type {{
+      (event: string, ...args: any[]): void;
+      (event: "play", song: Song): void;
+      (event: "pause"): void;
+      (event: "unpause"): void;
+    }}
+   * @param {string} event
+   * @param {any[]} args
    */
   static emit = (event, args) => {
     if (Array.isArray(args)) {
@@ -429,6 +518,25 @@ class Settings {
     return this.songMenuToRight;
   }
 
+  selectFFMPEGPath() {
+    let self = this;
+    dialog.showOpenDialog(remote.getCurrentWindow(), {
+      "buttonLabel": "Select File",
+      "properties": [
+        "openFile"
+      ],
+      "message": "Select FFMPEG executable"
+    })
+    .then(async value => {
+      if (value.filePaths.length == 0) {
+        return;
+      }
+      self.ffmpegPath = path.resolve(value.filePaths[0]);
+      document.querySelector("input#ffmpegpathValue").value = self.ffmpegPath;
+      self.saveToFile();
+    });
+  }
+
   // 
   // All Settings
   // 
@@ -573,6 +681,10 @@ class Settings {
    * Display the tutorial the first time toxen launches.
    */
   showTutorialOnStart = true;
+  /**
+   * Custom path to the user's FFMPEG file.
+   */
+  ffmpegPath = null;
 }
 
 /**
@@ -585,6 +697,14 @@ class HTMLSongElement extends HTMLDivElement {
    * @type {Song}
    */
   song;
+}
+
+class HTMLPromptElement extends HTMLDivElement {
+  /**
+   * Prompt object that belongs to this element.
+   * @type {Prompt}
+   */
+  prompt;
 }
 
 class Song {
@@ -849,10 +969,14 @@ class Song {
             SongManager.player.src = newSrc;
           }
           else {
-
-            // if (ffmpeg) {
-              
-            // }
+            
+            if (Toxen.ffmpegAvailable()) {
+              ffmpeg.setFfmpegPath(Toxen.ffmpegPath())
+            }
+            else {
+              Toxen.ffmpegDownload();
+              return;
+            }
 
             const format = fp.split(".")[fp.split(".").length - 1];
             /**
@@ -4100,10 +4224,42 @@ class Prompt {
     this.main.style.overflow = "auto";
 
     document.body.appendChild(this.main);
+
+    this.main.prompt = this;
+
+    // Promise based
+    this.promise = new Promise((res, rej) => {
+      this._res = res;
+      this._rej = rej;
+
+      this.return = (returnValue, close) => {
+        this._res(returnValue);
+        if (close === true || close === undefined) {
+          this.close();
+        }
+        if (typeof close === "number") {
+          this.close(close);
+        }
+      }
+    });
+  }
+
+  set name(value) {
+    this.main.setAttribute("promptname", value);
+  }
+  get name() {
+    return this.main.getAttribute("promptname");
+  }
+
+  set id(value) {
+    this.main.setAttribute("promptid", value);
+  }
+  get id() {
+    return this.main.getAttribute("promptid");
   }
 
   /**
-   * @type {HTMLDivElement}
+   * @type {HTMLPromptElement}
    */
   main = null;
 
@@ -4130,7 +4286,27 @@ class Prompt {
   buttonsElement = null;
 
   /**
+   * Removes everything inside the content field and appends `content`.
    * 
+   * `Identical to Prompt.addContent, but it clears the content first.`
+   * @param {HTMLElement | string} content 
+   * @param {boolean} textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
+   */
+  setContent(content, textAsHTML = true) {
+    this.clearContent();
+    this.addContent(content, textAsHTML);
+  }
+
+  clearContent() {
+    this.contentElement.innerHTML = "";
+  }
+
+  clearButtons() {
+    this.buttonsElement.innerHTML = "";
+  }
+
+  /**
+   * Append content to the content field.
    * @param {HTMLElement | string} content 
    * @param {boolean} textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
    */
@@ -4153,6 +4329,7 @@ class Prompt {
     }
     
     this.contentElement.appendChild(element);
+    return this;
   }
 
   /**
@@ -4286,7 +4463,42 @@ class Prompt {
         this.main.parentElement.removeChild(this.main);
       }
     }
+    this._rej("Prompt closed");
     return this;
+  }
+
+  /**
+   * Close a prompt or more prompts using a `promptname`.
+   * 
+   * You can set a prompts name by setting `Prompt.name` to a string.
+   * @param {string} name 
+   */
+  static close(name) {
+    /**
+     * @type {HTMLPromptElement[]}
+     */
+    let ps = document.querySelectorAll(`div[promptname="${name}"]`);
+    for (let i = 0; i < ps.length; i++) {
+      const p = ps[i];
+      if (p.hasOwnProperty("prompt")) {
+        p.prompt.close();
+      }
+    }
+  }
+
+  /**
+   * @type {{
+      (returnValue: any) => void,
+      (returnValue: any, close: boolean) => void,
+      (returnValue: any, closeAfterMs: number) => void
+    }}
+   * @param {any} returnValue Return this value and resolve the promise stored in `Prompt.promise`
+   * @param {boolean | number} close If set to `false`, the prompt won't close on return.  
+   * If set to a number, it acts as milliseconds before it closes.
+   */
+  return = (returnValue, close = true) => {
+    // Do nothing initially.
+    // Set inside of @constructor
   }
 
   /**
@@ -5096,6 +5308,7 @@ function showTutorial() {
 exports.Toxen = Toxen;
 exports.Settings = Settings;
 exports.HTMLSongElement = HTMLSongElement;
+exports.HTMLPromptElement = HTMLPromptElement;
 exports.Song = Song;
 exports.SongManager = SongManager;
 exports.SongGroup = SongGroup;
