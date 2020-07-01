@@ -4,6 +4,7 @@
   --innerpanelcolor: #4b4b4b;
   --txtcolor: white;
   --playingSong: #00c843;
+  --songSelected: #008cff;
   --scrollbarColor: #1b1b1b;
   --scrollbarThumbColor: #353535;
   --scrollbarWidth: 24px;
@@ -152,6 +153,14 @@ div.sidebar:hover, div.sidebar[open] {
 #songselection div.musicitem:hover[playing] {
   background-color: var(--playingSong);
   filter: invert();
+}
+
+#songselection div.musicitem[selectedsong] div.innermusicitem {
+  background-color: var(--songSelected);
+}
+
+#songselection div.musicitem:hover[selectedsong] {
+  background-color: var(--songSelected);
 }
 
 #songselection div.musicitem:hover div.innermusicitem {

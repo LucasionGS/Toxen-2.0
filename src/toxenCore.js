@@ -736,13 +736,22 @@ class Song {
     });
   }
 
+  get selected() {
+    return this.element.hasAttribute("selectedsong");
+  }
+  set selected(value) {
+    this.element.toggleAttribute("selectedsong", value);
+  }
+
   /**
-   * Zip the entire song folder and save it as a `txs`
+   * Zip the entire song folder and save it as a `txs`.
+   * 
+   * if `location` is defined, no prompt for selecting location will appear, and will just export to the set location
+   * @param {string} location Location to save to.
    */
-  export() {
-    let txs = new Zip();
-    txs.addLocalFolder(this.getFullPath("path"));
-    let ans = dialog.showSaveDialogSync(browserWindow, {
+  export(location = null) {
+    let txs = this.createTxs();
+    let ans = typeof location === "string" ? location : dialog.showSaveDialogSync(browserWindow, {
       "title": "Save Toxen Song File",
       "buttonLabel": "Save Song",
       "filters": [
@@ -755,6 +764,12 @@ class Song {
       txs.writeZip(ans);
       shell.showItemInFolder(ans);
     }
+  }
+  
+  createTxs() {
+    let txs = new Zip();
+    txs.addLocalFolder(this.getFullPath("path"));
+    return txs;
   }
 
   refreshElement() {
@@ -1212,8 +1227,11 @@ class Song {
   }
 
   delete() {
-    while(SongManager.getCurrentlyPlayingSong().songId === this.songId && SongManager.songList.length > 1) {
-      SongManager.playNext();
+    while(SongManager.getCurrentlyPlayingSong().songId === this.songId && SongManager.playableSongs.length > 1) {
+      SongManager.playRandom();
+    }
+    if (SongManager.getCurrentlyPlayingSong().songId === this.songId) {
+      SongManager.player.src = "";
     }
     SongManager.songList = SongManager.songList.filter(s => s.songId !== this.songId);
     SongManager.saveToFile();
@@ -1258,6 +1276,48 @@ class SongManager {
    */
   static onlyVisibleSongList() {
     return Settings.current.onlyVisible && Settings.current.songGrouping > 0 ? SongManager.playableSongs.filter(s => s.getGroup() == null || s.getGroup().collapsed == false) : SongManager.playableSongs;
+  }
+
+  /**
+   * Export every song into a folder.
+   * @param {string} location
+   * @param {Song[]} songList
+   */
+  static async exportAll(location = null, songList = null) {
+    // Not yet implemented
+    let ans = typeof location === "string" ? location : dialog.showSaveDialogSync(browserWindow, {
+      "title": "Zip all Toxen songs into txs files",
+      "buttonLabel": "Zip Songs",
+      "filters": [
+        "zip"
+      ],
+      "defaultPath": "toxen_songs.zip"
+    });
+
+    let songs = Array.isArray(songList) ? songList : SongManager.songList;
+
+    if (typeof ans == "string") {
+      let zip = new Zip();
+      let p = new Prompt(`Exporting ${songs.length} songs...`, "This can take a while depending on how many songs you're exporting and your computer's speed.");
+      setTimeout(() => {
+        for (let i = 0; i < songs.length; i++) {
+          const song = songs[i];
+          zip.addFile(song.path + ".txs", song.createTxs().toBuffer());
+        }
+        zip.writeZip(ans);
+        p.close();
+        p = new Prompt(`All songs zipped and exported!`);
+        p.close(2000);
+        shell.showItemInFolder(ans);
+      }, 10);
+    }
+  }
+
+  /**
+   * Return all the song object that has selected enabled
+   */
+  static getSelectedSongs() {
+    return SongManager.songList.filter(s => s.element.hasAttribute("selectedsong"));
   }
 
   /**
@@ -2005,7 +2065,10 @@ class SongManager {
             fs.mkdirSync(songPath, {recursive: true});
             // let ws = fs.createWriteStream(songPath + "/" + file.name);
             fs.copyFileSync(file.path, songPath + "/" + file.name);
-            song.songId = SongManager.songList.length;
+            song.songId = SongManager.songList.length - 1;
+            do {
+              song.songId++;
+            } while(SongManager.songList.find(s => s.songId == song.songId));
             song.path = fileNoExt;
             song.songPath = song.getFullPath("path") + "/" + file.name;
             let parts = fileNoExt.split(" - ");
@@ -2029,6 +2092,7 @@ class SongManager {
             // song.saveDetails();
             song.focus();
             SongManager.refreshList();
+            song.play();
             p.close();
           }
           
@@ -4463,7 +4527,8 @@ class Prompt {
         this.main.parentElement.removeChild(this.main);
       }
     }
-    this._rej("Prompt closed");
+    this._res(null);
+    // this._rej("Prompt closed");
     return this;
   }
 
