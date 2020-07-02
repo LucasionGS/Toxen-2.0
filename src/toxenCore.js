@@ -4779,6 +4779,7 @@ class Update {
       // p.close();
       p.headerText = "Extracting update...";
       p.contentElement.innerText = "Toxen will be frozen for a bit and restart automatically when finished.";
+      p.clearButtons();
       
       setTimeout(async () => {
         let file = new Zip(path.resolve("./latest.zip"));
