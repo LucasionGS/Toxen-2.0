@@ -441,6 +441,21 @@ class Settings {
   /**
    * @param {boolean} force
    */
+  toggleVideo(force) {
+    if (typeof force == "boolean") {
+      Settings.current.video = force;
+    }
+    else {
+      Settings.current.video = SongManager.player.hidden;
+    }
+    
+    SongManager.player.hidden = !Settings.current.video;
+    return Settings.current.video;
+  }
+
+  /**
+   * @param {boolean} force
+   */
   toggleSongPanelLock(force) {
     /**
      * @type {HTMLButtonElement}
@@ -586,6 +601,11 @@ class Settings {
    * @type {boolean}
    */
   storyboard = true;
+  /**
+   * Show video as the background if it's available.
+   * @type {boolean}
+   */
+  video = true;
   /**
    * `true` Displays the advanced options.  
    * `false` Keep the advanced options hidden.

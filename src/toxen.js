@@ -124,16 +124,18 @@ async function initialize() {
     }
   }
 
+  
+  // Applying everything
+  SongManager.player = document.querySelector("#musicObject"); // Important to be done first
+  SongManager.player.volume = settings.volume / 100;
+  SongManager.songListElement = document.querySelector("#songselection");
+
   SongManager.toggleShuffle(settings.shuffle);
   SongManager.toggleRepeat(settings.repeat);
   SongManager.toggleOnlyVisible(settings.onlyVisible);
   settings.toggleSongPanelLock(settings.songMenuLocked);
+  settings.toggleVideo(settings.video);
   Storyboard.rgb(settings.visualizerColor.red, settings.visualizerColor.green, settings.visualizerColor.blue);
-
-  // Applying everything
-  SongManager.songListElement = document.querySelector("#songselection");
-  SongManager.player = document.querySelector("#musicObject");
-  SongManager.player.volume = settings.volume / 100;
 
   // Get songs from either database or scan folder.
   if (!settings.remote && !fs.existsSync(settings.songFolder+"/db.json")) {

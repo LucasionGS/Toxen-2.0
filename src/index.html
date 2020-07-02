@@ -194,6 +194,13 @@
         Display ToxenScript storyboards.<br>
         If you're experiencing low performance, try to disable this.
       </sup>
+      <br>
+      <input type="checkbox" name="videotoggle" id="videoToggle" onclick="settings.toggleVideo(this.checked); settings.saveToFile();">
+      <label for="videoToggle">Display Video</label>
+      <sup>
+        If your song is a video media, play it in the background.<br>
+        Turning this off will disable rendering of the video.
+      </sup>
       <label for="backgrounddimValue">Visualizer Color</label>
       <div class="flex">
         <div style="width: 48px;">
