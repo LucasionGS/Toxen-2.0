@@ -703,6 +703,7 @@ class Settings {
   showTutorialOnStart = true;
   /**
    * Custom path to the user's FFMPEG file.
+   * @type {string}
    */
   ffmpegPath = null;
 }
@@ -791,6 +792,141 @@ class Song {
 
   toggleSelect() {
     this.selected = !this.selected;
+  }
+
+  trim() {
+    if (Toxen.ffmpegAvailable()) {
+      ffmpeg.setFfmpegPath(Toxen.ffmpegPath())
+    }
+    else {
+      Toxen.ffmpegDownload();
+      return;
+    }
+
+    let start = document.createElement("input");
+    start.classList.add("fancyinput");
+    start.value = "0";
+    start.placeholder = "Seconds or timestamp (HH:MM:SS)";
+    let end = document.createElement("input");
+    end.classList.add("fancyinput");
+    end.value = ToxenScriptManager.convertSecondsToDigitalClock(this.details.songLength ? this.details.songLength : 60);
+    end.placeholder = "Seconds or timestamp (HH:MM:SS)";
+    let setCurStart = document.createElement("button");
+    setCurStart.classList.add("fancybutton");
+    setCurStart.innerText = "Use current time";
+    let setCurEnd = document.createElement("button");
+    setCurEnd.classList.add("fancybutton");
+    setCurEnd.innerText = "Use current time";
+
+    setCurStart.addEventListener("click", () => {
+      start.value = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.currentTime);
+    });
+    setCurEnd.addEventListener("click", () => {
+      end.value = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.currentTime);
+    });
+
+    /**
+     * @param {string} timestamp 
+     */
+    function verify(timestamp) {
+      try {
+        ToxenScriptManager.timeStampToSeconds(timestamp, true);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    let p = new Prompt(
+      "Trim song",
+       [
+         "You're about to trim \""+ this.parseName() +"\"<br><sup style='color: red'>This is going to make physical changes to your original file.</sup>",
+         "When should the song start?",
+         start,
+         setCurStart,
+         "When should it end?",
+         end,
+         setCurEnd,
+       ]
+    );
+
+    let [trim, close] = p.addButtons(["Trim", "Close"], "fancybutton", true);
+
+    start.addEventListener("input", () => {
+      let valid = verify(start.value);
+      if (valid) { start.style.color = "inherit"; trim.disabled = false; }
+      else { start.style.color = "red"; trim.disabled = true; }
+    });
+    end.addEventListener("input", () => {
+      let valid = verify(end.value);
+      if (valid) { end.style.color = "inherit"; trim.disabled = false; }
+      else { end.style.color = "red"; trim.disabled = true; }
+    });
+
+    trim.addEventListener("click", () => {
+      start.disabled = true;
+      end.disabled = true;
+      trim.disabled = true;
+      close.disabled = true;
+      p.return(true, false);
+      let sp = this.getFullPath("songPath");
+      let fc = ffmpeg(sp);
+      let tmpPath = path.resolve(path.dirname(sp) + "/tmp_" + path.basename(sp));
+
+      let ss = ToxenScriptManager.timeStampToSeconds(start.value);
+      let se = ToxenScriptManager.timeStampToSeconds(end.value) - ss;
+      fc.setStartTime(ss)
+      .addOption("-to " + se)
+      .saveToFile(tmpPath)
+      .on("start", () => {
+        p.headerText = "Trimming Song";
+        p.setContent("Starting FFMPEG...");
+        p.clearButtons();
+      })
+      .on("progress", (progress) => {
+        p.setContent(`Trimming song...<br>${((ToxenScriptManager.timeStampToSeconds(progress.timemark) / se) * 100).toFixed(2)}%`);
+      })
+      .on("end", () => {
+        p.setContent(`Trimmed song!`);
+        let curSong = SongManager.getCurrentlyPlayingSong();
+        if (curSong && curSong.songId === this.songId) {
+          SongManager.clearPlay();
+        }
+        rimraf(sp, (err) => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+          
+          fs.rename(tmpPath, sp, () => {
+            this.hash = Debug.generateRandomString(3);
+            this.play();
+          });
+        });
+        fc.kill();
+        p.close(2000);
+      })
+      .on("error", (err) => {
+        console.error(err);
+        fc.kill();
+      });
+      console.log(sp);
+      console.log(tmpPath);
+      console.log(fc._getArguments().join(" "));
+      // ffmpeg -ss 6.118 -i C:\Users\Lucas\Music\Nhato_-_Bad_Apple\audio.mp3 -y -to 9.528 C:\Users\Lucas\Music\Nhato_-_Bad_Apple\tmp_audio.mp3
+    });
+  }
+
+  /**
+   * Returns the full name for this song with parsed markdown, if any.
+   * 
+   * This is just a shortcut for:
+   * ```js
+   * Imd.MarkDownToHTML(this.details.artist) + " - " + Imd.MarkDownToHTML(this.details.title)
+   * ```
+   */
+  parseName() {
+    return Imd.MarkDownToHTML(this.details.artist) + " - " + Imd.MarkDownToHTML(this.details.title);
   }
 
   /**
@@ -968,6 +1104,7 @@ class Song {
     /**
      * The length of the song in seconds.  
      * **Note:** This value is automatically updated if it doesn't match the song's duration.
+     * @readonly
      */
     songLength: 0,
   };
@@ -992,9 +1129,15 @@ class Song {
   onplay(song) { }
 
   /**
+   * A randomly generated hash to cache files correctly.
+   */
+  hash = "";
+
+  /**
    * Play this song.
    */
-  play() {
+  play(hash = this.hash) {
+    if (typeof hash == "string" && hash.length > 0) hash = "?" + hash;
     let fp = this.getFullPath("songPath");
     let id = this.songId;
     let cur = SongManager.getCurrentlyPlayingSong();
@@ -1012,7 +1155,7 @@ class Song {
         if (source == null) {
           source = document.createElement("source");
         }
-        source.src = fp;
+        source.src = fp + hash;
         SongManager.player.removeAttribute("src");
         SongManager.player.appendChild(source);
         SongManager.player.load();
@@ -1022,7 +1165,7 @@ class Song {
           SongManager.player.innerHTML = "";
         }
         if (fp.toLowerCase().endsWith(".mp3")) {
-          SongManager.player.src = fp;
+          SongManager.player.src = fp + hash;
         }
         else if ([
           "wma",
@@ -1035,7 +1178,7 @@ class Song {
             }
           });
           if (newSrc != undefined) {
-            SongManager.player.src = newSrc;
+            SongManager.player.src = newSrc + hash;
           }
           else {
             
@@ -1063,7 +1206,7 @@ class Song {
             + "so it is being converted to a usable format.<br>Please allow a moment until it has been converted...");
             p.addButtons("Close", null, true);
             src.toFormat("mp3").saveToFile(newName).on("end", () => {
-              SongManager.player.src = newName;
+              SongManager.player.src = newName + hash;
               p.close();
               new Prompt("Convertion Completed.");
               this.play();
@@ -1373,6 +1516,16 @@ class SongManager {
    */
   static getSelectedSongs() {
     return SongManager.songList.filter(s => s.element.hasAttribute("selectedsong"));
+  }
+
+  /**
+   * Stops playing music and unoccupy the music files
+   */
+  static clearPlay() {
+    SongManager.player.pause();
+    SongManager.player.removeAttribute("songid");
+    SongManager.player.src = "";
+    SongManager.player.innerHTML = "";
   }
 
   /**
@@ -1823,7 +1976,7 @@ class SongManager {
    * @param {number} id Song ID
    */
   static getSong(id) {
-    return SongManager.songList.find((s, i) => s.songId == id);
+    return SongManager.songList.find(s => s.songId == id);
   }
 
   static getCurrentlyPlayingSong() {
@@ -2701,6 +2854,18 @@ const menus = {
         }
       },
       {
+        label: "Trim song",
+        click: (menuItem) => {
+          /**
+           * @type {Song}
+           */
+          const song = menuItem.songObject;
+          if (song instanceof Song) {
+            song.trim();
+          }
+        }
+      },
+      {
         label: "Delete song",
         click: (menuItem) => {
           /**
@@ -3289,8 +3454,7 @@ class Pulse {
 
     this.left = leftDiv;
     
-    SongManager.player.parentElement.insertBefore(leftDiv, SongManager.player);
-
+    
     const rightDiv = document.createElement("div");
     rightDiv.style.position = "absolute";
     rightDiv.style.top = "0";
@@ -3299,10 +3463,13 @@ class Pulse {
     rightDiv.style.height = "100vh";
 
     this.right = rightDiv;
-
-    SongManager.player.parentElement.insertBefore(rightDiv, SongManager.player);
-
+    
     this.allPulses.push(this);
+
+    setTimeout(() => {
+      SongManager.player.parentElement.insertBefore(leftDiv, SongManager.player);
+      SongManager.player.parentElement.insertBefore(rightDiv, SongManager.player);
+    }, 0);
   }
   /**
    * @type {HTMLDivElement}
@@ -3394,9 +3561,8 @@ class StoryboardObject {
  * @type {Pulse}
  */
 var testPulse;
-setTimeout(() => {
-  testPulse = new Pulse();
-}, 10);
+
+window.addEventListener("load", () => testPulse = new Pulse());
 
 /**
  * Toxen Script Manager
@@ -4167,7 +4333,8 @@ class ToxenScriptManager {
    * Convert a timestamp into seconds.
    * @param {string} timestamp Time in format "hh:mm:ss".
    */
-  static timeStampToSeconds(timestamp) {
+  static timeStampToSeconds(timestamp, throwError = false) {
+    if (typeof timestamp !== "string") timestamp += "";
     try {
       var seconds = 0;
       var parts = timestamp.split(":");
@@ -4190,12 +4357,18 @@ class ToxenScriptManager {
       return seconds;
     }
     catch (error) {
-      var p = new Prompt("Music Script Error", "Unable to convert timestamp \"" + timestamp + "\" to a valid timing point.");
-      const [btn] = p.addButtons("welp, fuck", "fancybutton");
-      btn.addEventListener("click", () => {
-        p.closeOnEscape();
-        p.close();
-      })
+      if (!throwError) {
+        var p = new Prompt("Music Script Error", "Unable to convert timestamp \"" + timestamp + "\" to a valid timing point.");
+        const [btn] = p.addButtons("welp, fuck", "fancybutton");
+        btn.addEventListener("click", () => {
+          p.closeOnEscape();
+          p.close();
+        });
+      }
+      else {
+        throw error;
+      }
+      return null;
     }
   }
 
@@ -4240,10 +4413,10 @@ class ToxenScriptManager {
       milliseconds -= 1000;
     }
     if (curNumber < 10) {
-      time += "0" + (curNumber) + ",";
+      time += "0" + (curNumber) + ".";
     }
     else {
-      time += curNumber + ",";
+      time += curNumber + ".";
     }
     curNumber = 0;
 
@@ -4389,7 +4562,7 @@ class Prompt {
   /**
    * 
    * @param {string} title 
-   * @param {HTMLElement | HTMLElement[] | string | string[]} description 
+   * @param {HTMLElement | (string | HTMLElement)[] | string} description 
    */
   constructor(title = null, description = null) {
     this.main = document.createElement("div");
