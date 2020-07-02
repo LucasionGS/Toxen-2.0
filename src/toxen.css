@@ -152,7 +152,7 @@ div.sidebar:hover, div.sidebar[open] {
 
 #songselection div.musicitem:hover[playing] {
   background-color: var(--playingSong);
-  filter: invert();
+  /* filter: invert(); */
 }
 
 #songselection div.musicitem[selectedsong] div.innermusicitem {
@@ -170,7 +170,8 @@ div.sidebar:hover, div.sidebar[open] {
   transform: translate(1%, -4px);
   width: 100%;
   box-shadow: 4px 4px 10px 10px var(--bgcolor);
-  background-color: var(--bgcolor);
+  /* background-color: var(--bgcolor); */
+  filter: brightness(0.75);
   cursor: pointer;
 }
 

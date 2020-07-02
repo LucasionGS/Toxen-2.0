@@ -1,9 +1,11 @@
 const { app, BrowserWindow, Menu, Tray, shell } = require('electron');
 const cp = require('child_process');
-// Auto updating
-require("update-electron-app")({
-  "repo": "LucasionGS/Toxen-2.0",
-});
+
+// Auto updating (Reenable when it works :/)
+// require("update-electron-app")({
+//   "repo": "LucasionGS/Toxen-2.0",
+// });
+
 // const process = require('process');
 // const fs = require('fs');
 const winWidth = 1280;

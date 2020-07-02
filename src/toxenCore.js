@@ -65,7 +65,7 @@ class Toxen {
   }
 
   static ffmpegAvailable() {
-    return !Settings.current.ffmpegPath && !commandExists.sync("ffmpeg");
+    return Settings.current.ffmpegPath != null || commandExists.sync("ffmpeg");
   }
 
   static ffmpegPath() {
@@ -721,18 +721,36 @@ class Song {
     this.element.appendChild(innerDiv);
     this.element.addEventListener("click", function(e) {
       e.preventDefault();
-      self.click();
+      if (e.ctrlKey) {
+        self.toggleSelect();
+      }
+      else {
+        SongManager.getSelectedSongs().forEach(s => s.deselect());
+        self.click();
+      }
     });
     this.element.addEventListener("contextmenu", function(e) {
       e.preventDefault();
       e.stopPropagation();
-      menus.songMenu.items.forEach(i => {
-        i.songObject = self;
-      });
-      menus.songMenu.popup({
-        "x": e.clientX,
-        "y": e.clientY
-      });
+      let selectedSongs = SongManager.getSelectedSongs();
+      if (selectedSongs.length == 0) {
+        menus.songMenu.items.forEach(i => {
+          i.songObject = self;
+        });
+        menus.songMenu.popup({
+          "x": e.clientX,
+          "y": e.clientY
+        });
+      }
+      else {
+        menus.selectedSongMenu.items.forEach(i => {
+          i.songObject = self;
+        });
+        menus.selectedSongMenu.popup({
+          "x": e.clientX,
+          "y": e.clientY
+        });
+      }
     });
   }
 
@@ -741,6 +759,18 @@ class Song {
   }
   set selected(value) {
     this.element.toggleAttribute("selectedsong", value);
+  }
+
+  select() {
+    this.selected = true;
+  }
+
+  deselect() {
+    this.selected = false;
+  }
+
+  toggleSelect() {
+    this.selected = !this.selected;
   }
 
   /**
@@ -949,6 +979,7 @@ class Song {
     let id = this.songId;
     let cur = SongManager.getCurrentlyPlayingSong();
     if (cur != null) cur.element.toggleAttribute("playing", false);
+    else SongManager.songList.forEach(s => s.element.toggleAttribute("playing", false));
     this.element.toggleAttribute("playing", true);
     this.focus();
 
@@ -973,7 +1004,10 @@ class Song {
         if (fp.toLowerCase().endsWith(".mp3")) {
           SongManager.player.src = fp;
         }
-        else {
+        else if ([
+          "wma",
+          "ogg"
+        ].find(a => fp.toLowerCase().endsWith("."+a)) != null) {
           let newSrc;
           fs.readdirSync(this.getFullPath("path")).forEach(f => {
             if (f.toLowerCase().endsWith(".mp3")) {
@@ -1178,7 +1212,9 @@ class Song {
     if (cpp != null) {
       cpp.collapsed = false;
     }
-    this.element.scrollIntoViewIfNeeded();
+    setTimeout(() => {
+      this.element.scrollIntoViewIfNeeded();
+    }, 0);
   }
 
   addToPlaylist() {
@@ -1284,17 +1320,16 @@ class SongManager {
    * @param {Song[]} songList
    */
   static async exportAll(location = null, songList = null) {
-    // Not yet implemented
+    let songs = Array.isArray(songList) ? songList : SongManager.songList;
     let ans = typeof location === "string" ? location : dialog.showSaveDialogSync(browserWindow, {
-      "title": "Zip all Toxen songs into txs files",
-      "buttonLabel": "Zip Songs",
+      "title": `Zip ${songs.length} Toxen song file${songs.length > 1 ? "s" : ""}`,
+      "buttonLabel": `Zip Song${songs.length > 1 ? "s" : ""}`,
       "filters": [
         "zip"
       ],
-      "defaultPath": "toxen_songs.zip"
+      "defaultPath": `toxen_song${songs.length > 1 ? "s" : ""}.zip`
     });
 
-    let songs = Array.isArray(songList) ? songList : SongManager.songList;
 
     if (typeof ans == "string") {
       let zip = new Zip();
@@ -1996,7 +2031,7 @@ class SongManager {
         let files = e.dataTransfer.files;
         for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
           const file = files[fileIndex];
-          importFile(file);
+          importFile(file, fileIndex == files.length - 1);
         }
         setTimeout(() => {
           SongManager.scanDirectory();
@@ -2022,7 +2057,7 @@ class SongManager {
               name: files[fileIndex].split(/\\|\//g).pop(),
               path: files[fileIndex]
             }
-            importFile(file);
+            importFile(file, fileIndex == files.length - 1);
           }
 
           setTimeout(() => {
@@ -2036,7 +2071,8 @@ class SongManager {
           /**
            * @param {File} file 
            */
-          function importFile(file) {
+          function importFile(file, playOnDone = true) {
+            const song = new Song();
             let ext;
             let fileNoExt = (function() {
               let a = file.name.split(".");
@@ -2065,10 +2101,10 @@ class SongManager {
             fs.mkdirSync(songPath, {recursive: true});
             // let ws = fs.createWriteStream(songPath + "/" + file.name);
             fs.copyFileSync(file.path, songPath + "/" + file.name);
-            song.songId = SongManager.songList.length - 1;
-            do {
+            song.songId = SongManager.songList.length;
+            while(SongManager.songList.find(s => s.songId == song.songId)) {
               song.songId++;
-            } while(SongManager.songList.find(s => s.songId == song.songId));
+            } 
             song.path = fileNoExt;
             song.songPath = song.getFullPath("path") + "/" + file.name;
             let parts = fileNoExt.split(" - ");
@@ -2090,13 +2126,15 @@ class SongManager {
             
             SongManager.songList.push(song);
             // song.saveDetails();
-            song.focus();
-            SongManager.refreshList();
-            song.play();
-            p.close();
+            if (playOnDone) {
+              // song.focus();
+              SongManager.refreshList();
+              p.close();
+              setTimeout(() => {
+                song.focus();
+              }, 10);
+            }
           }
-          
-      const song = new Song();
       
       return main;
     })());
@@ -2573,6 +2611,18 @@ const menus = {
         }
       },
       {
+        label: "Select/Deselect",
+        click: (menuItem) => {
+          /**
+           * @type {Song}
+           */
+          const song = menuItem.songObject;
+          if (song instanceof Song) {
+            song.toggleSelect();
+          }
+        }
+      },
+      {
         label: "Add to playlist...",
         click: (menuItem) => {
           /**
@@ -2655,6 +2705,81 @@ const menus = {
             }
             song.delete();
           }
+        }
+      },
+      {type: "separator"},
+      {
+        label: "Focus currently playing song.",
+        click: () => {
+          Settings.current.revealSongPanel();
+          SongManager.getCurrentlyPlayingSong().focus();
+        }
+      },
+    ]
+  ),
+  "selectedSongMenu": Menu.buildFromTemplate(
+    [
+      {
+        label: "Export songs",
+        click: (menuItem) => {
+          /**
+           * @type {Song[]}
+           */
+          const songs = SongManager.getSelectedSongs();
+
+          SongManager.exportAll(null, songs);
+        }
+      },
+      {
+        label: "Delete songs",
+        click: (menuItem) => {
+          /**
+           * @type {Song[]}
+           */
+          const songs = SongManager.getSelectedSongs();
+          let ans = dialog.showMessageBoxSync(remote.getCurrentWindow(),
+          {
+            "buttons": [
+              "Delete all",
+              "Cancel"
+            ],
+            "message": "Delete the following songs?:" + `${(function(){
+              let text = "";
+              for (let i = 0; i < songs.length; i++) {
+                const song = songs[i];
+                text += `\n"${song.details.artist} - ${song.details.title}"`;
+              }
+              return text;
+            })()}`,
+            "defaultId": 1,
+            "noLink": true
+          });
+
+          if (ans !== 0) {
+            return;
+          }
+          for (let i = 0; i < songs.length; i++) {
+            songs[i].delete();
+          }
+        }
+      },
+      {type: "separator"},
+      {
+        label: "Select/Deselect",
+        click: (menuItem) => {
+          /**
+           * @type {Song}
+           */
+          const song = menuItem.songObject;
+          if (song instanceof Song) {
+            song.toggleSelect();
+          }
+        }
+      },
+      {
+        label: "Deselect all",
+        click: (menuItem) => {
+          SongManager.getSelectedSongs().forEach(s => s.deselect());
         }
       },
       {type: "separator"},
