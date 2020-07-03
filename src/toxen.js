@@ -207,6 +207,18 @@ async function initialize() {
   })();
   //#endregion
 
+  /**
+   * @type {HTMLInputElement}
+   */
+  let search = document.getElementById("search");
+  search.addEventListener("keydown", e => {
+    let songs;
+    if (e.key == "Enter" && (songs = SongManager.onlyVisibleSongList()).length == 1 && songs[0].songId != SongManager.getCurrentlyPlayingSong().songId) {
+      songs[0].play();
+      search.blur();
+    }
+  })
+  
   // Shortcuts
   window.addEventListener("keydown", function(e) {
     let {
@@ -234,13 +246,9 @@ async function initialize() {
     if (ctrl && key == "r") {
       window.location.reload();
     }
-    
+
     if (ctrl && !shift && key == "s" || ctrl && !shift && key == "f") {
       settings.revealSongPanel();
-      /**
-       * @type {HTMLInputElement}
-       */
-      let search = document.getElementById("search");
       search.focus();
       search.setSelectionRange(0, search.value.length)
       search.scrollIntoViewIfNeeded();

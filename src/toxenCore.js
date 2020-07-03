@@ -3239,12 +3239,31 @@ function reloadMenu() {
       accelerator: "F12"
     },
     {
-      label:"Website",
-      click(){
-        //Open github page
-        shell.openExternal("https://toxen.net/");
-      }
-    }
+      label: "Help",
+      submenu: [
+        {
+          label:"Tutorial",
+          click(){
+            // Start Tutorial
+            shell.openExternal("https://discord.gg/TCDWjJS");
+          }
+        },
+        {
+          label:"Toxen.net Website",
+          click(){
+            // Open Toxen.net
+            shell.openExternal("https://toxen.net/");
+          }
+        },
+        {
+          label:"Official Discord",
+          click(){
+            // Open Discord Page
+            shell.openExternal("https://discord.gg/TCDWjJS");
+          }
+        },
+      ]
+    },
   ]);
   return menu;
 }
@@ -4060,7 +4079,7 @@ class ToxenScriptManager {
       }
       else {
         try {
-          let rgb = Debug.cssColorToRgb(args[0]);
+          let rgb = args[0].toLowerCase() == "default" ? Settings.current.visualizerColor : Debug.cssColorToRgb(args[0]);
           args[0] = rgb.red;
           args[1] = rgb.green;
           args[2] = rgb.blue;
@@ -4153,7 +4172,7 @@ class ToxenScriptManager {
       }
       else {
         try {
-          let rgb = Debug.cssColorToRgb(args[0]);
+          let rgb = args[1].toLowerCase() == "default" ? Settings.current.visualizerColor : Debug.cssColorToRgb(args[1]);
           args[4] = args[2];
           args[1] = rgb.red;
           args[2] = rgb.green;
@@ -4175,7 +4194,6 @@ class ToxenScriptManager {
     },
     /**
      * Change the color of a Hue Light and Visualizer.
-     * @param {[string | number, string | number, string | number, string | number, string | number]} args Arguments
      */
     hueandvisualizercolor: function (args) {
       if (!isNaN(args[1])) {
@@ -4185,7 +4203,7 @@ class ToxenScriptManager {
       }
       else {
         try {
-          let rgb = Debug.cssColorToRgb(args[0]);
+          let rgb = args[1].toLowerCase() == "default" ? Settings.current.visualizerColor : Debug.cssColorToRgb(args[1]);
           args[4] = args[2];
           args[1] = rgb.red;
           args[2] = rgb.green;
