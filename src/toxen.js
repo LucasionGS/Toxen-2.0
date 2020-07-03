@@ -104,6 +104,10 @@ async function initialize() {
   stats.load();
   stats.startSaveTimer();
 
+  Toxen.extraStyle = document.getElementById("extracss");
+
+  settings.setThemeBase(settings.lightThemeBase);
+
   // Check for update
   Update.check(version);
 
@@ -372,12 +376,13 @@ async function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong(
        */
       let options = {
         "details": `${ScriptEditor.window != null ? "Editing a storyboard" : song.isVideo ? "Watching a video" : "Listening to a song"} (vers. ${version})`,
-        "largeImageKey": "toxen"
+        "largeImageKey": Settings.current.lightThemeBase ? "toxenlight" : "toxen"
       };
       if (settings.discordPresenceShowDetails) {
-        options["startTimestamp"] = Date.now();
+        // options["startTimestamp"] = Date.now(); // For Time left
+        // options["endTimestamp"] = Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000; // For Time left
+        options["startTimestamp"] = Date.now() - (SongManager.player.currentTime * 1000); // For Time Elapsed
         options["details"] = (`${ScriptEditor.window != null ? "Editing " : song.isVideo ? "Watching " : "Listening to "}`) + `${song.details.artist} - ${song.details.title}`;
-        options["endTimestamp"] = Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000;
         options["state"] = (song.details.source ? `\nFrom ${song.details.source} ` : "") + `(Vers. ${version})`;
       }
       discord.setActivity(options);

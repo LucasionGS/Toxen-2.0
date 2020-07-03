@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="toxen.css">
+  <link rel="stylesheet" href="toxen.css" id="extracss">
   <script async src="toxen.js"></script>
   <title>Toxen 2.0</title>
 </head>
@@ -201,7 +202,16 @@
         If your song is a video media, play it in the background.<br>
         Turning this off will disable rendering of the video.
       </sup>
-      <label for="backgrounddimValue">Visualizer Color</label>
+      <br>
+      <label>Theme</label>
+      <br>
+      <input type="checkbox" name="avtoggle" id="lightthemebaseToggle" onclick="settings.setThemeBase(this.checked); settings.saveToFile();">
+      <label for="lightthemebaseToggle">Light Theme Base</label>
+      <sup>
+        Enable this to willingly burn your eyes up.
+      </sup>
+      <br>
+      <label>Visualizer Color</label>
       <div class="flex">
         <div style="width: 48px;">
           <label for="visualizercolor.redValue" style="text-align: center; width: 100%; display: block">Red</label>

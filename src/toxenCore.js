@@ -176,6 +176,18 @@ class Toxen {
       Toxen.eventEmitter.emit(event);
     }
   }
+
+  /**
+   * @type {HTMLLinkElement}
+   */
+  static extraStyle;
+
+  /**
+   * @param {string} src 
+   */
+  static setStyleSource(src) {
+    Toxen.extraStyle.href = src + (src ? "?" + Debug.generateRandomString(3) : "");
+  }
 }
 
 class Settings {
@@ -552,8 +564,23 @@ class Settings {
     });
   }
 
+  /**
+   * @param {Settings["lightThemeBase"]} base
+   */
+  setThemeBase(base) {
+    Settings.current.lightThemeBase = base;
+    browserWindow.setIcon(Settings.current.lightThemeBase ? "./iconlight.ico" : "./icon.ico");
+    if (Settings.current.lightThemeBase) {
+      Toxen.setStyleSource("./light.theme.css");
+    }
+    else {
+      Toxen.setStyleSource("");
+    }
+  }
+
   // 
   // All Settings
+  // @settings
   // 
   /**
    * Percentage to dim the background.
@@ -706,6 +733,13 @@ class Settings {
    * @type {string}
    */
   ffmpegPath = null;
+  /**
+   * Toggle light theme on Toxen.
+   * 
+   * Why would anyone do that..?
+   * @type {boolean}
+   */
+  lightThemeBase = false;
 }
 
 /**
@@ -3314,7 +3348,7 @@ class Storyboard {
         body.style.backgroundSize = "cover";
       }
       else {
-        var defImg = "../icon.png";
+        var defImg = Settings.current.lightThemeBase ? "../iconlight.png" : "../icon.png";
         Storyboard.currentBackground = defImg;
         if (!Settings.current.remote && fs.existsSync(Settings.current.songFolder + "/default.jpg")) {
           defImg = Settings.current.songFolder + "/default.jpg";
@@ -4463,11 +4497,13 @@ class Debug {
     let links = document.querySelectorAll("link");
     for (let i = 0; i < links.length; i++) {
       const link = links[i];
-      if (link.href.includes("?")) {
-        link.href = link.href.replace(/(?<=.+)\?.*/g, "?" + Debug.generateRandomString());
-      }
-      else {
-        link.href += "?" + Debug.generateRandomString();
+      if (/\.css(\?.*)?$/g.test(link.href)) {
+        if (link.href.includes("?")) {
+          link.href = link.href.replace(/(?<=.+)\?.*/g, "?" + Debug.generateRandomString());
+        }
+        else {
+          link.href += "?" + Debug.generateRandomString();
+        }
       }
     }
   }
@@ -4566,6 +4602,7 @@ class Prompt {
    */
   constructor(title = null, description = null) {
     this.main = document.createElement("div");
+    this.main.classList.add("promptmain")
     this.headerElement = document.createElement("h1");
     this.contentElement = document.createElement("div");
     this.buttonsElement = document.createElement("div");

@@ -1,0 +1,14 @@
+:root {
+  --bgcolor: white;
+  --panelcolor: white;
+  --innerpanelcolor: #FbFbFb;
+  --txtcolor: black;
+  --songTextColor: white;
+  --songTextShadowColor: 1px 1px 5px black;
+  --playingSong: #00c843;
+  --songSelected: #008cff;
+  --scrollbarColor: #eeeeee;
+  --scrollbarThumbColor: #757575;
+  --scrollbarWidth: 24px;
+  --buttonTextColor: black;
+}

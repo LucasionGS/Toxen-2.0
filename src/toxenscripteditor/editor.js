@@ -60,13 +60,15 @@ ipcRenderer.on("editor.song",
 
   textEditor.suggestions = validSyntax;
 
-  textEditor.on("finish", () => {
+  let updateAfterZero = () => {
     setTimeout(() => {
-      console.log("Called!");
-      
       editor.updateOverlay();
     }, 1);
-  })
+  };
+
+  textEditor.on("finish", updateAfterZero);
+  // textEditor.on("dupeline", updateAfterZero);
+  textEditor.on("insert", updateAfterZero);
 
   // Create Menu
   browserWindow.setMenu(Menu.buildFromTemplate([
@@ -166,13 +168,8 @@ class Editor {
     });
 
     // this.textarea.addEventListener("keydown", e => {
-    //   if (e.ctrlKey && e.key.toLowerCase() == "s") {
-    //     e.preventDefault();
-    //     this.save();
-    //   }
-    //   if (e.ctrlKey && e.key.toLowerCase() == "w") {
-    //     e.preventDefault();
-    //     browserWindow.close();
+    //   if (!e.ctrlKey && e.shiftKey && e.altKey && e.key.toLowerCase() == "arrowdown") {
+    //     textEditor.insert()
     //   }
     // });
   }

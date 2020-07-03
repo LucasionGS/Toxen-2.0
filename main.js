@@ -21,7 +21,7 @@ app.allowRendererProcessReuse = true; // Electron mad if i don't :(
 function createWindow () {
   // Create the browser window.
   win = new BrowserWindow({
-    title:"Toxen",
+    title: "Toxen",
     minWidth: 400,
     minHeight: 384,
     width: winWidth,

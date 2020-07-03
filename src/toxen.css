@@ -1,13 +1,21 @@
 :root {
+  --basefont: Arial, Helvetica, sans-serif;
+  --subtitleFont: var(--basefont);
   --bgcolor: #1b1b1b;
   --panelcolor: #2b2b2b;
   --innerpanelcolor: #4b4b4b;
   --txtcolor: white;
   --playingSong: #00c843;
+  --songTextColor: white;
+  --songTextShadowColor: 0px 0px 5px black;
   --songSelected: #008cff;
   --scrollbarColor: #1b1b1b;
   --scrollbarThumbColor: #353535;
   --scrollbarWidth: 24px;
+  --subtitleColor: white;
+  --subtitleShadow: 0px 0px 5px #000;
+  --subtitleBackgroundColor: rgba(0, 0, 0, 0.25);
+  --buttonTextColor: white;
 }
 
 body {
@@ -15,7 +23,7 @@ body {
   color: var(--txtcolor);
   margin: 0;
   padding: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--basefont);
   overflow: hidden;
 }
 
@@ -105,6 +113,8 @@ div.sidebar:hover, div.sidebar[open] {
   min-height: 1em;
   /* border: solid 1px white; */
   background-color: var(--innerpanelcolor);
+  color: var(--songTextColor);
+  text-shadow: var(--songTextShadowColor);
 }
 
 #songselection div.songgroup[collapsed] {
@@ -197,9 +207,11 @@ p#subtitles {
   text-align: center;
   width: 100%;
   padding: 0;
+  font-family: var(--subtitleFont);
   box-sizing: border-box;
-  background-color: rgba(0, 0, 0, 0.25);
-  text-shadow: 0px 0px 5px #000;
+  background-color: var(--subtitleBackgroundColor);
+  text-shadow: var(--subtitleShadow);
+  color: var(--subtitleColor);
   margin: auto;
 }
 
@@ -237,16 +249,23 @@ div.flex button{
   width: 100%;
 }
 
+.promptmain {
+  color: white;
+}
+
 button.fancybutton.color-red {
   background-color: red;
+  color: white;
 }
 
 button.fancybutton.color-green {
   background-color: green;
+  color: white;
 }
 
 button.fancybutton.color-blue {
   background-color: blue;
+  color: white;
 }
 
 button.fancybutton {
@@ -254,7 +273,7 @@ button.fancybutton {
   font-size: 16px;
   padding: 8px;
   background-color: var(--innerpanelcolor);
-  color: var(--txtcolor);
+  color: var(--buttonTextColor);
   border-color: var(--panelcolor);
 }
 
