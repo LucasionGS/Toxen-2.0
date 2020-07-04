@@ -4428,7 +4428,7 @@ class ToxenScriptManager {
    * Convert seconds to digital time format.
    * @param {number} seconds 
    */
-  static convertSecondsToDigitalClock(seconds) {
+  static convertSecondsToDigitalClock(seconds, trim = false) {
     var milliseconds = seconds * 1000;
     var time = "";
     var curNumber = 0;
@@ -4484,6 +4484,9 @@ class ToxenScriptManager {
       time += "00" + milliseconds;
     }
 
+    while(trim == true && time.startsWith("00:")) {
+      time = time.substring(3);
+    }
     return time;
   }
 
@@ -4610,6 +4613,20 @@ class Debug {
   static cssColorToRgb(str){
     return Debug.hexToRgb(Debug.cssColorToHex(str));
   }
+
+  /**
+ * Wait `ms` milliseconds.
+ * @param {number} ms 
+ */
+static async wait(ms) {
+  var resolve;
+  setTimeout(() => {
+    resolve();
+  }, ms);
+  return new Promise((res => {
+    resolve = res;
+  }));
+}
 }
 
 class Prompt {
@@ -5063,12 +5080,16 @@ ipcRenderer.on("editor.save", () => {
   ToxenScriptManager.loadCurrentScript();
 });
 
+ipcRenderer.on("editor.request.currenttime", () => {
+  ScriptEditor.window.webContents.send( "editor.response.currenttime", SongManager.player.currentTime);
+});
+
 ipcRenderer.on("editor.request.data", () => {
   let element = ScriptEditor.currentSong.element;
   let txnScript = ScriptEditor.currentSong.txnScript;
   ScriptEditor.currentSong.txnScript = ScriptEditor.currentSong.getFullPath("txnScript");
   ScriptEditor.currentSong.element = null;
-  ScriptEditor.window.webContents.send("editor.song", JSON.stringify(ScriptEditor.currentSong), ToxenScriptManager.getEventNames());
+  ScriptEditor.window.webContents.send("editor.response.data", JSON.stringify(ScriptEditor.currentSong), ToxenScriptManager.getEventNames());
   ScriptEditor.currentSong.txnScript = txnScript;
   ScriptEditor.currentSong.element = element;
 });

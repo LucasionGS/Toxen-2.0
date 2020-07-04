@@ -29,7 +29,7 @@ window.addEventListener("load", () => {
 
 var saveOnQuit = true;
 
-ipcRenderer.on("editor.song",
+ipcRenderer.on("editor.response.data",
 /**
  * @param {string} _song
  * @param {string[]} validSyntax
@@ -69,6 +69,8 @@ ipcRenderer.on("editor.song",
   textEditor.on("finish", updateAfterZero);
   // textEditor.on("dupeline", updateAfterZero);
   textEditor.on("insert", updateAfterZero);
+  textEditor.on("undo", updateAfterZero);
+  textEditor.on("redo", updateAfterZero);
 
   // Create Menu
   browserWindow.setMenu(Menu.buildFromTemplate([
@@ -97,6 +99,13 @@ ipcRenderer.on("editor.song",
           accelerator: "Ctrl + w",
         },
         {
+          label: "Reload Window",
+          click: function() {
+            browserWindow.reload();
+          },
+          accelerator: "Ctrl + r",
+        },
+        {
           label: "Close Editor",
           click: function() {
             saveOnQuit = false;
@@ -113,7 +122,8 @@ ipcRenderer.on("editor.song",
           label: "Toggle Developer Tools",
           click: function() {
             browserWindow.webContents.toggleDevTools();
-          }
+          },
+          "accelerator": "F12"
         }
       ]
     },
@@ -167,11 +177,19 @@ class Editor {
       self.updateOverlay();
     });
 
-    // this.textarea.addEventListener("keydown", e => {
-    //   if (!e.ctrlKey && e.shiftKey && e.altKey && e.key.toLowerCase() == "arrowdown") {
-    //     textEditor.insert()
-    //   }
-    // });
+    this.textarea.addEventListener("keydown", e => {
+      if (e.key.toLowerCase() == "t" && e.ctrlKey && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        browserWindow.getParentWindow().webContents.send("editor.request.currenttime", true);
+
+        ipcRenderer.once("editor.response.currenttime", (e, /** @type {number} */ time) => {
+          let c = textEditor.getCursor();
+          let text = ToxenScriptManager.convertSecondsToDigitalClock(time, true);
+          textEditor.insert(text, c.start, c.end);
+          textEditor.setCursor(c.start, c.start + text.length);
+        });
+      }
+    });
   }
 
   focus() {

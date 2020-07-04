@@ -34,20 +34,6 @@ discord.on("ready", () => {
   discordReady = true;
 });
 
-/**
- * Wait `ms` milliseconds.
- * @param {number} ms 
- */
-async function wait(ms) {
-  var resolve;
-  setTimeout(() => {
-    resolve();
-  }, ms);
-  return new Promise((res => {
-    resolve = res;
-  }));
-}
-
 discordApplicationLogin();
 function discordApplicationLogin(attempts = 3) {
   let tries = 0;
@@ -120,7 +106,7 @@ async function initialize() {
     updateDiscordPresence(song);
 
     while(isNaN(SongManager.player.duration)) {
-      await wait(1); 
+      await Debug.wait(1); 
     }
     if (song.details.songLength != SongManager.player.duration) {
       song.details.songLength = SongManager.player.duration;
@@ -172,15 +158,16 @@ async function initialize() {
   updateTimer();
   function updateTimer() {
     document.querySelector("div#progress progress#progressbar").value = SongManager.player.currentTime;
-    if (!SongManager.player.paused) {
-      let cur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.currentTime).replace(",", ".");
-      let dur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.duration).replace(",", ".");
+    let cur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.currentTime);
+    let dur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.duration);
+    let progressText = document.querySelector("div#progress label#progresstext");
+    while (dur.startsWith("00:")) {
+      cur = cur.substring(3);
+      dur = dur.substring(3);
+    }
+    if (progressText.innerText != cur + " / " + dur) {
   
-      while (dur.startsWith("00:")) {
-        cur = cur.substring(3);
-        dur = dur.substring(3);
-      }
-      document.querySelector("div#progress label#progresstext").innerText = cur + "/" + dur;
+      progressText.innerText = cur + " / " + dur;
     }
     requestAnimationFrame(updateTimer);
   }
@@ -292,6 +279,7 @@ async function initialize() {
     let percent = (e.clientX - p.clientLeft) / p.clientWidth;
     percent = Math.min(Math.max(0, percent), 1);
     SongManager.moveToTime(SongManager.player.duration * percent);
+    updateDiscordPresence();
   });
   window.addEventListener("mousemove", function(e) {
     /**
@@ -365,8 +353,7 @@ ipcRenderer.on("updatediscordpresence", () => {
 })
 
 /**
- * 
- * @param {Song} song 
+ * Update Discord presence
  */
 async function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
   let attemptCount = 0;
@@ -376,7 +363,7 @@ async function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong(
     }
     if (isNaN(SongManager.player.duration) || !discordReady) {
       attemptCount++;
-      await wait(100);
+      await Debug.wait(100);
     }
     else {
       /**

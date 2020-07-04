@@ -1,5 +1,6 @@
 /**
  * @typedef {{"word": string,"start": number,"end": number}} Word;
+ * @typedef {{"start": number,"end": number}} CursorPosition;
  */
 
 exports.TextEditor = class TextEditor {
@@ -30,19 +31,67 @@ exports.TextEditor = class TextEditor {
         this.insert(this.currentSuggestion, word.start, word.end);
         this.emit("finish", this.currentSuggestion);
         this.currentSuggestion = null;
-        return;
       }
-      else if (!ctrlKey && shiftKey && altKey && key.toLowerCase() == "arrowdown") {
+      else if (key == "Tab"  && !ctrlKey && !shiftKey && !altKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        let c = this.getCursor();
+        let lines = this.getCurrentLines();
+        if (lines.length == 1) {
+          this.insert("  ", c.start);
+        }
+        else if (lines.length > 1) {
+          let cu = this.getCursor();
+          lines.forEach(l => {
+            this.insert("  ", l.start, l.start);
+          });
+          this.setCursor(cu.start + 2, cu.end + 2);
+        }
+      }
+      else if (key == "Tab"  && !ctrlKey && shiftKey && !altKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        let c = this.getCurrentLines();
+        let cu = this.getCursor();
+        let thisLine = c.find(l => l.start >= cu.start && cu.end <= l.end);
+        let cursorForward = thisLine.text.substring(0, 2) == "  " ? 2 : thisLine.text.substring(0, 1) == " " ? 1 : 0;
+        c.forEach(l => {
+          if (this.value.substring(l.start, l.start + 2) == "  ") {
+            this.insert("", l.start, l.start + 2);
+            // this.setCursor(cu.start - 2, cu.end - 2);
+          }
+          else if (this.value.substring(l.start, l.start + 1) == " ") {
+            this.insert("", l.start, l.start + 1);
+          }
+        });
+        this.setCursor(cu.start - cursorForward, cu.end - cursorForward);
+      }
+      else if (key.toLowerCase() == "arrowup" && !ctrlKey && shiftKey && altKey) {
         let lines = this.getCurrentLines();
         let text = lines.map(l => l.text).join("\n");
         this.insert("\n"+text, lines[0].end);
       }
-      else if (!ctrlKey && shiftKey && altKey && key.toLowerCase() == "arrowup") {
+      else if (key.toLowerCase() == "arrowdown" && !ctrlKey && shiftKey && altKey) {
         let lines = this.getCurrentLines();
         let text = lines.map(l => l.text).join("\n");
         this.insert("\n"+text, lines[0].start - 1);
       }
-      else if (ctrlKey && !shiftKey && !altKey && key.toLowerCase() == "'") {
+      // else if (key.toLowerCase() == "arrowdown" && !ctrlKey && !shiftKey && altKey) {
+      //   // let lines = this.getCurrentLines();
+      //   // let text = lines.map(l => l.text).join("\n");
+      //   // this.insert("\n"+text, lines[0].end);
+      // }
+      // else if (key.toLowerCase() == "arrowup" && !ctrlKey && !shiftKey && altKey) {
+      //   let lines = this.getCurrentLines();
+      //   let otherLines = this.getLines(lines.map(l => l.index - lines.length));
+        
+      //   lines.forEach((l, i) => this.setLine(l.index, otherLines[i].text));
+      //   otherLines.forEach((l, i) => this.setLine(l.index, lines[i].text));
+
+      //   let text = lines.map(l => l.text).join("\n");
+      //   this.insert("\n"+text, lines[0].start - 1, lines[0].end);
+      // }
+      else if (key.toLowerCase() == "'" && ctrlKey && !shiftKey && !altKey) {
         let lines = this.getCurrentLines();
         let endPlus = 0;
         let text = lines.map(
@@ -82,13 +131,84 @@ exports.TextEditor = class TextEditor {
         }
       }
 
-      this.currentSuggestion = this.suggest();
-      // console.log(this.currentSuggestion);
+
+      if (key.toLowerCase() == "z" && ctrlKey) {
+        e.preventDefault();
+        this.undo();
+      }
+      else if (key.toLowerCase() == "y" && ctrlKey) {
+        e.preventDefault();
+        this.redo();
+      }
+      else {
+        setTimeout(() => {
+          this.addStack({
+            "text": this.value,
+            "cursor": this.getCursor()
+          });
+        }, 0);
+      }
+
+      // console.log(this.stack);
+      // console.log(this.stack.length);
+      // console.log(this.stackIndex);
     });
+
+    this.stack = [
+      {
+        "text": this.value,
+        "cursor": {
+          "start": 0,
+          "end": 0
+        }
+      }
+    ];
+
+    // this.stackIndex = 0;
   }
 
   /**
-   * @typedef { "finish" | "suggestion" | "dupeline" | "insertA" } TextEditorEvents
+   * @type {{"cursor": CursorPosition, "text": string[]}[]}
+   */
+  stack = [];
+  /**
+   * @type {number}
+   */
+  stackIndex = 0;
+
+  /**
+   * 
+   * @param {TextEditor["stack"][0]} data 
+   */
+  addStack(data) {
+    if (this.stack[this.stackIndex] == null || this.stack[this.stackIndex].text !== this.value) {
+      this.stack.splice(++this.stackIndex);
+      this.stack.push(data);
+    }
+  }
+
+  undo() {
+    if (this.stackIndex > 0) {
+      let {cursor, text} = this.stack[--this.stackIndex];
+      this.value = text;
+      this.setCursor(cursor.start, cursor.end)
+      // --this.stackIndex;
+    }
+    this.emit("undo");
+  }
+
+  redo() {
+    if (this.stackIndex < this.stack.length - 1) {
+      let {cursor, text} = this.stack[++this.stackIndex];
+      this.value = text;
+      this.setCursor(cursor.start, cursor.end)
+      // ++this.stackIndex;
+    }
+    this.emit("redo");
+  }
+
+  /**
+   * @typedef { "finish" | "suggestion" | "dupeline" | "insert" | "undo" | "redo" } TextEditorEvents
    * @type {{[eventName: string]: ((...any) => void)[]}}
    */
   _events = [];
@@ -144,7 +264,7 @@ exports.TextEditor = class TextEditor {
     };
   }
   /**
-   * @param {number}} start 
+   * @param {number} start 
    * @param {number} end 
    * @param {"forward" | "backward" | "none"} direction 
    */
@@ -189,10 +309,77 @@ exports.TextEditor = class TextEditor {
 
   /**
    * Get a line by index.
-   * @param {number} lineIndex 
+   * 
+   * This is a 1-based index, so the first line is `1`.
+   * @param {number} lineIndex 1-based index
    */
   getLine(lineIndex) {
-    return this.getAllLines()[lineIndex];
+    lineIndex--;
+    let charIndex = 0;
+    let lines = this.getAllLines();
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      charIndex += line.length;
+      if (i > 0) charIndex++;
+      if (i == lineIndex) {
+        return {
+          "text": line,
+          "start": charIndex - line.length,
+          "end": charIndex,
+          "index": i + 1
+        }
+      }
+    }
+  }
+
+  /**
+   * Get lines by indexes.
+   * 
+   * This is a 1-based index, so the first line is `1`.
+   * @param {number[]} lineIndexes Array of 1-based indexes
+   */
+  getLines(lineIndexes) {
+    lineIndexes = lineIndexes.map(i => --i);
+    let charIndex = 0;
+    let lines = this.getAllLines();
+    /**
+     * @type {{
+          "text": string,
+          "start": number,
+          "end": number,
+          "index": number
+        }[]}
+     */
+    let returnLines = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      charIndex += line.length;
+      if (i > 0) charIndex++;
+      if (lineIndexes.includes(i)) {
+        returnLines.push({
+          "text": line,
+          "start": charIndex - line.length,
+          "end": charIndex,
+          "index": i + 1
+        });
+      }
+    }
+
+    return returnLines;
+  }
+
+  /**
+   * Get a line by index.
+   * 
+   * This is a 1-based index, so the first line is `1`.
+   * @param {number} lineIndex 1-based index
+   * @param {string} newText
+   */
+  setLine(lineIndex, newText) {
+    let line = this.getLine(lineIndex);
+    this.insert(newText, line.start, line.end);
   }
 
   getAllLines() {

@@ -223,9 +223,9 @@ div#progress {
   background-color: var(--panelcolor);
 }
 
-/* div#progress label#progresstext {
-  
-} */
+div#progress label#progresstext {
+  margin-left: 4px;
+}
 
 div#progress progress#progressbar {
   width: 100%;
