@@ -569,7 +569,7 @@ class Settings {
    */
   setThemeBase(base) {
     Settings.current.lightThemeBase = base;
-    browserWindow.setIcon(Settings.current.lightThemeBase ? "./iconlight.ico" : "./icon.ico");
+    // browserWindow.setIcon(Settings.current.lightThemeBase ? "./iconlight.ico" : "./icon.ico");
     if (Settings.current.lightThemeBase) {
       Toxen.setStyleSource("./light.theme.css");
     }
