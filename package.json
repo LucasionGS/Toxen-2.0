@@ -23,6 +23,7 @@
     "ionlib": "^1.0.13",
     "ionodelib": "^1.0.1",
     "jquery": "^3.5.0",
+    "mime-types": "^2.1.27",
     "node-fetch": "^2.6.0",
     "node-hue-api": "^4.0.5",
     "npm": "^6.14.4",

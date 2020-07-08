@@ -22,6 +22,7 @@ const Zip = require("adm-zip");
 const { EventEmitter } = require("events");
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
+const mime = require("mime-types");
 
 /**
  * @type {"win"|"linux"|"mac"}
@@ -187,6 +188,62 @@ class Toxen {
    */
   static setStyleSource(src) {
     Toxen.extraStyle.href = src + (src ? "?" + Debug.generateRandomString(3) : "");
+  }
+  
+  /**
+   * Object of generator objects using Toxen styling.
+   */
+  static generate = {
+    /**
+     * Generate an input.
+     * @param {object} opts
+     * @param {(obj: HTMLInputElement) => void} opts.modify Modify this object using a function. This will always happen before the other options get applied.
+     * @param {string} opts.id Id for this item.
+     * 
+     * @param {string} opts.value Default value for the input.
+     * @param {string} opts.placeholder Default placeholder for the input.
+     */
+    input(opts = {}) {
+      if (opts !== null && typeof opts === "object") {
+        let obj = document.createElement("input");
+        obj.classList.add("fancyinput");
+
+        // Apply opts (Globals)
+        if (typeof opts.modify == "function") opts.modify(obj);
+        if (typeof opts.id == "string") obj.id = opts.id;
+        // Apply opts (Local)
+        if (typeof opts.value == "string") obj.value = opts.value;
+        if (typeof opts.placeholder == "string") obj.placeholder = opts.placeholder;
+
+        return obj;
+      }
+    },
+    /**
+     * Generate a button.
+     * @param {object} opts
+     * @param {(obj: HTMLButtonElement) => void} opts.modify Modify this object using a function. This will always happen before the other options get applied.
+     * @param {string} opts.id Id for this item.
+     * 
+     * @param {string} opts.text Text to be displayed on the button. Supports HTML.
+     * @param {string} opts.backgroundColor Background color in CSS.
+     * @param {(ev: MouseEvent) => void} opts.click Function to execute on the click of this button.
+     */
+    button(opts = {}) {
+      if (opts !== null && typeof opts === "object") {
+        let obj = document.createElement("button");
+        obj.classList.add("fancybutton");
+
+        // Apply opts (Globals)
+        if (typeof opts.modify == "function") opts.modify(obj);
+        if (typeof opts.id == "string") obj.id = opts.id;
+        // Apply opts (Local)
+        if (typeof opts.text == "string") obj.innerHTML = opts.text;
+        if (typeof opts.backgroundColor == "string") obj.style.backgroundColor = opts.backgroundColor;
+        if (typeof opts.click == "function") obj.addEventListener("click", opts.click);
+
+        return obj;
+      }
+    },
   }
 }
 
@@ -2612,7 +2669,12 @@ class SongManager {
         }
       ]
     })
-    .then(pathObject => {
+    .then(handler);
+
+    /**
+     * @param {string} pathObject 
+     */
+    function handler (pathObject) {
       // TODO: Drag and Drop backgrounds directly
       if (pathObject.filePaths.length == 0) {
         return;
@@ -2625,7 +2687,73 @@ class SongManager {
       song.background = song.path + "/" + path.relative(song.getFullPath("path"), newPath);
       Storyboard.setBackground(song.getFullPath("background"));
       SongManager.saveToFile();
+    }
+  }
+
+  static async selectBackgroundFromURL(song = SongManager.getCurrentlyPlayingSong()) {
+    let url = Toxen.generate.input(
+      {
+        "placeholder": "https://example.com/image.jpg",
+        modify(obj) {
+          obj.style.width = "100%";
+          obj.addEventListener("input", () => {
+            if (/https?:\/\/.*/g.test(obj.value)) {
+              dlBg.disabled = false;
+            }
+            else {
+              dlBg.disabled = true;
+            }
+          });
+        }
+      }
+    );
+
+    let dlBg = Toxen.generate.button({
+      "text": "Download Background",
+      "backgroundColor": "green",
+      click() {
+        p.return(url.value);
+      }
     });
+
+    let p = new Prompt("Download Background", [
+      url
+    ]);
+    
+    p.addButtons([dlBg, "Close"], "fancybutton", true);
+
+    /**
+     * @type {string}
+     */
+    let imageUrl = await p.promise;
+    if (imageUrl == null) {
+      return;
+    }
+    let _ext = path.extname(imageUrl);
+    let _path = song.getFullPath("path") + "/background" + (_ext != "" ?  _ext : "") + ".tmp";
+    let dl = new ion.Download(imageUrl, _path);
+
+    dl.onEnd = function() {
+      handler(_path);
+    };
+    dl.start();
+
+    /**
+     * @param {string} pathObject 
+     */
+    function handler(pathObject) {
+      if (song.background) {
+        try {
+          fs.unlinkSync(song.getFullPath("background"));
+        } catch {}
+      }
+      
+      let newPath = pathObject.substring(0, pathObject.length - 4);
+      fs.renameSync(pathObject, newPath);
+      song.background = song.path + "/" + path.relative(song.getFullPath("path"), newPath);
+      Storyboard.setBackground(song.getFullPath("background"));
+      SongManager.saveToFile();
+    }
   }
 
   /**
@@ -2857,6 +2985,30 @@ const menus = {
         }
       },
       {
+        label: "Set Background",
+        click(menuItem) {
+          /**
+           * @type {Song}
+           */
+          const song = menuItem.songObject;
+          if (song instanceof Song) {
+            SongManager.selectBackground(song);
+          }
+        }
+      },
+      {
+        label: "Set Background from URL",
+        click(menuItem) {
+          /**
+           * @type {Song}
+           */
+          const song = menuItem.songObject;
+          if (song instanceof Song) {
+            SongManager.selectBackgroundFromURL(song);
+          }
+        }
+      },
+      {
         label: "Edit Storyboard Script",
         click: (menuItem) => {
           /**
@@ -2864,9 +3016,9 @@ const menus = {
            */
           const song = menuItem.songObject;
           if (song instanceof Song) {
-            if (song.txnScript != null && fs.existsSync(song.getFullPath("txnScript"))) {
+            // if (song.txnScript != null && fs.existsSync(song.getFullPath("txnScript"))) {
               
-            }
+            // }
             ScriptEditor.open(song);
             browserWindow.webContents.send("updatediscordpresence");
           }
@@ -3083,6 +3235,22 @@ const menus = {
       },
     ]
   ),
+  "selectBackgroundMenu": Menu.buildFromTemplate(
+    [
+      {
+        label: "Select from file",
+        click() {
+          SongManager.selectBackground();
+        }
+      },
+      {
+        label: "Select from URL",
+        click() {
+          SongManager.selectBackgroundFromURL();
+        }
+      }
+    ]
+  )
 }
 
 /**
@@ -3296,13 +3464,13 @@ class Storyboard {
    * @param {number} blue 
    */
   static rgb(red = Storyboard.red, green = Storyboard.green, blue = Storyboard.blue) {
-    if (typeof red != "number") {
+    if (!isNaN(red) && typeof red != "number") {
       Storyboard.red;
     }
-    if (typeof green != "number") {
+    if (!isNaN(green) && typeof green != "number") {
       Storyboard.green;
     }
-    if (typeof blue != "number") {
+    if (!isNaN(blue) && typeof blue != "number") {
       Storyboard.blue;
     }
 
@@ -4084,7 +4252,10 @@ class ToxenScriptManager {
           args[1] = rgb.green;
           args[2] = rgb.blue;
         } catch (error) {
-          
+          args[0] = Settings.current.visualizerColor.red;
+          args[1] = Settings.current.visualizerColor.green;
+          args[2] = Settings.current.visualizerColor.blue;
+          console.warn(error);
         }
       }
       Storyboard.rgb(+args[0], +args[1], +args[2]);
