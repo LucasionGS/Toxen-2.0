@@ -14,6 +14,9 @@
   "author": "Lucasion",
   "license": "ISC",
   "dependencies": {
+    "@types/discord-rpc": "^3.0.4",
+    "@types/fluent-ffmpeg": "^2.1.14",
+    "@types/mime-types": "^2.1.0",
     "adm-zip": "^0.4.14",
     "command-exists": "^1.2.9",
     "directory-tree": "^2.2.4",
@@ -26,12 +29,14 @@
     "mime-types": "^2.1.27",
     "node-fetch": "^2.6.0",
     "node-hue-api": "^4.0.5",
-    "npm": "^6.14.4",
+    "npm": "^6.14.6",
     "rimraf": "^3.0.2",
     "update-electron-app": "^1.5.0",
     "ytdl-core": "^2.1.5"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.4.33",
+    "@types/rimraf": "^3.0.0",
     "electron": "^8.3.1"
   }
 }

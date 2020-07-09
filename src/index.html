@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="toxen.css">
   <link rel="stylesheet" href="toxen.css" id="extracss">
+  <script>var exports = {};</script>
   <script async src="toxen.js"></script>
   <title>Toxen 2.0</title>
 </head>
@@ -12,11 +13,14 @@
   <div id="mainbody">
     <canvas id="storyboard"></canvas>
     <video id="musicObject"></video>
+    <div id="progressbarspot2" style="position: absolute; width: 100%;"></div>
     <div class="sidebar left" id="songmenusidebar">
-      <div id="progress">
-        <label id="progresstext"></label>
-        <br>
-        <progress id="progressbar" class="fancyprogress"></progress>
+      <div id="progressbarspot1">
+        <div id="progress">
+          <label id="progresstext"></label>
+          <br>
+          <progress id="progressbar" class="fancyprogress"></progress>
+        </div>
       </div>
       <hr>
       <div id="lockPanel" onclick="Settings.current.toggleSongPanelLock()" title="Toggle lock Panel">🔓</div>
@@ -271,6 +275,15 @@
           }
         </script>
       </div>
+      <br>
+      <label>Progress Bar Position</label>
+      <sup>Change the position of the progress bar.</sup>
+      <input type="radio" name="pbsstyle" id="progressbarspot=0" value="0" onclick="settings.setProgressBarSpot(0); settings.saveToFile();">
+      <label for="progressbarspot=0">Side Menu</label><br>
+      <input type="radio" name="pbsstyle" id="progressbarspot=1" value="1" onclick="settings.setProgressBarSpot(1); settings.saveToFile();">
+      <label for="progressbarspot=1">Top of screen</label><br>
+      <input type="radio" name="pbsstyle" id="progressbarspot=2" value="2" onclick="settings.setProgressBarSpot(2); settings.saveToFile();">
+      <label for="progressbarspot=2">Bottom of screen</label><br>
       <hr>
       <label for="backgrounddimValue">Background Dimming</label>
       <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = this.value" onmouseup="settings.saveToFile();">
