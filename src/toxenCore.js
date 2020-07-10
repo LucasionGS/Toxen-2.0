@@ -28,9 +28,6 @@ const Zip = require("adm-zip");
 const events_1 = require("events");
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
-/**
- * @type {"win"|"linux"|"mac"}
- */
 var updatePlatform;
 switch (process.platform) {
     case "win32":
@@ -241,47 +238,38 @@ class Settings {
         // 
         /**
          * Percentage to dim the background.
-         * @type {number}
          */
         this.backgroundDim = 50;
         /**
          * Audio volume.
-         * @type {number}
          */
         this.volume = 100;
         /**
          * Full path to the current song folder.
-         * @type {string}
          */
         this.songFolder = null;
         /**
          * List of full paths to the song folders.
-         * @type {string[]}
          */
         this.songFolderList = [];
         /**
          * Intensity of the audio visualizer.
-         * @type {number}
          */
         this.visualizerIntensity = 15;
         /**
          * Direction of the audio visualizer.
-         * @type {number}
          */
         this.visualizerDirection = 0;
         /**
          * Whether or not the visualizer is enabled.
-         * @type {boolean}
          */
         this.visualizer = true;
         /**
          * Whether or not the storyboard is enabled.
-         * @type {boolean}
          */
         this.storyboard = true;
         /**
          * Show video as the background if it's available.
-         * @type {boolean}
          */
         this.video = true;
         /**
@@ -350,23 +338,19 @@ class Settings {
         this.discordPresenceShowDetails = true;
         /**
          * Hue Bridge: IP Address / Host
-         * @type {string}
          */
         this.hueBridgeIp = null;
         /**
          * Hue Bridge: Username
-         * @type {string}
          */
         this.hueBridgeUser = null;
         /**
          * Hue Bridge: Client Key
-         * @type {string}
          */
         this.hueBridgeClientKey = null;
         /**
          * Currently selected playlist.
          * (`null`) if none is selected.
-         * @type {string}
          */
         this.playlist = null;
         /**
@@ -380,7 +364,6 @@ class Settings {
         this.showTutorialOnStart = true;
         /**
          * Custom path to the user's FFMPEG file.
-         * @type {string}
          */
         this.ffmpegPath = null;
         /**
@@ -517,9 +500,6 @@ class Settings {
      * @param {boolean} newInstance If `true`, returns a new instance of a playlist and without the "No playlist selected" option.
      */
     reloadPlaylists(newInstance = false) {
-        /**
-         * @type {HTMLSelectElement}
-         */
         let selection;
         // Add "None"
         if (newInstance == true) {
@@ -527,7 +507,7 @@ class Settings {
             selection.classList.add("fancyselect");
         }
         else {
-            selection = selection = document.getElementById("playlistselection");
+            selection = document.querySelector("#playlistselection");
             selection.innerHTML = ""; // clear
             let opt = document.createElement("option");
             opt.innerText = "No Playlist Selected";
@@ -651,9 +631,6 @@ class Settings {
      * @param {boolean} force
      */
     toggleSongPanelLock(force) {
-        /**
-         * @type {HTMLButtonElement}
-         */
         const element = document.getElementById("lockPanel");
         if (typeof force == "boolean") {
             this.songMenuLocked = !force;
@@ -690,10 +667,6 @@ class Settings {
      */
     toggleSettingsPanelLock(force) {
         let locked = document.getElementById("settingsmenusidebar").hasAttribute("open");
-        // /**
-        //  * @type {HTMLButtonElement}
-        //  */
-        // const element = document.getElementById("lockPanelSettings");
         if (typeof force == "boolean") {
             locked = !force;
         }
@@ -798,9 +771,6 @@ class Settings {
     ;
 }
 exports.Settings = Settings;
-/**
- * @type {Settings}
- */
 Settings.current = null;
 class Song {
     constructor() {
@@ -835,53 +805,14 @@ class Song {
          * Detailed information about this song (if applied)
          */
         this.details = {
-            /**
-             * The artist who made this song.
-             * @type {string}
-             */
             artist: null,
-            /**
-             * The title for this song.
-             * @type {string}
-             */
             title: null,
-            /**
-             * Album this song belongs to, if any.
-             * @type {string}
-             */
             album: null,
-            /**
-             * Source for this song. If it's from a game, series, or sites, state them here.
-             * @type {string}
-             */
             source: null,
-            /**
-             * Source link for this song. If you got this from somewhere online originally, you can link it here.
-             * @type {string}
-             */
             sourceLink: null,
-            /**
-             * Main language for this song.
-             * @type {string}
-             */
             language: null,
-            /**
-             * List of tags to better help find this song in searches.
-             * @type {string[]}
-             */
             tags: [],
-            // Indirectly Modifiable
-            /**
-             * List of playlists this song belongs in.
-             * @type {string[]}
-             */
             playlists: [],
-            // Unmodifiable
-            /**
-             * The length of the song in seconds.
-             * **Note:** This value is automatically updated if it doesn't match the song's duration.
-             * @readonly
-             */
             songLength: 0,
         };
         this.element = null;
@@ -1235,13 +1166,25 @@ class Song {
                         let p = new Prompt("First Time Convertion", "This song is in a different format than supported, "
                             + "so it is being converted to a usable format.<br>Please allow a moment until it has been converted...");
                         p.addButtons("Close", null, true);
-                        src.toFormat("mp3").saveToFile(newName).on("end", () => {
+                        var duration;
+                        src.toFormat("mp3").saveToFile(newName).once("end", () => {
                             SongManager.player.src = newName + hash;
                             p.close();
-                            new Prompt("Convertion Completed.");
+                            new Prompt("Convertion Completed.").close(2000);
+                            SongManager.clearPlay();
                             this.play();
                         })
-                            .on("error", (err) => {
+                            .once("codecData", (data) => {
+                            duration = ToxenScriptManager.timeStampToSeconds(data.duration);
+                        })
+                            .on("progress", (progress) => {
+                            if (duration != null) {
+                                // p.setContent(`Converting...<br>${progress.targetSize}%`);
+                                // p.setContent(`Converting...<br>${duration}%`);
+                                p.setContent(`Converting...<br>${(ToxenScriptManager.timeStampToSeconds(progress.timemark) / duration * 100).toFixed(2)}%`);
+                            }
+                        })
+                            .once("error", (err) => {
                             console.error(err);
                         });
                         return;
@@ -1792,7 +1735,14 @@ class SongManager {
                     for (let i2 = 0; i2 < items.length; i2++) {
                         const item = items[i2];
                         // Media file
-                        if (item.endsWith(".mp3") || item.endsWith(".wma") || item.endsWith(".mp4")) {
+                        if (
+                        // Audios
+                        item.endsWith(".mp3") // Standard
+                            || item.endsWith(".wma")
+                            || item.endsWith(".ogg")
+                            // Videos
+                            || item.endsWith(".mp4") // Standard
+                        ) {
                             song.songPath = file.name + "/" + item;
                         }
                         // Subtitle file
@@ -3660,7 +3610,7 @@ class ToxenScriptManager {
                     // Failures
                     if (typeof fb == "string") {
                         setTimeout(() => {
-                            new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1), fb])
+                            new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1), (typeof fb == "string" ? fb : "")])
                                 .addButtons("Close", null, true);
                         }, 100);
                         throw "Failed parsing script. Error at line " + (i + 1) + "\n" + fb;
@@ -4003,11 +3953,11 @@ class ToxenScriptManager {
     }
     /**
      * Convert a timestamp into seconds.
-     * @param {string} timestamp Time in format "hh:mm:ss".
+     * @param timestamp Time in format "hh:mm:ss".
      */
     static timeStampToSeconds(timestamp, throwError = false) {
         if (typeof timestamp !== "string")
-            timestamp += "";
+            timestamp = timestamp + "";
         try {
             var seconds = 0;
             var parts = timestamp.split(":");
@@ -4501,14 +4451,23 @@ exports.Debug = Debug;
 class Prompt {
     /**
      *
-     * @param {string} title
-     * @param {HTMLElement | (string | HTMLElement)[] | string} description
+     * @param title
+     * @param description
      */
     constructor(title = null, description = null) {
         this.main = null;
         this.headerElement = null;
         this.contentElement = null;
         this.buttonsElement = null;
+        /**
+         * @param returnValue Return this value and resolve the promise stored in `Prompt.promise`
+         * @param close If set to `false`, the prompt won't close on return.
+         * If set to a number, it acts as milliseconds before it closes.
+         */
+        this.return = (returnValue, close = true) => {
+            // Do nothing initially.
+            // Set inside of @constructor
+        };
         this.main = document.createElement("div");
         this.main.classList.add("promptmain");
         this.headerElement = document.createElement("h1");
@@ -4552,7 +4511,6 @@ class Prompt {
         this.promise = new Promise((res, rej) => {
             this._res = res;
             this._rej = rej;
-            //@ts-expect-error
             this.return = (returnValue, close) => {
                 this._res(returnValue);
                 if (close === true || close === undefined) {
@@ -4749,10 +4707,6 @@ class Prompt {
                 p.prompt.close();
             }
         }
-    }
-    return(returnValue, close = true) {
-        // Do nothing initially.
-        // Set inside of @constructor
     }
     /**
      * Run this to make this prompt close next time the user presses the escape key.

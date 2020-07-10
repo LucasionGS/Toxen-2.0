@@ -52,13 +52,6 @@ let settings = new Settings();
  */
 // This is automatically set to Statistics.current as well
 let stats = new Statistics();
-/**
- * Removes unnecessary extra "forward slashes" `/`
- * @param {string} path Path to fix
- */
-function fixPath(path) {
-    return path.replace(/\/\/+/, "/");
-}
 window.addEventListener("load", initialize);
 function initialize() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -80,7 +73,7 @@ function initialize() {
         }
         stats.load();
         stats.startSaveTimer();
-        Toxen.extraStyle = document.getElementById("extracss");
+        Toxen.extraStyle = document.querySelector("#extracss");
         settings.setThemeBase(settings.lightThemeBase);
         // Check for update
         Update.check(version);

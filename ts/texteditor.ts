@@ -66,12 +66,12 @@ export class TextEditor {
         });
         this.setCursor(cu.start - cursorForward, cu.end - cursorForward);
       }
-      else if (key.toLowerCase() == "arrowup" && !ctrlKey && shiftKey && altKey) {
+      else if (key.toLowerCase() == "arrowdown" && !ctrlKey && shiftKey && altKey) {
         let lines = this.getCurrentLines();
         let text = lines.map(l => l.text).join("\n");
         this.insert("\n"+text, lines[0].end);
       }
-      else if (key.toLowerCase() == "arrowdown" && !ctrlKey && shiftKey && altKey) {
+      else if (key.toLowerCase() == "arrowup" && !ctrlKey && shiftKey && altKey) {
         let lines = this.getCurrentLines();
         let text = lines.map(l => l.text).join("\n");
         this.insert("\n"+text, lines[0].start - 1);

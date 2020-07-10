@@ -46,10 +46,7 @@ interface HTMLElementScroll extends HTMLElement{
 
 declare function local_playNext(): void;
 
-/**
- * @type {"win"|"linux"|"mac"}
- */
-var updatePlatform;
+var updatePlatform: "win" | "linux" | "mac";
 switch (process.platform) {
   case "win32":
     updatePlatform = "win";
@@ -211,10 +208,7 @@ export class Toxen {
     }
   }
 
-  /**
-   * @type {HTMLLinkElement}
-   */
-  static extraStyle;
+  static extraStyle: HTMLLinkElement;
 
   /**
    * @param {string} src 
@@ -294,9 +288,6 @@ export class Toxen {
 }
 
 export class Settings {
-  /**
-   * @type {Settings}
-   */
   static current: Settings = null;
 
   constructor(doNotReplaceCurrent = false) {
@@ -426,10 +417,7 @@ export class Settings {
    * @param {boolean} newInstance If `true`, returns a new instance of a playlist and without the "No playlist selected" option.
    */
   reloadPlaylists(newInstance = false) {
-    /**
-     * @type {HTMLSelectElement}
-     */
-    let selection;
+    let selection: HTMLSelectElement;
     
     // Add "None"
     if (newInstance == true) {
@@ -437,7 +425,7 @@ export class Settings {
       selection.classList.add("fancyselect");
     }
     else {
-      selection = selection = document.getElementById("playlistselection");
+      selection = document.querySelector("#playlistselection");
       selection.innerHTML = ""; // clear
       let opt = document.createElement("option");
       opt.innerText = "No Playlist Selected";
@@ -572,9 +560,6 @@ export class Settings {
    * @param {boolean} force
    */
   toggleSongPanelLock(force?: boolean) {
-    /**
-     * @type {HTMLButtonElement}
-     */
     const element = document.getElementById("lockPanel");
     if (typeof force == "boolean") {
       this.songMenuLocked = !force;
@@ -615,10 +600,6 @@ export class Settings {
    */
   toggleSettingsPanelLock(force?: boolean) {
     let locked = document.getElementById("settingsmenusidebar").hasAttribute("open");
-    // /**
-    //  * @type {HTMLButtonElement}
-    //  */
-    // const element = document.getElementById("lockPanelSettings");
     if (typeof force == "boolean") {
       locked = !force;
     }
@@ -729,19 +710,16 @@ export class Settings {
   // 
   /**
    * Percentage to dim the background.
-   * @type {number}
    */
-  backgroundDim = 50;
+  backgroundDim: number = 50;
   /**
    * Audio volume.
-   * @type {number}
    */
-  volume = 100;
+  volume: number = 100;
   /**
    * Full path to the current song folder.
-   * @type {string}
    */
-  songFolder = null;
+  songFolder: string = null;
   /**
    * Returns whether or not the `songFolder` is a remote URL or not.
    */
@@ -750,39 +728,33 @@ export class Settings {
   };
   /**
    * List of full paths to the song folders.
-   * @type {string[]}
    */
-  songFolderList = [];
+  songFolderList: string[] = [];
   /**
    * Intensity of the audio visualizer.
-   * @type {number}
    */
-  visualizerIntensity = 15;
+  visualizerIntensity: number = 15;
   /**
    * Direction of the audio visualizer.
-   * @type {number}
    */
-  visualizerDirection = 0;
+  visualizerDirection: number = 0;
   /**
    * Whether or not the visualizer is enabled.
-   * @type {boolean}
    */
-  visualizer = true;
+  visualizer: boolean = true;
   /**
    * Whether or not the storyboard is enabled.
-   * @type {boolean}
    */
-  storyboard = true;
+  storyboard: boolean = true;
   /**
    * Show video as the background if it's available.
-   * @type {boolean}
    */
-  video = true;
+  video: boolean = true;
   /**
    * `true` Displays the advanced options.  
    * `false` Keep the advanced options hidden.
    */
-  advanced = false;
+  advanced: boolean = false;
   /**
    * Visualizer Colors RGB
    */
@@ -794,11 +766,11 @@ export class Settings {
   /**
    * Visualizer Style ID
    */
-  visualizerStyle = 3;
+  visualizerStyle: number = 3;
   /**
    * If the visualizer should freeze while the song is paused.
    */
-  freezeVisualizer = false;
+  freezeVisualizer: boolean = false;
   /**
    * Which style the songs should be grouped in.
    */
@@ -806,17 +778,17 @@ export class Settings {
   /**
    * Repeat the same song.
    */
-  repeat = false;
+  repeat: boolean = false;
   /**
    * Only play songs that are visible in the song panel.
    * 
    * (i.e doesn't have `display: none`)
    */
-  onlyVisible = false;
+  onlyVisible: boolean = false;
   /**
    * Shuffle to a random song instead of the next in the list.
    */
-  shuffle = true;
+  shuffle: boolean = true;
   /**
    * Detail to sort by
    */
@@ -825,12 +797,12 @@ export class Settings {
    * `true` Set the song menu on the right hand side.  
    * `false` Keep the song menu on the left hand side.
    */
-  songMenuToRight = false;
+  songMenuToRight: boolean = false;
   /**
    * `true` Lock the song panel in place and don't make it fade away.  
    * `false` Only show the panel when hovered over.
    */
-  songMenuLocked = false;
+  songMenuLocked: boolean = false;
   /**
    * `0` Doesn't show thumbnails.  
    * `1` Shows backgrounds as a thumbnail for the songs with a custom background.  
@@ -841,28 +813,24 @@ export class Settings {
    * Display the details of the current song playing in Discord Presence.
    * Details include Artist, Title, and current time.
    */
-  discordPresenceShowDetails = true;
+  discordPresenceShowDetails: boolean = true;
   /**
    * Hue Bridge: IP Address / Host
-   * @type {string}
    */
-  hueBridgeIp = null;
+  hueBridgeIp: string = null;
   /**
    * Hue Bridge: Username
-   * @type {string}
    */
-  hueBridgeUser = null;
+  hueBridgeUser: string = null;
   /**
    * Hue Bridge: Client Key
-   * @type {string}
    */
-  hueBridgeClientKey = null;
+  hueBridgeClientKey: string = null;
   /**
    * Currently selected playlist.  
    * (`null`) if none is selected.
-   * @type {string}
    */
-  playlist = null;
+  playlist: string = null;
   /**
    * All selected playlist.
    * @type {string[]}
@@ -871,12 +839,11 @@ export class Settings {
   /**
    * Display the tutorial the first time toxen launches.
    */
-  showTutorialOnStart = true;
+  showTutorialOnStart: boolean = true;
   /**
    * Custom path to the user's FFMPEG file.
-   * @type {string}
    */
-  ffmpegPath = null;
+  ffmpegPath: string = null;
   /**
    * Toggle light theme on Toxen.
    * 
@@ -898,17 +865,15 @@ export class Settings {
 interface HTMLSongElement extends HTMLDivElement {
   /**
    * Song object that belongs to this element.
-   * @type {Song}
    */
-  song?;
+  song?: Song;
 }
 
 interface HTMLPromptElement extends HTMLDivElement {
   /**
    * Prompt object that belongs to this element.
-   * @type {Prompt}
    */
-  prompt?;
+  prompt?: Prompt;
 }
 
 export class Song {
@@ -1022,7 +987,7 @@ export class Song {
        [
          "You're about to trim \""+ this.parseName() +"\"<br><sup style='color: red'>This is going to make physical changes to your original file.</sup>",
          "When should the song start?",
-         start,
+         start, 
          setCurStart,
          "When should it end?",
          end,
@@ -1228,54 +1193,47 @@ export class Song {
   /**
    * Detailed information about this song (if applied)
    */
-  details = {
+  details:
+  {
     /**
      * The artist who made this song.
-     * @type {string}
      */
-    artist: null,
+    artist: string,
 
     /**
      * The title for this song.
-     * @type {string}
      */
-    title: null,
+    title: string,
 
     /**
      * Album this song belongs to, if any.
-     * @type {string}
      */
-    album: null,
+    album: string,
 
     /**
      * Source for this song. If it's from a game, series, or sites, state them here.
-     * @type {string}
      */
-    source: null,
+    source: string,
 
     /**
      * Source link for this song. If you got this from somewhere online originally, you can link it here.
-     * @type {string}
      */
-    sourceLink: null,
+    sourceLink: string,
     
     /**
      * Main language for this song.
-     * @type {string}
      */
-    language: null,
+    language: string,
     /**
      * List of tags to better help find this song in searches.
-     * @type {string[]}
      */
-    tags: [],
+    tags: string[],
     
     // Indirectly Modifiable
     /**
      * List of playlists this song belongs in.
-     * @type {string[]}
      */
-    playlists: [],
+    playlists: string[],
 
     // Unmodifiable
     /**
@@ -1283,6 +1241,16 @@ export class Song {
      * **Note:** This value is automatically updated if it doesn't match the song's duration.
      * @readonly
      */
+    songLength: number,
+  } = {
+    artist: null,
+    title: null,
+    album: null,
+    source: null,
+    sourceLink: null,
+    language: null,
+    tags: [],
+    playlists: [],
     songLength: 0,
   };
 
@@ -1357,7 +1325,7 @@ export class Song {
           else {
             
             if (Toxen.ffmpegAvailable()) {
-              ffmpeg.setFfmpegPath(Toxen.ffmpegPath())
+              ffmpeg.setFfmpegPath(Toxen.ffmpegPath());
             }
             else {
               Toxen.ffmpegDownload();
@@ -1376,13 +1344,32 @@ export class Song {
             let p = new Prompt("First Time Convertion", "This song is in a different format than supported, "
             + "so it is being converted to a usable format.<br>Please allow a moment until it has been converted...");
             p.addButtons("Close", null, true);
-            src.toFormat("mp3").saveToFile(newName).on("end", () => {
+            var duration: number;
+            src.toFormat("mp3").saveToFile(newName).once("end", () => {
               SongManager.player.src = newName + hash;
               p.close();
-              new Prompt("Convertion Completed.");
+              new Prompt("Convertion Completed.").close(2000);
+              SongManager.clearPlay();
               this.play();
             })
-            .on("error", (err) => {
+            .once("codecData", (data: { duration: string }) => {
+              duration = ToxenScriptManager.timeStampToSeconds(data.duration);
+            })
+            .on("progress", (progress: {
+              frames: number,
+              currentFps: number,
+              currentKbps: number,
+              targetSize: number,
+              timemark: string,
+              percent: number,
+            }) => {
+              if (duration != null) {
+                // p.setContent(`Converting...<br>${progress.targetSize}%`);
+                // p.setContent(`Converting...<br>${duration}%`);
+                p.setContent(`Converting...<br>${(ToxenScriptManager.timeStampToSeconds(progress.timemark) / duration * 100).toFixed(2)}%`);
+              }
+            })
+            .once("error", (err) => {
               console.error(err);
             });
             return;
@@ -1567,7 +1554,7 @@ export class Song {
     
     // Removing already in.
     for (let i = 0; i < list.childNodes.length; i++) {
-      const c = list.childNodes[i];
+      const c = list.childNodes[i] as HTMLOptionElement;
       if (this.details.playlists.includes(c.value)) {
         list.removeChild(c);
         i--;
@@ -1580,7 +1567,7 @@ export class Song {
       add.parentElement.removeChild(add);
       return;
     }
-    list.value = list.childNodes[0].value;
+    list.value = (list.childNodes[0] as HTMLOptionElement).value;
     add.classList.add("color-green");
     add.addEventListener("click", () => {
       this.details.playlists.push(list.value);
@@ -1984,7 +1971,14 @@ export class SongManager {
           for (let i2 = 0; i2 < items.length; i2++) {
             const item = items[i2];
             // Media file
-            if (item.endsWith(".mp3") || item.endsWith(".wma") || item.endsWith(".mp4")) {
+            if (
+              // Audios
+              item.endsWith(".mp3") // Standard
+              || item.endsWith(".wma") 
+              || item.endsWith(".ogg")
+              // Videos
+              || item.endsWith(".mp4") // Standard
+            ) {
               song.songPath = file.name + "/" + item;
             }
             // Subtitle file
@@ -4027,7 +4021,7 @@ export class ToxenScriptManager {
         // Failures
         if (typeof fb == "string") {
           setTimeout(() => {
-            new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1), fb])
+            new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1), (typeof fb == "string" ? fb : "")])
             .addButtons("Close", null, true);
           }, 100);
           throw "Failed parsing script. Error at line " + (i + 1) + "\n" + fb;
@@ -4643,10 +4637,10 @@ export class ToxenScriptManager {
 
   /**
    * Convert a timestamp into seconds.
-   * @param {string} timestamp Time in format "hh:mm:ss".
+   * @param timestamp Time in format "hh:mm:ss".
    */
-  static timeStampToSeconds(timestamp, throwError = false) {
-    if (typeof timestamp !== "string") timestamp += "";
+  static timeStampToSeconds(timestamp: string | number, throwError = false) {
+    if (typeof timestamp !== "string") timestamp = timestamp + "";
     try {
       var seconds = 0;
       var parts = timestamp.split(":");
@@ -4895,10 +4889,10 @@ static async wait(ms) {
 export class Prompt {
   /**
    * 
-   * @param {string} title 
-   * @param {HTMLElement | (string | HTMLElement)[] | string} description 
+   * @param title 
+   * @param description 
    */
-  constructor(title = null, description = null) {
+  constructor(title: string = null, description: HTMLElement | (string | HTMLElement)[] | string = null) {
     this.main = document.createElement("div");
     this.main.classList.add("promptmain")
     this.headerElement = document.createElement("h1");
@@ -4949,8 +4943,7 @@ export class Prompt {
       this._res = res;
       this._rej = rej;
 
-      //@ts-expect-error
-      this.return = (returnValue, close) => {
+      this.return = (returnValue: any, close: any) => {
         this._res(returnValue);
         if (close === true || close === undefined) {
           this.close();
@@ -5189,19 +5182,12 @@ export class Prompt {
   }
 
   /**
-   * @type {{
-      (returnValue: any) => void,
-      (returnValue: any, close: boolean) => void,
-      (returnValue: any, closeAfterMs: number) => void
-    }}
-   * @param {any} returnValue Return this value and resolve the promise stored in `Prompt.promise`
-   * @param {boolean | number} close If set to `false`, the prompt won't close on return.  
+   * @param returnValue Return this value and resolve the promise stored in `Prompt.promise`
+   * @param close If set to `false`, the prompt won't close on return.  
    * If set to a number, it acts as milliseconds before it closes.
    */
-  return(returnValue: any): void;
-  return(returnValue: any, close: boolean): void;
-  return(returnValue: any, closeAfterMs: number): void;
-  return(returnValue: any, close: boolean | number = true) {
+  return: ((returnValue: any) => void) | ((returnValue: any, close?: boolean | number) => void)
+   = (returnValue: any, close: boolean | number = true): void => {
     // Do nothing initially.
     // Set inside of @constructor
   }
