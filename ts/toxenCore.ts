@@ -3483,8 +3483,7 @@ function reloadMenu() {
         {
           label:"Tutorial",
           click(){
-            // Start Tutorial
-            shell.openExternal("https://discord.gg/TCDWjJS");
+            showTutorial();
           }
         },
         {
