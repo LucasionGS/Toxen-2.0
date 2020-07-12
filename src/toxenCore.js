@@ -4963,7 +4963,7 @@ class ToxenModule {
                 }, null, 2));
             }
             this.module = JSON.parse(fs.readFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json", "utf8"));
-            this.function = require("../" + ToxenModule.moduleFolder + "/" + moduleName + "/" + (this.module.main ? this.module.main : "index.js")).default;
+            this.function = require("../" + ToxenModule.moduleFolder + "/" + moduleName + "/" + (this.module.main ? this.module.main : "index.js")).toxenModule;
         }
         catch (error) {
             let p = new Prompt("Module Error", [
@@ -4979,7 +4979,6 @@ class ToxenModule {
     }
     /**
      * Activate or deactivate the module
-     * @param {boolean} active
      */
     activation(active = undefined) {
         if (active === undefined && this.module && typeof this.module.active == "boolean") {
@@ -5005,24 +5004,53 @@ class ToxenModule {
             fs.mkdirSync(ToxenModule.moduleFolder, { recursive: true });
         }
     }
-    static createModule(moduleName) {
+    static createModule(moduleName, language = "js") {
         if (!fs.existsSync(moduleName)) {
             fs.mkdirSync(ToxenModule.moduleFolder + "/" + moduleName, { recursive: true });
-            fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/index.js", `/**
- * Your main function is required to be exported as \`exports.default\`.  
- * Otherwise, your module will not work.++
- * @param {import("../../src/toxenCore")} Core
+            // JavaScript
+            if (language == "js")
+                fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/index.js", `/**
+ * JavaScript Module.
+ * Your main function is required to be exported as \`exports.toxenModule\`.  
+ * Otherwise, your module will not work.
+ * @param {import("../../src/declarations/toxenCore")} Core
  */
-exports.default = (Core) => {
+exports.toxenModule = (Core) => {
   // You can export specific functionality from the Toxen Core if you'll be using them often
   const {
-    // SongManager,
-    // Storyboard
+    // SongManager
   } = Core;
 
   // Your code goes here
 
 }`);
+            // TypeScript
+            if (language == "ts") {
+                fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/index.ts", `/**
+ * TypeScript Module.
+ * Your main function is required to be exported as \`export var toxenModule\`.  
+ * Otherwise, your module will not work.
+ */
+export var toxenModule = (Core: typeof import("../../src/declarations/toxenCore")) => {
+  // You can export specific functionality from the Toxen Core if you'll be using them often
+  const {
+    // SongManager
+  } = Core;
+
+  // Your code goes here
+
+}`);
+                let tsconfig = {
+                    "compilerOptions": {
+                        "module": "commonjs",
+                        "target": "ES6",
+                    },
+                    "exclude": [
+                        "node_modules"
+                    ]
+                };
+                fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/tsconfig.json", JSON.stringify(tsconfig, null, 2));
+            }
             let module = {
                 "author": "Anonymous",
                 "name": moduleName,
@@ -5039,11 +5067,6 @@ exports.default = (Core) => {
     static listModules() {
         return fs.readdirSync(ToxenModule.moduleFolder);
     }
-    /**
-     * Loads all of the modules.
-     * If `activate` is set to `false`, the modules won't be activated, and only returned.
-     * @param {boolean} activate
-     */
     static loadAllModules(activate = true) {
         ToxenModule.installedModules = [];
         let modules = ToxenModule.listModules().map(m => new ToxenModule(m));
@@ -5093,7 +5116,6 @@ exports.default = (Core) => {
     }
     /**
      * Load a module in the toxenModules folder.
-     * @param {string} moduleName
      */
     static loadModule(moduleName) {
         return new ToxenModule(moduleName);
@@ -5104,21 +5126,30 @@ exports.default = (Core) => {
      * Helpful for other modules' debugging.
      */
     getPublicFunctions() {
-        return this.publicFunctions.map(v => v.name);
+        let names = [];
+        for (const name in this.publicFunctions) {
+            if (Object.prototype.hasOwnProperty.call(this.publicFunctions, name)) {
+                names.push(name);
+            }
+        }
+        return names;
     }
 }
 exports.ToxenModule = ToxenModule;
-/**
- * @type {ToxenModule[]}
- */
 ToxenModule.installedModules = [];
 ToxenModule.moduleFolder = "toxenModules";
 class Statistics {
     /**
      * Initialize a new statistics object.
-     * @param {Statistics} object
      */
     constructor(object = {}) {
+        /**
+         * The total time spend listening to songs in seconds.
+         */
+        this.secondsPlayed = 0;
+        /**
+         * Total count of songs played
+         */
         this.songsPlayed = 0;
         for (const key in this) {
             if (this.hasOwnProperty(key) && object.hasOwnProperty(key)) {
@@ -5141,7 +5172,7 @@ class Statistics {
             fs.mkdirSync(path.dirname(statsFile), { recursive: true });
         }
         if (!fs.existsSync(statsFile)) {
-            console.log("No existing file! Creating file");
+            console.log("No existing statistics file! Creating file.");
             let s = new Statistics({});
             s.save();
             return s;
@@ -5218,11 +5249,7 @@ class Statistics {
      * `Note: A song must have been played at least once before it adds to this total`
      */
     get collectiveSongLengthAsStamp() {
-        let time = 0;
-        SongManager.songList.forEach(s => {
-            time += typeof s.details.songLength == "number" ? s.details.songLength : 0;
-        });
-        return ToxenScriptManager.convertSecondsToDigitalClock(time);
+        return ToxenScriptManager.convertSecondsToDigitalClock(this.collectiveSongLength);
     }
     ;
     /**
@@ -5248,8 +5275,8 @@ class Theme {
          * Themeable objects referring to one specific object.
          */
         this.objects = {
-            "songPanel": Themeable.create("#songmenusidebar"),
-            "settingsPanel": Themeable.create("#settingsmenusidebar"),
+            "songPanel": new Themeable("#songmenusidebar"),
+            "settingsPanel": new Themeable("#settingsmenusidebar"),
         };
         /**
          * Themeable classes. Can refer to multiple objects.
@@ -5274,11 +5301,6 @@ class Theme {
 }
 exports.Theme = Theme;
 class Themeable {
-    /**
-     * @param {HTMLElement | string} element
-     * @param {string} selector Only required if `element` is a DOM object and not a selector
-     * @see Themeable.create
-     */
     constructor(element, selector = null) {
         /**
          * @type {ThemeableConstructor}
@@ -5293,9 +5315,6 @@ class Themeable {
         else {
             this.selector = selector;
         }
-        /**
-         * @type {HTMLElement}
-         */
         this.element = element;
     }
     /**
@@ -5305,17 +5324,6 @@ class Themeable {
         return this.element.style + "";
     }
 }
-/**
- * @typedef {(element: HTMLElement, selector: string) => Themeable} ThemeableConstructor1
- * @typedef {(element: string) => Themeable} ThemeableConstructor2
- * @typedef {ThemeableConstructor1 & ThemeableConstructor2} ThemeableConstructor
- */
-/**
- * @type {ThemeableConstructor}
- */
-Themeable.create = (element, selector = null) => {
-    return new Themeable(element, selector);
-};
 class Tooltip {
 }
 /**

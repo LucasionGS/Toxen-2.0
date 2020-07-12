@@ -5,7 +5,8 @@
     "resolveJsonModule": true,
     "watch": true,
     "outDir": "src",
-    "declaration": true
+    "declaration": true,
+    "declarationDir": "src/declarations"
   },
   "exclude": [
     "node_modules"

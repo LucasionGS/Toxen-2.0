@@ -854,33 +854,32 @@ export declare class ToxenModule {
     moduleName: string;
     module: ToxenModule_data;
     function: (ToxenCore: unknown) => void;
-    /**
-     * @type {ToxenModule[]}
-     */
-    static installedModules: any[];
+    static installedModules: ToxenModule[];
     /**
      * Activate or deactivate the module
-     * @param {boolean} active
      */
-    activation(active?: any): void;
+    activation(active?: boolean): void;
     static moduleFolder: string;
     /**
      * Initialize folders
      */
     static initialize(): void;
-    static createModule(moduleName: any): void;
+    static createModule(moduleName: string): any;
+    static createModule(moduleName: string, language: "js" | "ts"): any;
     static listModules(): string[];
+    /**
+     * Loads and activate all of the modules.
+     */
+    static loadAllModules(): ToxenModule[];
     /**
      * Loads all of the modules.
      * If `activate` is set to `false`, the modules won't be activated, and only returned.
-     * @param {boolean} activate
      */
-    static loadAllModules(activate?: boolean): ToxenModule[];
+    static loadAllModules(activate: boolean): ToxenModule[];
     /**
      * Load a module in the toxenModules folder.
-     * @param {string} moduleName
      */
-    static loadModule(moduleName: any): ToxenModule;
+    static loadModule(moduleName: string): ToxenModule;
     /**
      * Public functions that can be used by other modules to interact with this module.
      */
@@ -892,12 +891,11 @@ export declare class ToxenModule {
      *
      * Helpful for other modules' debugging.
      */
-    getPublicFunctions(): any;
+    getPublicFunctions(): string[];
 }
 export declare class Statistics {
     /**
      * Initialize a new statistics object.
-     * @param {Statistics} object
      */
     constructor(object?: {});
     /**
@@ -938,6 +936,13 @@ export declare class Statistics {
      * `Note: A song must have been played at least once before it adds to this total`
      */
     get collectiveSongLengthAsStamp(): string;
+    /**
+     * The total time spend listening to songs in seconds.
+     */
+    secondsPlayed: number;
+    /**
+     * Total count of songs played
+     */
     songsPlayed: number;
     /**
      * Returns the total amount of installed modules.
@@ -979,20 +984,14 @@ export declare class Theme {
 }
 declare class Themeable {
     /**
-     * @typedef {(element: HTMLElement, selector: string) => Themeable} ThemeableConstructor1
-     * @typedef {(element: string) => Themeable} ThemeableConstructor2
-     * @typedef {ThemeableConstructor1 & ThemeableConstructor2} ThemeableConstructor
+     * @param selector Unique CSS selector for this DOM element.
      */
+    constructor(selector: string);
     /**
-     * @type {ThemeableConstructor}
+     * @param element DOM Element
+     * @param selector Unique CSS selector for this DOM element.
      */
-    static create: (element: any, selector?: any) => Themeable;
-    /**
-     * @param {HTMLElement | string} element
-     * @param {string} selector Only required if `element` is a DOM object and not a selector
-     * @see Themeable.create
-     */
-    constructor(element: HTMLElement | string, selector?: any);
+    constructor(element: HTMLElement, selector: string);
     selector: string;
     element: HTMLElement;
     /**
