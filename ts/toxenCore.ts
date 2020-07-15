@@ -43,6 +43,7 @@ interface HTMLElementScroll extends HTMLElement{
   scrollIntoViewIfNeeded(): void
 }
 
+type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384;
 
 declare function local_playNext(): void;
 
@@ -1162,33 +1163,28 @@ export class Song {
 
   /**
    * Relative path for this song / Folder name
-   * @type {string}
    */
-  path = null;
+  path: string = null;
 
   /**
    * Relative path to the song mp3/mp4.
-   * @type {string}
    */
-  songPath = null;
+  songPath: string = null;
   
   /**
    * Relative path to the song's SRT file (if any).
-   * @type {string}
    */
-  subtitlePath = null;
+  subtitlePath: string = null;
 
   /**
    * Relative path to the song's TXN script file (if any).
-   * @type {string}
    */
-  txnScript = null;
+  txnScript: string = null;
 
   /**
    * Relative path to the song's background image (if any).
-   * @type {string}
    */
-  background = null;
+  background: string = null;
 
   /**
    * Detailed information about this song (if applied)
@@ -2808,10 +2804,7 @@ export class SongManager {
     };
     dl.start();
 
-    /**
-     * @param {string} pathObject 
-     */
-    function handler(pathObject) {
+    function handler(pathObject: string) {
       if (song.background) {
         try {
           fs.unlinkSync(song.getFullPath("background"));
@@ -2826,11 +2819,108 @@ export class SongManager {
     }
   }
 
+  static selectSubtitles(song = SongManager.getCurrentlyPlayingSong()) {
+    dialog.showOpenDialog(remote.getCurrentWindow(), {
+      "buttonLabel": "Select SRT Subtitle file",
+      "filters": [
+        {
+          "extensions": [
+            "srt"
+          ],
+          "name": ""
+        }
+      ]
+    })
+    .then(handler);
+
+    function handler (pathObject: Electron.OpenDialogReturnValue) {
+      if (pathObject.filePaths.length == 0) {
+        return;
+      }
+      if (song.subtitlePath) {
+        fs.unlinkSync(song.getFullPath("subtitlePath"));
+      }
+      let newPath = song.getFullPath("path") + "/" + pathObject.filePaths[0].replace(/\\+/g, "/").split("/").pop();
+      fs.copyFileSync(pathObject.filePaths[0], newPath);
+      song.subtitlePath = song.path + "/" + path.relative(song.getFullPath("path"), newPath);
+      if (song.subtitlePath) {
+        Subtitles.renderSubtitles(song.getFullPath("subtitlePath"));
+      }
+      else {
+        Subtitles.current = [];
+      }
+      SongManager.saveToFile();
+    }
+  }
+
+  static selectStoryboard(song = SongManager.getCurrentlyPlayingSong()) {
+    dialog.showOpenDialog(remote.getCurrentWindow(), {
+      "buttonLabel": "Select Toxen Storyboard file",
+      "filters": [
+        {
+          "extensions": [
+            "txn"
+          ],
+          "name": "Toxen Storyboard file"
+        }
+      ]
+    })
+    .then(handler);
+
+    function handler (pathObject: Electron.OpenDialogReturnValue) {
+      if (pathObject.filePaths.length == 0) {
+        return;
+      }
+      if (song.txnScript) {
+        fs.unlinkSync(song.getFullPath("txnScript"));
+      }
+      let newPath = song.getFullPath("path") + "/" + pathObject.filePaths[0].replace(/\\+/g, "/").split("/").pop();
+      fs.copyFileSync(pathObject.filePaths[0], newPath);
+      song.txnScript = song.path + "/" + path.relative(song.getFullPath("path"), newPath);
+      ToxenScriptManager.loadCurrentScript();
+      SongManager.saveToFile();
+    }
+  }
+
+  static selectDefaultBackground() {
+    let extensions = [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif"
+    ]
+    dialog.showOpenDialog(remote.getCurrentWindow(), {
+      "buttonLabel": "Select Toxen Storyboard file",
+      "filters": [
+        {
+          "extensions": extensions,
+          "name": "Image files"
+        }
+      ]
+    })
+    .then(handler);
+
+    function handler (pathObject: Electron.OpenDialogReturnValue) {
+      if (pathObject.filePaths.length == 0) {
+        return;
+      }
+      let _path = Settings.current.songFolder + "/default" + path.extname(pathObject.filePaths[0]);
+      for (let i = 0; i < extensions.length; i++) {
+        const ext = extensions[i];
+        if (fs.existsSync(Settings.current.songFolder + "/default." + ext)) fs.unlinkSync(Settings.current.songFolder + "/default." + ext);
+      }
+      fs.copyFileSync(pathObject.filePaths[0], _path);
+      SongManager.saveToFile();
+      try {
+        Storyboard.setBackground(SongManager.getCurrentlyPlayingSong().getFullPath("background"));
+      } catch {}
+    }
+  }
+
   /**
-   * This should be set bby the client.
-   * @param {Song} song 
+   * This should be set by the client.
    */
-  static onplay = function(song) { };
+  static onplay = function(song: Song) { };
 }
 
 /**
@@ -3607,11 +3697,23 @@ export class Storyboard {
       else {
         var defImg = Settings.current.lightThemeBase ? "../iconlight.png" : "../icon.png";
         Storyboard.currentBackground = defImg;
-        if (!Settings.current.remote && fs.existsSync(Settings.current.songFolder + "/default.jpg")) {
-          defImg = Settings.current.songFolder + "/default.jpg";
-          Storyboard.currentBackground = defImg;
-          body.style.background = "url(\"" + defImg.replace(/\\/g, "/") + "?" + queryString + "\") no-repeat center center fixed black";
-          body.style.backgroundSize = "cover";
+        if (!Settings.current.remote) {
+          let valid = [
+            "jpg",
+            "png",
+            "jpeg",
+            "gif"
+          ]
+          for (let i = 0; i < valid.length; i++) {
+            const item = valid[i];
+            if (fs.existsSync(Settings.current.songFolder + "/default." + item)) {
+              defImg = Settings.current.songFolder + "/default." + item;
+              Storyboard.currentBackground = defImg;
+              body.style.background = "url(\"" + defImg.replace(/\\/g, "/") + "?" + queryString + "\") no-repeat center center fixed black";
+              body.style.backgroundSize = "cover";
+              break;
+            }
+          }
         }
         else {
           Storyboard.currentBackground = defImg;
@@ -3629,9 +3731,25 @@ export class Storyboard {
   static setIntensity(value) {
     Storyboard.visualizerIntensity = value;
   }
+  
+  static analyser: AnalyserNode = null;
+  
+  static setAnalyserFftLevel(size: number) {
+    Storyboard.setAnalyserFftSize(Math.pow(size, 2) as AnalyserFftSizeIndex)
+  }
+  
+  static setAnalyserFftSize(size: AnalyserFftSizeIndex) {
+    Storyboard.analyser.fftSize = Debug.clamp(size, 32, 32768);
+    Storyboard.bufferLength = Storyboard.analyser.frequencyBinCount / 2;
+    Storyboard.dataArray = new Uint8Array(Storyboard.bufferLength);
+  }
+  
+  static bufferLength: number = 256;
+  static dataArray: Uint8Array = null;
 
   static _fadingEnabled: boolean | number | NodeJS.Timeout = false;
 }
+
 
 class Subtitles {
   /**
@@ -3644,10 +3762,7 @@ class Subtitles {
     text: string;
   }[] = [];
 
-  /**
-   * @param {string} srtPath 
-   */
-  static async parseSrt(srtPath) {
+  static async parseSrt(srtPath: string) {
     try {
       var srtText;
       if (Settings.current.remote) {
@@ -3708,10 +3823,7 @@ class Subtitles {
   }
   
   static isRendering: false | NodeJS.Timeout = false;
-  /**
-   * @param {string} srtFile 
-   */
-  static async renderSubtitles(srtFile) {
+  static async renderSubtitles(srtFile: string) {
     Subtitles.current = await Subtitles.parseSrt(srtFile);
     var subText = document.querySelector("p#subtitles");
     if (subText && subText.innerHTML) {
@@ -4003,7 +4115,7 @@ export class ToxenScriptManager {
       });
     }
     ToxenScriptManager.currentScriptFile = scriptFile;
-    let data;
+    let data: string[];
     if (Settings.current.remote) {
       data = (await (await fetch(scriptFile)).text()).split("\n");
     }
@@ -4035,15 +4147,18 @@ export class ToxenScriptManager {
       }
     }
 
-    if (ToxenScriptManager.events[ToxenScriptManager.events.length - 1] && ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint == "$") {
-      ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint = ToxenScriptManager.timeStampToSeconds("2:00:00");
+    if (ToxenScriptManager.events[ToxenScriptManager.events.length - 1] && ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint as unknown as string == "$") {
+      ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint = ToxenScriptManager.timeStampToSeconds("4:00:00");
+    }
+    if (ToxenScriptManager.events[ToxenScriptManager.events.length - 1] && isNaN(ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint)) {
+      ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint = ToxenScriptManager.timeStampToSeconds("4:00:00");
     }
 
     /**
      * Checks a line and parses it.
-     * @param {string} line Current line of the script.
+     * @param line Current line of the script.
      */
-    function lineParser(line) {
+    function lineParser(line: string) {
       try { // Massive trycatch for any error.
         let maxPerSecond = 0;
         
@@ -4101,7 +4216,7 @@ export class ToxenScriptManager {
         }
 
         // Check if non-time function
-        const checkFunction = /:(\S*?)\s*(=>?|:)s*.*/g;
+        const checkFunction = /^\s*:(\S*?)\s*(=>?|:)s*.*/g;
         if (checkFunction.test(line)) {
           line = "[0 - 1]" + line;
         }
@@ -4120,7 +4235,7 @@ export class ToxenScriptManager {
         var startPoint: any = 0;
         var endPoint: any = 0;
         var args = [];
-        var fn = (args = []) => { };
+        var fn: (args: string[]) => void;
 
         // Parsing...
         var timeRegResult = line.match(timeReg)[0];
@@ -4264,22 +4379,31 @@ export class ToxenScriptManager {
             try {
               ToxenScriptManager.eventFunctions[type](args, currentEvent);
             } catch (error) {
-              console.error(error);
+              console.error(error, type, args, currentEvent);
             }
             setTimeout(() => {
               currentEvent.hasRun = false;
             }, (1000 / maxPerSecond));
           }
           else if (maxPerSecond == 0 && !type.startsWith(":")) {
-            ToxenScriptManager.eventFunctions[type](args, currentEvent);
+            try {
+              ToxenScriptManager.eventFunctions[type](args, currentEvent);
+            } catch (error) {
+              console.error(error, type, args, currentEvent);
+            }
           }
           else if (type.startsWith(":") && currentEvent.hasRun == false) {
-            ToxenScriptManager.eventFunctions[type](args, currentEvent);
+            try {
+              ToxenScriptManager.eventFunctions[type](args, currentEvent);
+            } catch (error) {
+              console.error(error, type, args, currentEvent);
+            }
           }
           currentEvent.hasRun = true;
         };
 
         currentEvent.fn = fn;
+        currentEvent.type = type;
 
         if (typeof ToxenScriptManager.eventFunctions[type] == undefined) {
           return `Type "${type.toLowerCase()}" is not valid.`;
@@ -4745,9 +4869,8 @@ export class ToxenScriptManager {
 
   /**
    * List of events in order for the current song.
-   * @type {ToxenEvent[]}
    */
-  static events = [];
+  static events: ToxenEvent[] = [];
 }
 
 class ToxenEvent {
@@ -4755,9 +4878,9 @@ class ToxenEvent {
    * Create a new Event
    * @param {number} startPoint Starting point in seconds.
    * @param {number} endPoint Ending point in seconds.
-   * @param {(args: any[]) => void} fn Function to run at this interval.
+   * @param fn Function to run at this interval.
    */
-  constructor(startPoint, endPoint, fn) {
+  constructor(startPoint, endPoint, fn: (args: any[]) => void) {
     this.startPoint = startPoint;
     this.endPoint = endPoint;
     this.fn = fn;
@@ -4765,8 +4888,9 @@ class ToxenEvent {
 
   startPoint: number;
   endPoint: number;
-  fn = Function;
+  fn: Function;
   hasRun = false;
+  type: string;
 }
 
 export class Debug {
@@ -4871,18 +4995,28 @@ export class Debug {
   }
 
   /**
- * Wait `ms` milliseconds.
- * @param {number} ms 
- */
-static async wait(ms) {
-  var resolve;
-  setTimeout(() => {
-    resolve();
-  }, ms);
-  return new Promise((res => {
-    resolve = res;
-  }));
-}
+   * Wait `ms` milliseconds.
+   * @param {number} ms 
+   */
+  static async wait(ms) {
+    var resolve;
+    setTimeout(() => {
+      resolve();
+    }, ms);
+    return new Promise((res => {
+      resolve = res;
+    }));
+  }
+
+  /**
+   * Clamp a value inclusively in between a min and max value.
+   * @param value The value to clamp
+   * @param min Min value
+   * @param max Max value
+   */
+  static clamp(value: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, value));
+  };
 }
 
 export class Prompt {

@@ -3,6 +3,7 @@ export declare let hueApi: import("node-hue-api/lib/api/Api.js");
 import * as Electron from "electron";
 import * as Zip from "adm-zip";
 import { EventEmitter } from "events";
+declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384;
 /**
  * General Toxen functionality.
  *
@@ -332,29 +333,24 @@ export declare class Song {
     click: () => void;
     /**
      * Relative path for this song / Folder name
-     * @type {string}
      */
-    path: any;
+    path: string;
     /**
      * Relative path to the song mp3/mp4.
-     * @type {string}
      */
-    songPath: any;
+    songPath: string;
     /**
      * Relative path to the song's SRT file (if any).
-     * @type {string}
      */
-    subtitlePath: any;
+    subtitlePath: string;
     /**
      * Relative path to the song's TXN script file (if any).
-     * @type {string}
      */
-    txnScript: any;
+    txnScript: string;
     /**
      * Relative path to the song's background image (if any).
-     * @type {string}
      */
-    background: any;
+    background: string;
     /**
      * Detailed information about this song (if applied)
      */
@@ -511,11 +507,13 @@ export declare class SongManager {
     static addSongYouTube(): void;
     static selectBackground(song?: Song): void;
     static selectBackgroundFromURL(song?: Song): Promise<void>;
+    static selectSubtitles(song?: Song): void;
+    static selectStoryboard(song?: Song): void;
+    static selectDefaultBackground(): void;
     /**
-     * This should be set bby the client.
-     * @param {Song} song
+     * This should be set by the client.
      */
-    static onplay: (song: any) => void;
+    static onplay: (song: Song) => void;
 }
 export declare class SongGroup {
     /**
@@ -596,6 +594,11 @@ export declare class Storyboard {
      * @param {number} value
      */
     static setIntensity(value: any): void;
+    static analyser: AnalyserNode;
+    static setAnalyserFftLevel(size: number): void;
+    static setAnalyserFftSize(size: AnalyserFftSizeIndex): void;
+    static bufferLength: number;
+    static dataArray: Uint8Array;
     static _fadingEnabled: boolean | number | NodeJS.Timeout;
 }
 /**
@@ -661,22 +664,22 @@ export declare class ToxenScriptManager {
     static convertSecondsToDigitalClock(seconds: any, trim?: boolean): string;
     /**
      * List of events in order for the current song.
-     * @type {ToxenEvent[]}
      */
-    static events: any[];
+    static events: ToxenEvent[];
 }
 declare class ToxenEvent {
     /**
      * Create a new Event
      * @param {number} startPoint Starting point in seconds.
      * @param {number} endPoint Ending point in seconds.
-     * @param {(args: any[]) => void} fn Function to run at this interval.
+     * @param fn Function to run at this interval.
      */
-    constructor(startPoint: any, endPoint: any, fn: any);
+    constructor(startPoint: any, endPoint: any, fn: (args: any[]) => void);
     startPoint: number;
     endPoint: number;
-    fn: FunctionConstructor;
+    fn: Function;
     hasRun: boolean;
+    type: string;
 }
 export declare class Debug {
     static updateCSS(): void;
@@ -718,10 +721,17 @@ export declare class Debug {
         blue: number;
     };
     /**
-   * Wait `ms` milliseconds.
-   * @param {number} ms
-   */
+     * Wait `ms` milliseconds.
+     * @param {number} ms
+     */
     static wait(ms: any): Promise<unknown>;
+    /**
+     * Clamp a value inclusively in between a min and max value.
+     * @param value The value to clamp
+     * @param min Min value
+     * @param max Max value
+     */
+    static clamp(value: number, min: number, max: number): number;
 }
 export declare class Prompt {
     /**

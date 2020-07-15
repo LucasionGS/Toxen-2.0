@@ -154,7 +154,7 @@ function initialize() {
             let _analyser = _context.createAnalyser();
             _src.connect(_analyser);
             _analyser.connect(_context.destination);
-            analyser = _analyser;
+            Storyboard.analyser = _analyser;
             console.log("Visualizer is now ready.");
             initializeVisualizer();
         })();
@@ -308,10 +308,6 @@ function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
         }
     });
 }
-/**
- * For audio Visualizer
- */
-var analyser = null;
 var avg = 0;
 var avgSec = 0;
 var dim = 0;
@@ -324,17 +320,14 @@ function initializeVisualizer() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     var ctx = canvas.getContext("2d");
-    analyser.fftSize = 512;
-    var bufferLength = analyser.frequencyBinCount / 2;
-    var dataArray = new Uint8Array(bufferLength);
+    Storyboard.setAnalyserFftSize(512);
     function renderFrame() {
         requestAnimationFrame(renderFrame);
-        if (settings.freezeVisualizer && SongManager.player.paused) {
+        if (settings.freezeVisualizer && SongManager.player.paused)
             return;
-        }
         var WIDTH = canvas.width;
         var HEIGHT = canvas.height;
-        var barWidth = (WIDTH / bufferLength) - 1;
+        var barWidth = (WIDTH / Storyboard.bufferLength) - 1;
         var barHeight;
         ctx.clearRect(0, 0, WIDTH, HEIGHT);
         var x = 0;
@@ -360,7 +353,7 @@ function initializeVisualizer() {
         else {
             dim = settings.backgroundDim;
         }
-        analyser.getByteFrequencyData(dataArray);
+        Storyboard.analyser.getByteFrequencyData(Storyboard.dataArray);
         dim = Math.max(dim, 0);
         // console.log("Avg: ", avg);
         // console.log(dim);
@@ -371,9 +364,9 @@ function initializeVisualizer() {
         if (settings.visualizer) {
             avg = 0;
             if (Storyboard.visualizerDirection == 0)
-                dataArray = dataArray.reverse();
-            for (var i = 0; i < bufferLength; i++) {
-                barHeight = (dataArray[i] * intensity - (10 * intensity));
+                Storyboard.dataArray = Storyboard.dataArray.reverse();
+            for (var i = 0; i < Storyboard.bufferLength; i++) {
+                barHeight = (Storyboard.dataArray[i] * intensity - (10 * intensity));
                 var r = Storyboard.red;
                 var g = Storyboard.green;
                 var b = Storyboard.blue;
@@ -407,9 +400,9 @@ function initializeVisualizer() {
                         break;
                 }
                 x += barWidth + 1;
-                avg += dataArray[i];
+                avg += Storyboard.dataArray[i];
             }
-            avg /= bufferLength * 2;
+            avg /= Storyboard.bufferLength * 2;
             avgSec += avg;
             // avg -= settings.volume;
         }

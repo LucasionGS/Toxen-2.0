@@ -83,13 +83,13 @@
       <div class="flex">
         <button class="fancybutton" onclick="SongManager.scanDirectory();" title="Refresh the music library">Update Music Library</button>
         <button id="addsongbutton" class="fancybutton" onclick="SongManager.addSong()" title="Add a new song to your library">Add Song</button>
-        <button disabled id="setdefaultbackgroundbutton" class="fancybutton" onclick="SongManager.selectDefaultBackground()" title="Set the default background for all songs that doesn't have a custom background">Set Default Background</button>
+        <button id="setdefaultbackgroundbutton" class="fancybutton" onclick="SongManager.selectDefaultBackground()" title="Set the default background for all songs that doesn't have a custom background">Set Default Background</button>
       </div>
       <hr>
       <div class="flex">
         <button id="setbackgroundbutton" class="fancybutton" onclick="SongManager.selectBackground()" title="Set the background for the currently playing song">Set Background</button>
-        <button disabled id="setsubtitlesbutton" class="fancybutton" onclick="SongManager.selectSubtitles()" title="Set the subtitles file for the currently playing song">Set Subtitles</button>
-        <button disabled id="setstoryboardbutton" class="fancybutton" onclick="SongManager.selectStoryboard()" title="Set the storyboard file for the currently playing song">Set Storyboard</button>
+        <button id="setsubtitlesbutton" class="fancybutton" onclick="SongManager.selectSubtitles()" title="Set the subtitles file for the currently playing song">Set Subtitles</button>
+        <button id="setstoryboardbutton" class="fancybutton" onclick="SongManager.selectStoryboard()" title="Set the storyboard file for the currently playing song">Set Storyboard</button>
       </div>
       <div id="songinfo">
         <h2>Song Info</h2>
@@ -368,57 +368,6 @@
       <br>
       <button id="restartToxenButton" class="fancybutton" onclick="Toxen.restart()">Restart Toxen</button>
       <hr>
-      <!-- <div id="changenotes">
-        <label>Change Notes</label>
-        <sup>
-          Version ID format: YYYYMMDDHHMM<br>
-          Newest Update First, descending.
-        </sup>
-
-        <p>202006040235</p>
-        <ul>
-          <li>Auto Updator!</li>
-          <li>Song Grouping</li>
-          <li>In-app editable Song Details: Artist, Title, Album, Source, Source Link, Language, and other Tags</li>
-          <li>Background Dim adjustments</li>
-          <li>New thumbnail option: Background Image</li>
-        </ul>
-
-        <p>202005310640</p>
-        <ul>
-          <li>Added YouTube Download feature
-            <ul>
-              <li>
-                Press on the <code>Add Song</code> button and press <code>Download YouTube Audio</code> when the prompt appears.<br>
-                Insert the required information such as URL and title. The required fields are marked with <code>*</code> in the placeholders.
-              </li>
-            </ul>
-          </li>
-          <li>Added <code>Discord Presense: Show Details</code> setting in <code>Advanced Settings</code></li>
-          <li>Added <code>Delete song</code> to the song context menu</li>
-          <li>Re-styled the text fields and progress bars, including the <code>Song Progress</code> bar</li>
-        </ul>
-
-        <p>202005281449</p>
-        <ul>
-          <li>Added <code>Set Background</code> functionality</li>
-          <li>Added <code>Song Info</code> to song context menu and editable information</li>
-          <li>Fixed <code>Currently playing</code> being deselected on <code>Update Music Library</code></li>
-        </ul>
-        
-        <p>202005280316</p>
-        <ul>
-          <li>Added Change notes under <code>Settings</code></li>
-          <li>Added multiple new settings along with descriptions
-            <ul>
-              <li>Volume Bar</li>
-              <li>Song Folder Selector</li>
-              <li>Right-hand Song Menu</li>
-            </ul>
-          </li>
-        </ul>
-        
-      </div> -->
     </div>
     <p id="subtitles"></p>
   </div>
