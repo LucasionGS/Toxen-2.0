@@ -2643,7 +2643,7 @@ class SongGroup {
      */
     constructor(name) {
         /**
-         * @type {Song[]}
+         * List of songs in this group
          */
         this.songList = [];
         /**
@@ -3069,6 +3069,24 @@ const menus = {
             }
         },
         {
+            label: "Select all in group",
+            click: (menuItem) => {
+                const songGroup = menuItem.songGroup;
+                if (songGroup instanceof SongGroup) {
+                    songGroup.songList.forEach(s => s.selected = true);
+                }
+            }
+        },
+        {
+            label: "Deselect all in group",
+            click: (menuItem) => {
+                const songGroup = menuItem.songGroup;
+                if (songGroup instanceof SongGroup) {
+                    songGroup.songList.forEach(s => s.selected = false);
+                }
+            }
+        },
+        {
             type: "separator"
         },
         {
@@ -3276,19 +3294,16 @@ function reloadMenu() {
 class Storyboard {
     /**
      * Fade into a RGB color.
-     * @param {number} red
-     * @param {number} green
-     * @param {number} blue
      */
     static rgb(red = Storyboard.red, green = Storyboard.green, blue = Storyboard.blue) {
         if (!isNaN(red) && typeof red != "number") {
-            Storyboard.red;
+            red = Storyboard.red;
         }
         if (!isNaN(green) && typeof green != "number") {
-            Storyboard.green;
+            green = Storyboard.green;
         }
         if (!isNaN(blue) && typeof blue != "number") {
-            Storyboard.blue;
+            blue = Storyboard.blue;
         }
         Storyboard.toRed = red;
         Storyboard.toGreen = green;
@@ -3306,6 +3321,28 @@ class Storyboard {
                 }
             }, 1);
         }
+        return {
+            red: red,
+            green: green,
+            blue: blue
+        };
+    }
+    /**
+     * Instantly set the RGB value
+     */
+    static rgbInstant(red = Storyboard.red, green = Storyboard.green, blue = Storyboard.blue) {
+        if (!isNaN(red) && typeof red != "number") {
+            red = Storyboard.red;
+        }
+        if (!isNaN(green) && typeof green != "number") {
+            green = Storyboard.green;
+        }
+        if (!isNaN(blue) && typeof blue != "number") {
+            blue = Storyboard.blue;
+        }
+        Storyboard.red = red;
+        Storyboard.green = green;
+        Storyboard.blue = blue;
         return {
             red: red,
             green: green,
@@ -3384,7 +3421,9 @@ class Storyboard {
         Storyboard.visualizerIntensity = value;
     }
     static setAnalyserFftLevel(size) {
-        Storyboard.setAnalyserFftSize(Math.pow(size, 2));
+        if (size < 1)
+            size = 1;
+        Storyboard.setAnalyserFftSize(Math.pow(size + 4, 2));
     }
     static setAnalyserFftSize(size) {
         Storyboard.analyser.fftSize = Debug.clamp(size, 32, 32768);
@@ -3738,7 +3777,7 @@ class ToxenScriptManager {
             function lineParser(line) {
                 try { // Massive trycatch for any error.
                     let maxPerSecond = 0;
-                    const checkVariable = /(?<=^\s*)(\$\w+)\s*(=>?|:)\s*"(.*?[^\\])"/g;
+                    const checkVariable = /(?<=^\s*)(\$\w+)\s*(=>?|:|\()\s*"(.*?[^\\])"/g;
                     if (checkVariable.test(line)) {
                         line.replace(checkVariable, function (item, $1, $2) {
                             $2 = $2.replace(/\\"/g, "\"");
@@ -3748,7 +3787,7 @@ class ToxenScriptManager {
                         });
                         return;
                     }
-                    const checkRawVariable = /(?<=^\s*)(@\w+)\s*(?:=>?|:)\s*(.*)/g;
+                    const checkRawVariable = /(?<=^\s*)(@\w+)\s*(?:=>?|:|\()\s*(.*)/g;
                     if (checkRawVariable.test(line)) {
                         line.replace(checkRawVariable, function (item, $1, $2) {
                             // $2 = $2.replace(/\\"/g, "\"");
@@ -3791,7 +3830,7 @@ class ToxenScriptManager {
                             return returnError;
                     }
                     // Check if non-time function
-                    const checkFunction = /^\s*:(\S*?)\s*(=>?|:)s*.*/g;
+                    const checkFunction = /^\s*:(\S*?)\s*(=>?|:|\()s*.*/g;
                     if (checkFunction.test(line)) {
                         line = "[0 - 1]" + line;
                     }
@@ -3802,13 +3841,13 @@ class ToxenScriptManager {
                     }
                     // Regexes
                     const timeReg = /(?<=\[).+\s*-\s*\S+(?=\])/g;
-                    const typeReg = /(?<=\[.+\s*-\s*\S+\]\s*)\S*(?=\s*(=>?|:))/g;
-                    const argReg = /(?<=\[.+\s*-\s*\S+\]\s*\S*\s*(=>?|:)\s*).*/g;
+                    const typeReg = /(?<=\[.+\s*-\s*\S+\]\s*)\S*(?=\s*(=>?|:|\())/g;
+                    const argReg = /(?<=\[.+\s*-\s*\S+\]\s*\S*\s*(=>?|:|\()\s*).*/g;
                     // Variables
                     var startPoint = 0;
                     var endPoint = 0;
                     var args = [];
-                    var fn = (args = []) => { };
+                    var fn;
                     // Parsing...
                     var timeRegResult = line.match(timeReg)[0];
                     timeRegResult = timeRegResult.replace(/\s/g, "");
@@ -3862,9 +3901,6 @@ class ToxenScriptManager {
                     if (typeof argString != "string") {
                         return `Arguments are not in a valid format.`;
                     }
-                    /**
-                     * @param {string} as
-                     */
                     function parseArgumentsFromString(as) {
                         var argList = [];
                         var curArg = "";
@@ -4212,7 +4248,7 @@ ToxenScriptManager.eventFunctions = {
     },
     /**
      * Change the color of the visualizer
-     * @param {[string | number, string | number, string | number]} args Arguments
+     * @param args Arguments
      */
     visualizercolor: function (args, event) {
         if (!isNaN(args[0])) {
@@ -4236,6 +4272,33 @@ ToxenScriptManager.eventFunctions = {
             }
         }
         Storyboard.rgb(+args[0], +args[1], +args[2]);
+    },
+    /**
+     * Change the color of the visualizer instantly without transition.
+     * @param args Arguments
+     */
+    visualizercolorinstant: function (args, event) {
+        if (!isNaN(args[0])) {
+            for (let i = 1; i < 3; i++) {
+                if (isNaN(args[i]))
+                    args[i] = 0;
+            }
+        }
+        else {
+            try {
+                let rgb = args[0].toLowerCase() == "default" ? Settings.current.visualizerColor : Debug.cssColorToRgb(args[0]);
+                args[0] = rgb.red;
+                args[1] = rgb.green;
+                args[2] = rgb.blue;
+            }
+            catch (error) {
+                args[0] = Settings.current.visualizerColor.red;
+                args[1] = Settings.current.visualizerColor.green;
+                args[2] = Settings.current.visualizerColor.blue;
+                console.warn(error);
+            }
+        }
+        Storyboard.rgbInstant(+args[0], +args[1], +args[2]);
     },
     /**
      * Change the intensity of the visualizer
@@ -4371,18 +4434,16 @@ ToxenScriptManager.eventFunctions = {
      * @param {[number]} args
      */
     pulse: function ([intensity]) {
-        if (!SongManager.player.paused) {
-            testPulse.pulse(Storyboard.visualizerIntensity * 32 * intensity);
+        if (!SongManager.player.paused && !isNaN(intensity)) {
+            testPulse.pulse(Storyboard.visualizerIntensity * 32 * +intensity);
         }
     },
     /**
      * This function doesn't do anything.
      * BPMPulse is converted to Pulses when parsed.
+     * Exists only for syntax
      */
-    bpmpulse: function () {
-        // This function doesn't do anything.
-        // BPMPulse is converted to Pulses when parsed.
-    },
+    bpmpulse: function () { },
     log: function () {
         console.log([...arguments[0]]);
     },

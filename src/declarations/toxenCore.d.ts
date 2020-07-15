@@ -1,5 +1,5 @@
 /// <reference types="node" />
-export declare let hueApi: import("node-hue-api/lib/api/Api.js");
+export declare let hueApi: import("node-hue-api/lib/api/Api");
 import * as Electron from "electron";
 import * as Zip from "adm-zip";
 import { EventEmitter } from "events";
@@ -525,9 +525,9 @@ export declare class SongGroup {
      */
     constructor(name: any);
     /**
-     * @type {Song[]}
+     * List of songs in this group
      */
-    songList: any[];
+    songList: Song[];
     refreshList(): void;
     /**
      * @type {string}
@@ -572,11 +572,16 @@ export declare class Storyboard {
     static currentBackgroundDim: number;
     /**
      * Fade into a RGB color.
-     * @param {number} red
-     * @param {number} green
-     * @param {number} blue
      */
     static rgb(red?: number, green?: number, blue?: number): {
+        red: number;
+        green: number;
+        blue: number;
+    };
+    /**
+     * Instantly set the RGB value
+     */
+    static rgbInstant(red?: number, green?: number, blue?: number): {
         red: number;
         green: number;
         blue: number;
@@ -640,7 +645,7 @@ export declare class ToxenScriptManager {
      * Function Types for ToxenScript.
      */
     static eventFunctions: {
-        [eventName: string]: (args: any[], event: ToxenEvent) => void;
+        [eventName: string]: (args: string[], event: ToxenEvent) => void;
     };
     /**
      * Function Types for ToxenScript

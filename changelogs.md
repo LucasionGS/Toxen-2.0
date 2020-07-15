@@ -1,4 +1,34 @@
+# Toxen Next
+Features I want to implement (This will be updated as i get more ideas and remember to write them down):
+- Predefined actions that are callable.
+- Custom Themes
+- Graphical Storyboard Editor Interface
+- Built-in Graphical SRT(subtitle) creator
+- Proper module support with prebuilds for JS and TS
+- Better and more media conversions to supported files.
+- Better song info editing
+  - Multi-song info editing
+- Auto-import data from media files (Things like artist, album, etc...)
+- Remove playlist feature
+- Visualizer Quanity Customizer (Interface buttons for `Storyboard`.`setAnalyserFftLevel` and `Storyboard`.`setAnalyserFftSize`)
+- Music Playback Rate Changer (Like the first version of Toxen used to have)
+
 # Toxen Change Logs
+Features and changes that has already been made to Toxen.
+
+## Current WIP Update
+- Added select/deselect all songs in a group
+- ToxenScript now understands more common ways of executing a function, e.g using `()`
+  - On top of all the other ways of pointing to parameters, you can now write functions like this
+  ```js
+  // New added way of using a function. You don't NEED the ending bracket, but it makes the code look better.
+  [0] VisualizerColor("red")
+  // Old ways. All are still valid
+  [0] VisualizerColor => "red"
+  [0] VisualizerColor = "red"
+  [0] VisualizerColor: "red"
+  ```
+
 
 ## 202007150445
 - Added import subtitle file for current song

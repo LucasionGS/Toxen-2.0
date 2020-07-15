@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as rimraf from "rimraf";
 import { TextEditor } from "./texteditor";
 import { v3 as hue } from "node-hue-api";
-export let hueApi: import("node-hue-api/lib/api/Api.js") = null;
+export let hueApi: import("node-hue-api/lib/api/Api") = null;
 
 import { Imd } from "./ionMarkDown";
 import * as Electron from "electron";
@@ -2974,9 +2974,9 @@ export class SongGroup {
     });
   }
   /**
-   * @type {Song[]}
+   * List of songs in this group
    */
-  songList = [];
+  songList: Song[] = [];
 
   refreshList() {
     this.element.innerHTML = "";
@@ -3385,6 +3385,24 @@ const menus = {
         }
       },
       {
+        label: "Select all in group",
+        click: (menuItem: ToxenElectronMenuItemSongGroup) => {
+          const songGroup = menuItem.songGroup;
+          if (songGroup instanceof SongGroup) {
+            songGroup.songList.forEach(s => s.selected = true);
+          }
+        }
+      },
+      {
+        label: "Deselect all in group",
+        click: (menuItem: ToxenElectronMenuItemSongGroup) => {
+          const songGroup = menuItem.songGroup;
+          if (songGroup instanceof SongGroup) {
+            songGroup.songList.forEach(s => s.selected = false);
+          }
+        }
+      },
+      {
         type: "separator"
       },
       {
@@ -3619,19 +3637,16 @@ export class Storyboard {
   static currentBackgroundDim = 0;
   /**
    * Fade into a RGB color.
-   * @param {number} red 
-   * @param {number} green 
-   * @param {number} blue 
    */
   static rgb(red = Storyboard.red, green = Storyboard.green, blue = Storyboard.blue) {
     if (!isNaN(red) && typeof red != "number") {
-      Storyboard.red;
+      red = Storyboard.red;
     }
     if (!isNaN(green) && typeof green != "number") {
-      Storyboard.green;
+      green = Storyboard.green;
     }
     if (!isNaN(blue) && typeof blue != "number") {
-      Storyboard.blue;
+      blue = Storyboard.blue;
     }
 
     Storyboard.toRed = red;
@@ -3651,6 +3666,30 @@ export class Storyboard {
         }
       }, 1);
     }
+
+    return {
+      red: red,
+      green: green,
+      blue: blue
+    };
+  }
+  /**
+   * Instantly set the RGB value
+   */
+  static rgbInstant(red = Storyboard.red, green = Storyboard.green, blue = Storyboard.blue) {
+    if (!isNaN(red) && typeof red != "number") {
+      red = Storyboard.red;
+    }
+    if (!isNaN(green) && typeof green != "number") {
+      green = Storyboard.green;
+    }
+    if (!isNaN(blue) && typeof blue != "number") {
+      blue = Storyboard.blue;
+    }
+
+    Storyboard.red = red;
+    Storyboard.green = green;
+    Storyboard.blue = blue;
 
     return {
       red: red,
@@ -3735,7 +3774,8 @@ export class Storyboard {
   static analyser: AnalyserNode = null;
   
   static setAnalyserFftLevel(size: number) {
-    Storyboard.setAnalyserFftSize(Math.pow(size, 2) as AnalyserFftSizeIndex)
+    if (size < 1) size = 1;
+    Storyboard.setAnalyserFftSize(Math.pow(size + 4, 2) as AnalyserFftSizeIndex)
   }
   
   static setAnalyserFftSize(size: AnalyserFftSizeIndex) {
@@ -4162,7 +4202,7 @@ export class ToxenScriptManager {
       try { // Massive trycatch for any error.
         let maxPerSecond = 0;
         
-        const checkVariable = /(?<=^\s*)(\$\w+)\s*(=>?|:)\s*"(.*?[^\\])"/g;
+        const checkVariable = /(?<=^\s*)(\$\w+)\s*(=>?|:|\()\s*"(.*?[^\\])"/g;
         if (checkVariable.test(line)) {
           line.replace(checkVariable, function(item, $1, $2) {
             $2 = $2.replace(/\\"/g, "\"");
@@ -4173,7 +4213,7 @@ export class ToxenScriptManager {
           return;
         }
         
-        const checkRawVariable = /(?<=^\s*)(@\w+)\s*(?:=>?|:)\s*(.*)/g;
+        const checkRawVariable = /(?<=^\s*)(@\w+)\s*(?:=>?|:|\()\s*(.*)/g;
         if (checkRawVariable.test(line)) {
           line.replace(checkRawVariable, function(item, $1, $2) {
             // $2 = $2.replace(/\\"/g, "\"");
@@ -4216,7 +4256,7 @@ export class ToxenScriptManager {
         }
 
         // Check if non-time function
-        const checkFunction = /^\s*:(\S*?)\s*(=>?|:)s*.*/g;
+        const checkFunction = /^\s*:(\S*?)\s*(=>?|:|\()s*.*/g;
         if (checkFunction.test(line)) {
           line = "[0 - 1]" + line;
         }
@@ -4228,8 +4268,8 @@ export class ToxenScriptManager {
         }
         // Regexes
         const timeReg = /(?<=\[).+\s*-\s*\S+(?=\])/g;
-        const typeReg = /(?<=\[.+\s*-\s*\S+\]\s*)\S*(?=\s*(=>?|:))/g;
-        const argReg = /(?<=\[.+\s*-\s*\S+\]\s*\S*\s*(=>?|:)\s*).*/g;
+        const typeReg = /(?<=\[.+\s*-\s*\S+\]\s*)\S*(?=\s*(=>?|:|\())/g;
+        const argReg = /(?<=\[.+\s*-\s*\S+\]\s*\S*\s*(=>?|:|\()\s*).*/g;
 
         // Variables
         var startPoint: any = 0;
@@ -4301,10 +4341,7 @@ export class ToxenScriptManager {
           return `Arguments are not in a valid format.`;
         }
 
-        /**
-         * @param {string} as 
-         */
-        function parseArgumentsFromString(as) {
+        function parseArgumentsFromString(as: string) {
           var argList = [];
           var curArg = "";
           var waitForQuote = true;
@@ -4431,7 +4468,7 @@ export class ToxenScriptManager {
   /**
    * Function Types for ToxenScript.
    */
-  static eventFunctions: {[eventName: string]: (args: any[], event: ToxenEvent) => void} = {
+  static eventFunctions: {[eventName: string]: (args: string[], event: ToxenEvent) => void} = {
     /**
      * Change the image of the background.
      * @param {[string]} args Arguments.
@@ -4445,9 +4482,9 @@ export class ToxenScriptManager {
     },
     /**
      * Change the color of the visualizer
-     * @param {[string | number, string | number, string | number]} args Arguments
+     * @param args Arguments
      */
-    visualizercolor: function (args, event) {
+    visualizercolor: function (args: any[], event) {
       if (!isNaN(args[0])) {
         for (let i = 1; i < 3; i++) {
           if (isNaN(args[i])) args[i] = 0;
@@ -4467,6 +4504,31 @@ export class ToxenScriptManager {
         }
       }
       Storyboard.rgb(+args[0], +args[1], +args[2]);
+    },
+    /**
+     * Change the color of the visualizer instantly without transition.
+     * @param args Arguments
+     */
+    visualizercolorinstant: function (args: any[], event) {
+      if (!isNaN(args[0])) {
+        for (let i = 1; i < 3; i++) {
+          if (isNaN(args[i])) args[i] = 0;
+        }
+      }
+      else {
+        try {
+          let rgb = args[0].toLowerCase() == "default" ? Settings.current.visualizerColor : Debug.cssColorToRgb(args[0]);
+          args[0] = rgb.red;
+          args[1] = rgb.green;
+          args[2] = rgb.blue;
+        } catch (error) {
+          args[0] = Settings.current.visualizerColor.red;
+          args[1] = Settings.current.visualizerColor.green;
+          args[2] = Settings.current.visualizerColor.blue;
+          console.warn(error);
+        }
+      }
+      Storyboard.rgbInstant(+args[0], +args[1], +args[2]);
     },
     /**
      * Change the intensity of the visualizer
@@ -4543,7 +4605,7 @@ export class ToxenScriptManager {
      * Change the color of a Hue Light.
      * @param {[string | number, string | number, string | number, string | number, string | number]} args Arguments
      */
-    huecolor: function (args) {
+    huecolor: function (args: any[]) {
       if (!isNaN(args[1])) {
         for (let i = 2; i < 4; i++) {
           if (isNaN(args[i])) args[i] = 0;
@@ -4574,7 +4636,7 @@ export class ToxenScriptManager {
     /**
      * Change the color of a Hue Light and Visualizer.
      */
-    hueandvisualizercolor: function (args) {
+    hueandvisualizercolor: function (args: any[]) {
       if (!isNaN(args[1])) {
         for (let i = 2; i < 4; i++) {
           if (isNaN(args[i])) args[i] = 0;
@@ -4607,18 +4669,16 @@ export class ToxenScriptManager {
      * @param {[number]} args 
      */
     pulse: function ([intensity]) {
-      if (!SongManager.player.paused) {
-        testPulse.pulse(Storyboard.visualizerIntensity * 32 * intensity);
+      if (!SongManager.player.paused && !isNaN(intensity as unknown as number)) {
+        testPulse.pulse(Storyboard.visualizerIntensity * 32 * +intensity);
       }
     },
     /**
      * This function doesn't do anything.  
-     * BPMPulse is converted to Pulses when parsed.
+     * BPMPulse is converted to Pulses when parsed.  
+     * Exists only for syntax
      */
-    bpmpulse: function() {
-      // This function doesn't do anything.
-      // BPMPulse is converted to Pulses when parsed.
-    },
+    bpmpulse: function() { },
     log: function() {
       console.log([...arguments[0]]);
     },

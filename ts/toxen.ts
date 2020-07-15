@@ -16,10 +16,7 @@ const {
   Statistics,
   showTutorial,
 } = ToxenCore;
-// bruh
-// const process = require("process");
 import * as rpc from "discord-rpc";
-// const Imd = require("./ionMarkDown").Imd;
 import * as version from "./version.json";
 const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;

@@ -1,17 +1,17 @@
-/**
- * @typedef {{"word": string,"start": number,"end": number}} Word;
- * @typedef {{"start": number,"end": number}} CursorPosition;
- */
+declare type CursorPosition = {
+    "start": number;
+    "end": number;
+};
 export declare class TextEditor {
     /**
      * @param {HTMLTextAreaElement | HTMLInputElement} textarea
      */
     constructor(textarea?: HTMLTextAreaElement | HTMLInputElement);
     textarea: HTMLTextAreaElement | HTMLInputElement;
-    /**
-     * @type {{"cursor": CursorPosition, "text": string[]}[]}
-     */
-    stack: any[];
+    stack: {
+        "cursor": CursorPosition;
+        "text": string;
+    }[];
     /**
      * @type {number}
      */
@@ -53,7 +53,7 @@ export declare class TextEditor {
      * @param end
      * @param direction
      */
-    setCursor(start: any, end?: any, direction?: "forward" | "backward" | "none"): void;
+    setCursor(start: number, end?: number, direction?: "forward" | "backward" | "none"): void;
     getCurrentLines(): any[];
     /**
      * Get a line by index.
@@ -108,3 +108,4 @@ export declare class TextEditor {
      */
     insert(text: string | [string, string], start: number, end?: number): void;
 }
+export {};

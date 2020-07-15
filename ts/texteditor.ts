@@ -1,7 +1,5 @@
-/**
- * @typedef {{"word": string,"start": number,"end": number}} Word;
- * @typedef {{"start": number,"end": number}} CursorPosition;
- */
+type Word = {"word": string,"start": number,"end": number};
+type CursorPosition = {"start": number,"end": number};
 
 export class TextEditor {
   /**
@@ -23,11 +21,11 @@ export class TextEditor {
       } = e;
 
       let cursor = this.getCursor();
+      let word = this.getWord();
       
       if (key == "Tab" && typeof (this.currentSuggestion = this.suggest()) == "string") {
         e.preventDefault();
         e.stopPropagation();
-        let word = this.getWord();
         this.insert(this.currentSuggestion, word.start, word.end);
         this.emit("finish", this.currentSuggestion);
         this.currentSuggestion = null;
@@ -76,21 +74,6 @@ export class TextEditor {
         let text = lines.map(l => l.text).join("\n");
         this.insert("\n"+text, lines[0].start - 1);
       }
-      // else if (key.toLowerCase() == "arrowdown" && !ctrlKey && !shiftKey && altKey) {
-      //   // let lines = this.getCurrentLines();
-      //   // let text = lines.map(l => l.text).join("\n");
-      //   // this.insert("\n"+text, lines[0].end);
-      // }
-      // else if (key.toLowerCase() == "arrowup" && !ctrlKey && !shiftKey && altKey) {
-      //   let lines = this.getCurrentLines();
-      //   let otherLines = this.getLines(lines.map(l => l.index - lines.length));
-        
-      //   lines.forEach((l, i) => this.setLine(l.index, otherLines[i].text));
-      //   otherLines.forEach((l, i) => this.setLine(l.index, lines[i].text));
-
-      //   let text = lines.map(l => l.text).join("\n");
-      //   this.insert("\n"+text, lines[0].start - 1, lines[0].end);
-      // }
       else if (key.toLowerCase() == "'" && ctrlKey && !shiftKey && !altKey) {
         let lines = this.getCurrentLines();
         let endPlus = 0;
@@ -101,16 +84,33 @@ export class TextEditor {
         this.insert(text, lines[0].start, lines[lines.length - 1].end);
         this.setCursor(endPlus > 0 ? lines[0].start + 2 : lines[0].start, lines[lines.length - 1].end + endPlus);
       }
-      else if (cursor.start < cursor.end && [
+      else if ([
+        "]",
+        "}",
+        ")",
+        "\""
+      ].find((t, i, obj) => key.toLowerCase() == t && t == this.value.substring(cursor.start, cursor.start + 1))) {
+        e.preventDefault();
+
+        switch (key) {
+          case "]":
+          case "}":
+          case ")":
+          case "\"":
+            this.setCursor(cursor.start + 1);
+            break;
+        
+          default:
+            break;
+        }
+      }
+      else if ([
         "[",
         "{",
         "(",
         "\""
       ].find(t => key.toLowerCase() == t)) {
         e.preventDefault();
-        // textEditor.insert();
-        let lines = this.getCurrentLines();
-        let text = lines.map(l => l.text).join("\n");
         
         switch (key) {
           case "[":
@@ -130,7 +130,7 @@ export class TextEditor {
             break;
         }
       }
-
+      
 
       if (key.toLowerCase() == "z" && ctrlKey) {
         e.preventDefault();
@@ -148,10 +148,6 @@ export class TextEditor {
           });
         }, 0);
       }
-
-      // console.log(this.stack);
-      // console.log(this.stack.length);
-      // console.log(this.stackIndex);
     });
 
     this.stack = [
@@ -169,10 +165,7 @@ export class TextEditor {
 
   textarea: HTMLTextAreaElement | HTMLInputElement;
 
-  /**
-   * @type {{"cursor": CursorPosition, "text": string[]}[]}
-   */
-  stack = [];
+  stack: {"cursor": CursorPosition, "text": string}[] = [];
   /**
    * @type {number}
    */
@@ -270,7 +263,7 @@ export class TextEditor {
    * @param end 
    * @param direction 
    */
-  setCursor(start, end = start, direction: "forward" | "backward" | "none" = "none") {
+  setCursor(start: number, end = start, direction: "forward" | "backward" | "none" = "none") {
     this.textarea.setSelectionRange(start, end, direction)
   }
 
