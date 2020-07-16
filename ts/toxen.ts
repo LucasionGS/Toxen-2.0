@@ -14,6 +14,7 @@ const {
   ScriptEditor,
   ToxenModule,
   Statistics,
+  SelectList,
   showTutorial,
 } = ToxenCore;
 import * as rpc from "discord-rpc";
@@ -327,7 +328,6 @@ async function initialize() {
   // Finish
   settings.reloadPlaylists();
   SongManager.playRandom();
-
 }
 
 

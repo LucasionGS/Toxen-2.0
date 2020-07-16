@@ -452,6 +452,19 @@ div.pinput > input:focus-within + p{
   cursor: pointer;
 }
 
+div.selectlist {
+  position: absolute;
+  background-color: var(--bgcolor);
+  color: var(--txtcolor);
+  z-index: 10000;
+}
+
+div.selectlist select {
+  color: var(--txtcolor);
+  background-color: var(--panelcolor);
+  width: 100%;
+}
+
 /* ToxenScript Values */
 .toxenscript_number {
   color: #78ff4a;

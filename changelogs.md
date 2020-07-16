@@ -12,6 +12,9 @@ Features I want to implement (This will be updated as i get more ideas and remem
 - Remove playlist feature
 - Visualizer Quanity Customizer (Interface buttons for `Storyboard`.`setAnalyserFftLevel` and `Storyboard`.`setAnalyserFftSize`)
 - Music Playback Rate Changer (Like the first version of Toxen used to have)
+- [Toxen.net](https://toxen.net/) website
+  - Hub for downloading modules, storyboards, subtitles, custom themes, etc...
+  - A Toxen forum where you can ask questions or suggest ideas for future updates.
 
 # Toxen Change Logs
 Features and changes that has already been made to Toxen.
@@ -21,13 +24,15 @@ Features and changes that has already been made to Toxen.
 - ToxenScript now understands more common ways of executing a function, e.g using `()`
   - On top of all the other ways of pointing to parameters, you can now write functions like this
   ```js
-  // New added way of using a function. You don't NEED the ending bracket, but it makes the code look better.
+  // New added way of using a function. You don't NEED the ending bracket, but it makes the code look cleaner.
   [0] VisualizerColor("red")
   // Old ways. All are still valid
   [0] VisualizerColor => "red"
   [0] VisualizerColor = "red"
   [0] VisualizerColor: "red"
   ```
+- Added artist name quick-select in the YouTube Downloader for if you are downloading a song from an artist you already have other songs from.
+![youtubeArtistQuickSelect.gif](https://toxen.net/media/youtubeArtistQuickSelect.gif)
 
 
 ## 202007150445

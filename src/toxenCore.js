@@ -1009,7 +1009,7 @@ class Song {
      * Zip the entire song folder and save it as a `txs`.
      *
      * if `location` is defined, no prompt for selecting location will appear, and will just export to the set location
-     * @param {string} location Location to save to.
+     * @param location Location to save to.
      */
     export(location = null) {
         let txs = this.createTxs();
@@ -2234,11 +2234,7 @@ class SongManager {
         });
     }
     static addSongYouTube() {
-        /**
-         * @param {string} str
-         */
         function isValid(str) {
-            // var orgStr = str;
             let reg = /[\\\/\:\*\?\"\<\>\|]/g;
             if (reg.test(str)) {
                 str = str.replace(reg, "");
@@ -2265,6 +2261,13 @@ class SongManager {
         ytInputTitle.style.width = "90%";
         ytInputTitle.style.margin = "auto";
         ytInputTitle.placeholder = "Title*";
+        let sl = new SelectList(SongManager.getAllArtists().map(artist => {
+            return {
+                text: artist,
+                value: artist
+            };
+        }), false);
+        sl.setSelectPlaceholder("Quick-select Artist");
         let ytProgressBar = document.createElement("progress");
         ytProgressBar.classList.add("fancyprogress");
         ytProgressBar.style.width = "93%";
@@ -2276,6 +2279,8 @@ class SongManager {
                 downloadYouTube.click();
             }
         });
+        p.addContent(sl.element);
+        sl.element.style.position = "relative";
         p.addContent(ytInputArtist);
         ytInputArtist.addEventListener("keydown", e => {
             if (e.key == "Enter" && !e.ctrlKey && !e.altKey && !e.shiftKey) {
@@ -2431,8 +2436,17 @@ class SongManager {
         close.classList.add("color-red");
         close.onclick = function () {
             p.close();
+            sl.close();
         };
         p.addButtons([downloadYouTube, close], "fancybutton");
+        setTimeout(() => {
+            let box = ytInputArtist.getBoundingClientRect();
+            sl.element.style.width = box.width + "px";
+            sl.element.style.display = "block";
+            sl.element.style.width = "93%";
+            sl.element.style.margin = "auto";
+            sl.on("select", s => ytInputArtist.value = s.value);
+        }, 0);
     }
     static selectBackground(song = SongManager.getCurrentlyPlayingSong()) {
         dialog.showOpenDialog(remote.getCurrentWindow(), {
@@ -2618,6 +2632,10 @@ class SongManager {
             catch (_c) { }
         }
     }
+    static getAllArtists() {
+        let artists = SongManager.songList.map(s => s.details.artist);
+        return [...new Set(artists)];
+    }
 }
 exports.SongManager = SongManager;
 /**
@@ -2639,7 +2657,7 @@ SongManager.player = null;
 SongManager.onplay = function (song) { };
 class SongGroup {
     /**
-     * @param {string} name Name for this group container.
+     * @param name Name for this group container.
      */
     constructor(name) {
         /**
@@ -2660,9 +2678,6 @@ class SongGroup {
         this.element.classList.add("songgroup");
         this.element.toggleAttribute("collapsed", true);
         this.element.addEventListener("click", (e) => {
-            /**
-             * @type {HTMLElement}
-             */
             let t = e.target;
             if (t && t.classList.contains("songgrouphead")) {
                 this.collapse();
@@ -2781,9 +2796,6 @@ class SongGroup {
     }
 }
 exports.SongGroup = SongGroup;
-/**
- * @type {SongGroup[]}
- */
 SongGroup.songGroups = [];
 const menus = {
     "songMenu": Menu.buildFromTemplate([
@@ -5509,6 +5521,76 @@ class Themeable {
         return this.element.style + "";
     }
 }
+class SelectList extends events_1.EventEmitter {
+    constructor(items, closeAutomatically = true) {
+        super();
+        this.items = items;
+        this.closeAutomatically = closeAutomatically;
+        this.optionElements = [];
+        this.element = document.createElement("div");
+        this.element.classList.add("selectlist");
+        this.selectElement = document.createElement("select");
+        this.element.appendChild(this.selectElement);
+        let resolve;
+        let reject;
+        this.value = new Promise((res, rej) => {
+            resolve = res;
+            reject = rej;
+        });
+        let placeholderOption = document.createElement("option");
+        placeholderOption.innerText = "<Select value>";
+        placeholderOption.style.color = "gray";
+        placeholderOption.value = "-1";
+        this.selectElement.appendChild(placeholderOption);
+        let cancelOption = document.createElement("option");
+        cancelOption.innerText = "<Cancel>";
+        cancelOption.style.color = "red";
+        cancelOption.value = "cancel";
+        this.selectElement.appendChild(cancelOption);
+        items.forEach((item, i) => {
+            let option = document.createElement("option");
+            this.optionElements.push(option);
+            option.innerText = item.text;
+            option.itemValue = item.value;
+            option.selectListItem = item;
+            option.value = i.toString();
+            this.selectElement.appendChild(option);
+        });
+        this.selectElement.addEventListener("change", () => {
+            console.log("CHANGE");
+            if (this.selectElement.value != "-1" && this.selectElement.value != "cancel") {
+                let option = this.optionElements.find(oe => oe.value == this.selectElement.value);
+                resolve(option.selectListItem);
+                this.emit("select", option.selectListItem);
+                if (this.closeAutomatically)
+                    this.close();
+            }
+            if (this.selectElement.value == "cancel") {
+                this.close();
+                reject("Cancelled");
+            }
+        });
+        this.selectElement.addEventListener("keydown", (e) => {
+            if (e.key == "Escape") {
+                this.close();
+                reject("Cancelled");
+            }
+        });
+    }
+    close() {
+        this.element.remove();
+    }
+    open(x, y, width) {
+        document.body.appendChild(this.element);
+        this.element.style.left = x + "px";
+        this.element.style.top = y + "px";
+        this.element.style.width = width + "px";
+    }
+    setSelectPlaceholder(placeholder) {
+        this.selectElement.firstChild.innerText = `<${placeholder}>`;
+    }
+}
+exports.SelectList = SelectList;
 class Tooltip {
 }
 /**

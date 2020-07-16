@@ -3,6 +3,9 @@ export declare let hueApi: import("node-hue-api/lib/api/Api");
 import * as Electron from "electron";
 import * as Zip from "adm-zip";
 import { EventEmitter } from "events";
+interface HTMLElementScroll extends HTMLElement {
+    scrollIntoViewIfNeeded(): void;
+}
 declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384;
 /**
  * General Toxen functionality.
@@ -322,9 +325,9 @@ export declare class Song {
      * Zip the entire song folder and save it as a `txs`.
      *
      * if `location` is defined, no prompt for selecting location will appear, and will just export to the set location
-     * @param {string} location Location to save to.
+     * @param location Location to save to.
      */
-    export(location?: any): void;
+    export(location?: string): void;
     createTxs(): Zip;
     refreshElement(): void;
     songId: number;
@@ -510,20 +513,29 @@ export declare class SongManager {
     static selectSubtitles(song?: Song): void;
     static selectStoryboard(song?: Song): void;
     static selectDefaultBackground(): void;
+    static getAllArtists(): string[];
     /**
      * This should be set by the client.
      */
     static onplay: (song: Song) => void;
 }
+/**
+ * Custom HTML Song Container Element that extends div.
+ * Every `songContainer` is this.
+ */
+interface HTMLSongGroupElement extends HTMLElementScroll {
+    /**
+     * Song Group object that belongs to this element.
+     * @type {SongGroup}
+     */
+    songGroup?: any;
+}
 export declare class SongGroup {
+    static songGroups: SongGroup[];
     /**
-     * @type {SongGroup[]}
+     * @param name Name for this group container.
      */
-    static songGroups: any[];
-    /**
-     * @param {string} name Name for this group container.
-     */
-    constructor(name: any);
+    constructor(name: string);
     /**
      * List of songs in this group
      */
@@ -536,9 +548,9 @@ export declare class SongGroup {
     /**
      * @type {HTMLSongGroupElement}
      */
-    element: any;
-    set collapsed(value: any);
-    get collapsed(): any;
+    element: HTMLSongGroupElement;
+    set collapsed(value: boolean);
+    get collapsed(): boolean;
     /**
      * Toggle collapse on this container.
      */
@@ -1017,6 +1029,36 @@ declare class Themeable {
      * Return the styling as a CSS string.
      */
     toString(): string;
+}
+interface SelectListItem<ValueType> {
+    "text": string;
+    "value": ValueType;
+}
+interface HTMLSelectListOptionElement<ValueType> extends HTMLOptionElement {
+    "itemValue": ValueType;
+    "selectListItem": SelectListItem<ValueType>;
+}
+export interface SelectList<SelectItemValueType = any> {
+    /**
+     * Triggers when the user has selected an option.
+     */
+    on(event: "select", listener: (selectItem: SelectListItem<SelectItemValueType>) => void): this;
+    /**
+     * Triggers the `select` event.
+     */
+    emit(event: "select", selectItem: SelectListItem<SelectItemValueType>): boolean;
+}
+export declare class SelectList<SelectItemValueType = any> extends EventEmitter {
+    items: SelectListItem<SelectItemValueType>[];
+    closeAutomatically: boolean;
+    constructor(items: SelectListItem<SelectItemValueType>[], closeAutomatically?: boolean);
+    element: HTMLDivElement;
+    selectElement: HTMLSelectElement;
+    optionElements: HTMLSelectListOptionElement<SelectItemValueType>[];
+    value: Promise<SelectListItem<SelectItemValueType>>;
+    close(): void;
+    open(x: number, y: number, width: number): void;
+    setSelectPlaceholder(placeholder: string): void;
 }
 /**
  * Start the tutorial prompts
