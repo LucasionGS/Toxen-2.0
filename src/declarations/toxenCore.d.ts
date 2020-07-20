@@ -716,32 +716,21 @@ export declare class Debug {
      */
     static componentToHex(c: any): any;
     static rgbToHex(red: any, green: any, blue: any): string;
-    /**
-     * @typedef {{"red": number, "green": number, "blue": number}} RGB
-     * @param {string} hex
-     */
-    static hexToRgb(hex: any): {
+    static hexToRgb(hex: string): {
         red: number;
         green: number;
         blue: number;
     };
-    /**
-     * @param {string} str
-     */
-    static cssColorToHex(str: any): string | CanvasGradient | CanvasPattern;
-    /**
-     * @param {string} str
-     */
-    static cssColorToRgb(str: any): {
+    static cssColorToHex(str: string): string;
+    static cssColorToRgb(str: string): {
         red: number;
         green: number;
         blue: number;
     };
     /**
      * Wait `ms` milliseconds.
-     * @param {number} ms
      */
-    static wait(ms: any): Promise<unknown>;
+    static wait(ms: number): Promise<unknown>;
     /**
      * Clamp a value inclusively in between a min and max value.
      * @param value The value to clamp
@@ -749,6 +738,16 @@ export declare class Debug {
      * @param max Max value
      */
     static clamp(value: number, min: number, max: number): number;
+    /**
+     * Strips all HTML tags from one or more strings.
+     * @param html HTML code string
+     */
+    static stripHTML(html: string): string;
+    /**
+     * Strips all HTML tags from one or more strings.
+     * @param html HTML code strings
+     */
+    static stripHTML(...html: string[]): string[];
 }
 export declare class Prompt {
     /**

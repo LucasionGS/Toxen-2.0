@@ -129,8 +129,6 @@ async function initialize() {
     await SongManager.loadFromFile();
   }
 
-  // SongManager.playableSongs = SongManager.songList;
-
   settings.toggleSongPanelToRight(settings.songMenuToRight);
 
   SongManager.player.addEventListener("ended", function() {
@@ -242,6 +240,8 @@ async function initialize() {
       settings.toggleSettingsPanelLock();
     }
   });
+
+  
 
   interface HTMLProgressElement extends Element {
     clicking: boolean;

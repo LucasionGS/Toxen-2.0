@@ -108,7 +108,6 @@ function initialize() {
         else {
             yield SongManager.loadFromFile();
         }
-        // SongManager.playableSongs = SongManager.songList;
         settings.toggleSongPanelToRight(settings.songMenuToRight);
         SongManager.player.addEventListener("ended", function () {
             if (settings.repeat) {

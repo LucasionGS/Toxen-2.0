@@ -261,9 +261,10 @@
           }
           function local_setColorsFromSelector(value) {
             let rgb = Debug.hexToRgb(value);
-            let red = +(document.getElementById("visualizercolor.redValue").value = rgb.r);
-            let green = +(document.getElementById("visualizercolor.greenValue").value = rgb.g);
-            let blue = +(document.getElementById("visualizercolor.blueValue").value = rgb.b);
+            if (rgb == null) return;
+            let red = +(document.getElementById("visualizercolor.redValue").value = rgb.red);
+            let green = +(document.getElementById("visualizercolor.greenValue").value = rgb.green);
+            let blue = +(document.getElementById("visualizercolor.blueValue").value = rgb.blue);
             Storyboard.rgb(red, green, blue);
             document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
             document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;

@@ -3808,9 +3808,6 @@ export class Storyboard {
 
 
 class Subtitles {
-  /**
-   * @type {{ id: number, startTime: number, endTime: number, text: string }[]}
-   */
   static current: {
     id: number;
     startTime: number;
@@ -3820,7 +3817,7 @@ class Subtitles {
 
   static async parseSrt(srtPath: string) {
     try {
-      var srtText;
+      var srtText: string;
       if (Settings.current.remote) {
         srtText = await (await fetch(srtPath)).text();
       }
@@ -3850,7 +3847,7 @@ class Subtitles {
       if (lines[i].trim() == "") {
         continue;
       }
-      if (!isNaN(lines[i])) {
+      if (!isNaN(+lines[i])) {
         //Set ID
         newSub.id = +lines[i];
         i++;
@@ -3866,8 +3863,12 @@ class Subtitles {
         newSub.endTime = ((+ints[0] * 60 * 60) + (+ints[1] * 60) + (+ints[2]) + (+timeStamps[1].split(",", 2)[1] / 1000));
         i++;
         //Set texts
-        while (lines[i] && lines[i].trim() != "") {
+        if (lines[i] && lines[i].trim() != "") { // First
           newSub.text += Imd.MarkDownToHTML(lines[i]) + "\n";
+          i++;
+        }
+        while (lines[i] && lines[i].trim() != "") { // Rest
+          newSub.text += "<br>"+ Imd.MarkDownToHTML(lines[i]) + "\n";
           i++;
         }
         subData.push(newSub);
@@ -5032,16 +5033,12 @@ export class Debug {
     return "#" + Debug.componentToHex(red) + Debug.componentToHex(green) + Debug.componentToHex(blue);
   }
 
-  /**
-   * @typedef {{"red": number, "green": number, "blue": number}} RGB
-   * @param {string} hex 
-   */
-  static hexToRgb(hex) {
+  static hexToRgb(hex: string) {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     /**
      * @type {RGB}
      */
-    let rgb = {
+    let rgb: {"red": number, "green": number, "blue": number} = {
       red: 0,
       green: 0,
       blue: 0,
@@ -5054,27 +5051,20 @@ export class Debug {
     return retrn;
   }
 
-  /**
-   * @param {string} str 
-   */
-  static cssColorToHex(str){
+  static cssColorToHex(str: string){
     var ctx = document.createElement("canvas").getContext("2d");
     ctx.fillStyle = str;
     return ctx.fillStyle;
   }
 
-  /**
-   * @param {string} str 
-   */
-  static cssColorToRgb(str){
-    return Debug.hexToRgb(Debug.cssColorToHex(str));
+  static cssColorToRgb(str: string){
+    return Debug.hexToRgb(Debug.cssColorToHex(str) as string);
   }
 
   /**
    * Wait `ms` milliseconds.
-   * @param {number} ms 
    */
-  static async wait(ms) {
+  static async wait(ms: number) {
     var resolve;
     setTimeout(() => {
       resolve();
@@ -5093,6 +5083,26 @@ export class Debug {
   static clamp(value: number, min: number, max: number) {
     return Math.max(min, Math.min(max, value));
   };
+
+  /**
+   * Strips all HTML tags from one or more strings.
+   * @param html HTML code string
+   */
+  static stripHTML(html: string): string ;
+  /**
+   * Strips all HTML tags from one or more strings.
+   * @param html HTML code strings
+   */
+  static stripHTML(...html: string[]): string[] ;
+  static stripHTML(...html: string[]) {
+    let _d = document.createElement("div");
+    for (let i = 0; i < html.length; i++) {
+      _d.innerHTML = html[i];
+      html[i] = _d.innerText;
+    }
+    if (html.length == 1) return html[0];
+    return html;
+  }
 }
 
 export class Prompt {
