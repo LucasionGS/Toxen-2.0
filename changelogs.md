@@ -1,6 +1,17 @@
 # Toxen Next
 Features I want to implement (This will be updated as i get more ideas and remember to write them down):
-- Predefined actions that are callable.
+- Defineable actions that are callable in ToxenScript.
+  - An idea could be something like this
+  ```js
+  :ActionStart("redblue")
+  // Times inside actions will be relative to the execution time instead of the song.
+  [0] VisualizerColor("red")
+  [1] VisualizerColor("blue");
+  :ActionEnd();
+
+  // Usage
+  1/1 [5-8] Action("redblue") // It will repeat from 5 seconds to 8 seconds, repeating the action in "redblue" every 1/1th of a second (each second)
+  ```
 - Custom Themes
 - Graphical Storyboard Editor Interface
 - Built-in Graphical SRT(subtitle) creator
@@ -14,7 +25,21 @@ Features I want to implement (This will be updated as i get more ideas and remem
 - Music Playback Rate Changer (Like the first version of Toxen used to have)
 - [Toxen.net](https://toxen.net/) website
   - Hub for downloading modules, storyboards, subtitles, custom themes, etc...
+    - https://toxen.net/listings/SUBJECT
   - A Toxen forum where you can ask questions or suggest ideas for future updates.
+
+- Smoother Redesign (Check ref)
+  - Different way of accessing panels
+  - More panels
+    - Song Panel
+    - Setting Panel
+    - Song specifics settings
+    - Information about Toxen and the credits (Patch notes?)
+  - Song Wheel(?)
+    - Songs could be pushed further out towards the center (and more visible) the closer it goes to the center of the visible part song list.
+  - Draggable buttons(?)
+    - The ability to move the buttons on the main interface around to whichever corner you prefer.
+  - Functionality and panel buttons should have icons instead of blocks of text.
 
 # Toxen Change Logs
 Features and changes that has already been made to Toxen.
@@ -32,6 +57,7 @@ Features and changes that has already been made to Toxen.
   [0] VisualizerColor: "red"
   ```
 - Added artist name quick-select in the YouTube Downloader for if you are downloading a song from an artist you already have other songs from.
+
 ![youtubeArtistQuickSelect.gif](https://toxen.net/media/youtubeArtistQuickSelect.gif)
 
 
