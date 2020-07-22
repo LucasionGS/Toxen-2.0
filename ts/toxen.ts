@@ -15,6 +15,7 @@ const {
   ToxenModule,
   Statistics,
   SelectList,
+  PanelManager,
   showTutorial,
 } = ToxenCore;
 import * as rpc from "discord-rpc";
@@ -168,6 +169,9 @@ async function initialize() {
     document.querySelector<HTMLProgressElement>("div#progress progress#progressbar").max = SongManager.player.duration;
   });
 
+  // Initialize other objects
+  Toxen.initialize();
+  PanelManager.initialize();
   //#region Initialize Audio visualizer
   (function () {
     var _context = new AudioContext();
@@ -224,7 +228,7 @@ async function initialize() {
       settings.revealSongPanel();
       search.focus();
       search.setSelectionRange(0, search.value.length);
-      (search as unknown as HTMLElementScroll).scrollIntoViewIfNeeded();
+      SongManager.songListElement.parentElement.scrollLeft = 0;
     }
 
     if (ctrl && key == " ") {

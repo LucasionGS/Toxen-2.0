@@ -13,6 +13,8 @@ declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 40
  * Primarily used for events.
  */
 export declare class Toxen {
+    static initialize(): void;
+    static inactivityState: boolean;
     /**
      * Restarts Toxen immediately.
      */
@@ -21,7 +23,7 @@ export declare class Toxen {
      * Reloads the Toxen window immediately.
      */
     static reload(): void;
-    static ffmpegAvailable(): any;
+    static ffmpegAvailable(): boolean;
     static ffmpegPath(): string;
     /**
      * Prompts you for installation of ffmpeg to your system.
@@ -38,6 +40,12 @@ export declare class Toxen {
     static on(event: "play", callback: (song: Song) => void): void;
     static on(event: "pause", callback: () => void): void;
     static on(event: "unpause", callback: () => void): void;
+    static on(event: "songpanelopen", callback: () => void): void;
+    static on(event: "songpanelclose", callback: () => void): void;
+    static on(event: "settingspanelopen", callback: () => void): void;
+    static on(event: "settingspanelclose", callback: () => void): void;
+    static on(event: "inactive", callback: () => void): void;
+    static on(event: "active", callback: () => void): void;
     /**
      * Emit an event.
      */
@@ -45,6 +53,12 @@ export declare class Toxen {
     static emit(event: "play", song: Song): void;
     static emit(event: "pause"): void;
     static emit(event: "unpause"): void;
+    static emit(event: "songpanelopen"): void;
+    static emit(event: "songpanelclose"): void;
+    static emit(event: "settingspanelopen"): void;
+    static emit(event: "settingspanelclose"): void;
+    static emit(event: "inactive"): void;
+    static emit(event: "active"): void;
     static extraStyle: HTMLLinkElement;
     /**
      * @param {string} src
@@ -96,51 +110,34 @@ export declare class Settings {
     saveToFile(fileLocation?: string): Promise<void>;
     /**
      * Set the media's volume.
-     * @param {number} value Volume value.
+     * @param value Volume value.
      */
-    setVolume(value: any): void;
+    setVolume(value: number): void;
     applySettingsToPanel(): void;
     /**
-     *
-     * @param {boolean} newInstance If `true`, returns a new instance of a playlist and without the "No playlist selected" option.
+     * @param newInstance If `true`, returns a new instance of a playlist and without the "No playlist selected" option.
      */
     reloadPlaylists(newInstance?: boolean): HTMLSelectElement;
-    /**
-     * @param {string} playlist
-     */
-    selectPlaylist(playlist: any): void;
-    /**
-     * @param {string} name
-     */
+    selectPlaylist(playlist: string): void;
     addPlaylist(): void;
     selectSongFolder(): Promise<void>;
-    /**
-     * @param {boolean} force
-     */
-    toggleVideo(force: any): boolean;
-    /**
-     * @param {boolean} force
-     */
+    toggleVideo(force: boolean): boolean;
     toggleSongPanelLock(force?: boolean): boolean;
     revealSongPanel(): void;
     /**
-     * @param {boolean} force
+     * @param force
      */
     toggleSettingsPanelLock(force?: boolean): boolean;
-    /**
-     * @param {boolean} force
-     */
-    toggleSongPanelToRight(force: any): boolean;
+    toggleSongPanelToRight(force: boolean): boolean;
     selectFFMPEGPath(): void;
     /**
-     * @param {Settings["lightThemeBase"]} base
+     * @param base
      */
-    setThemeBase(base: any): void;
+    setThemeBase(base: boolean): void;
     /**
      * Set the progress bar spot.
-     * @param {number} spotid
      */
-    setProgressBarSpot(spotid: any): void;
+    setProgressBarSpot(spotid: number): void;
     /**
      * Percentage to dim the background.
      */
@@ -264,9 +261,8 @@ export declare class Settings {
     playlist: string;
     /**
      * All selected playlist.
-     * @type {string[]}
      */
-    playlists: any[];
+    playlists: string[];
     /**
      * Display the tutorial the first time toxen launches.
      */
@@ -287,6 +283,11 @@ export declare class Settings {
      * `2` Progress bar stays at the bottom of the screen and is visible at all times.
      */
     progressBarSpot: number;
+    /**
+     * `true` Panel buttons are activated by hovering over them.
+     * `false` Panel buttons are activated by clicking over them.
+     */
+    buttonActivationByHover: boolean;
 }
 /**
  * Custom HTML Song Element that extends div.
@@ -471,10 +472,7 @@ export declare class SongManager {
      * @param {string} search Search for a string
      */
     static search(search?: string): void;
-    /**
-     * @type {HTMLDivElement}
-     */
-    static songListElement: any;
+    static songListElement: HTMLDivElement;
     static player: HTMLVideoElement;
     static scanDirectory(location?: string): void | any[];
     static loadFromFile(fileLocation?: string): Promise<void>;
@@ -1058,6 +1056,13 @@ export declare class SelectList<SelectItemValueType = any> extends EventEmitter 
     close(): void;
     open(x: number, y: number, width: number): void;
     setSelectPlaceholder(placeholder: string): void;
+}
+export declare class PanelManager {
+    static initialize(): void;
+    static hideButtons(): void;
+    static showButtons(): void;
+    static songPanelButton: HTMLDivElement;
+    static settingsPanelButton: HTMLDivElement;
 }
 /**
  * Start the tutorial prompts

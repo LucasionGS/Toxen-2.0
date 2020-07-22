@@ -23,7 +23,7 @@
         </div>
       </div>
       <hr>
-      <div id="lockPanel" onclick="Settings.current.toggleSongPanelLock()" title="Toggle lock Panel">🔓</div>
+      <div id="lockPanel" onclick="Settings.current.toggleSongPanelLock(); Settings.current.saveToFile()" title="Toggle lock Panel">🔓</div>
       <label for="search">Search</label>
       <br>
       <input type="text" id="search" oninput="SongManager.search(this.value)" class="fancyinput">
@@ -207,6 +207,12 @@
         Turning this off will disable rendering of the video.
       </sup>
       <br>
+      <input type="checkbox" name="hovertoggle" id="buttonactivationbyhoverToggle" onclick="settings.buttonActivationByHover = this.checked; settings.saveToFile();">
+      <label for="buttonactivationbyhoverToggle">Button Activation By Hover</label>
+      <sup>
+        Enable this to open the panels by only hovering over the buttons insteading of needing to click them.
+      </sup>
+      <br>
       <label>Theme</label>
       <br>
       <input type="checkbox" name="avtoggle" id="lightthemebaseToggle" onclick="settings.setThemeBase(this.checked); settings.saveToFile();">
@@ -371,6 +377,12 @@
       <hr>
     </div>
     <p id="subtitles"></p>
+  </div>
+  <div id="songpanelbutton" class="floatingbutton">
+    <img src="./img/songpanel.png" alt="songpanel.png">
+  </div>
+  <div id="settingsbutton" class="floatingbutton">
+    <img src="./img/settings.png" alt="settings.png">
   </div>
 </body>
 </html>

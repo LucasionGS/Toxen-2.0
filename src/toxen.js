@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const ToxenCore = require("./toxenCore");
-const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Debug, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, showTutorial, } = ToxenCore;
+const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Debug, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, showTutorial, } = ToxenCore;
 const rpc = require("discord-rpc");
 const version = require("./version.json");
 const { remote, ipcRenderer, shell } = require("electron");
@@ -142,6 +142,9 @@ function initialize() {
         SongManager.player.addEventListener("canplay", () => {
             document.querySelector("div#progress progress#progressbar").max = SongManager.player.duration;
         });
+        // Initialize other objects
+        Toxen.initialize();
+        PanelManager.initialize();
         //#region Initialize Audio visualizer
         (function () {
             var _context = new AudioContext();
@@ -186,7 +189,7 @@ function initialize() {
                 settings.revealSongPanel();
                 search.focus();
                 search.setSelectionRange(0, search.value.length);
-                search.scrollIntoViewIfNeeded();
+                SongManager.songListElement.parentElement.scrollLeft = 0;
             }
             if (ctrl && key == " ") {
                 e.preventDefault();

@@ -56,9 +56,13 @@ Features and changes that has already been made to Toxen.
   [0] VisualizerColor = "red"
   [0] VisualizerColor: "red"
   ```
-- Added artist name quick-select in the YouTube Downloader for if you are downloading a song from an artist you already have other songs from.
-
+- Added artist name quick-select in the YouTube Downloader for if you are downloading a song from an artist you already have other songs from.  
 ![youtubeArtistQuickSelect.gif](https://toxen.net/media/youtubeArtistQuickSelect.gif)
+- Added Video download to the YouTube Downloader (Tick `Download Video` to download the video)
+- Added buttons to pull out the side panels. (Sprites are still placeholders, will likely be replaced)  
+  You'll need to click on the buttons to open the panels, but you can change it to only hover over in the settings by ticking `Button Activation By Hover` on  
+![panelButtons.pngs](https://toxen.net/media/panelButtons.png)
+- Fixed the progress bar not being sticky to the top of the visible song panel.
 
 
 ## 202007150445

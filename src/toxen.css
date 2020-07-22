@@ -59,14 +59,37 @@ div.sidebar {
   background-color: var(--panelcolor);
   height: 100vh;
   max-height: 100vh;
-  min-width: 10%;
-  width: 10%;
+  min-width: 0%;
+  width: 0%;
   opacity: 0;
   overflow: hidden;
   overflow-y: auto;
   transition: width 1s ease-in-out;
   transition-property: width, opacity;
   z-index: 100;
+  /* word-wrap: break-word; */
+}
+
+div.floatingbutton {
+  position: absolute;
+  transition: all 0.5s ease-in-out;
+  filter: brightness(0.7);
+  width: 128px;
+  height: 128px;
+}
+
+div.floatingbutton:hover {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  filter: brightness(1);
+  transform: translate(calc());
+  width: 138px;
+  height: 138px;
+}
+
+div.floatingbutton img {
+  max-height: 100%;
+  max-width: 100%;
 }
 
 ::-webkit-scrollbar {
@@ -78,15 +101,10 @@ div.sidebar {
   background-color: var(--scrollbarThumbColor);
 }
 
-/* div.sidebar::-webkit-scrollbar:hover {
-  visibility: visible;
-  width: 64px;
-} */
-
 div.sidebar:hover, div.sidebar[open] {
   width: 35vw;
   opacity: 0.9;
-  transition: width 0.1s ease-in-out;
+  transition: width 0.2s ease-in-out;
   transition-property: width, opacity;
 }
 
@@ -119,6 +137,10 @@ div.sidebar:hover, div.sidebar[open] {
   background-color: var(--innerpanelcolor);
   color: var(--songTextColor);
   text-shadow: var(--songTextShadowColor);
+}
+
+#songselection div.songgroup {
+  overflow: hidden;
 }
 
 #songselection div.songgroup[collapsed] {
@@ -223,8 +245,16 @@ div#progress {
   width: 100%;
   position: sticky;
   top: 0;
+  position: sticky;
+  top: 0;
   z-index: 10;
   background-color: var(--panelcolor);
+}
+
+#progressbarspot1 {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 div#progress label#progresstext {

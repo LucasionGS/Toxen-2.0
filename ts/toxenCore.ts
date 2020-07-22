@@ -70,6 +70,51 @@ switch (process.platform) {
  * Primarily used for events.
  */
 export class Toxen {
+  static initialize() {
+    let songmenusidebar: HTMLDivElement = document.querySelector("#songmenusidebar");
+    let settingsmenusidebar: HTMLDivElement = document.querySelector("#settingsmenusidebar");
+    // Emit events
+    songmenusidebar.addEventListener("mouseenter", () => {
+      if (!Settings.current.songMenuLocked) Toxen.emit("songpanelopen");
+    });
+    songmenusidebar.addEventListener("mouseleave", () => {
+      if (!Settings.current.songMenuLocked) Toxen.emit("songpanelclose");
+    });
+    settingsmenusidebar.addEventListener("mouseenter", () => {
+      Toxen.emit("settingspanelopen");
+    });
+    settingsmenusidebar.addEventListener("mouseleave", () => {
+      Toxen.emit("settingspanelclose");
+    });
+
+    let inactivityTimer = 0;
+    setInterval(() => {
+      if (inactivityTimer < 5) inactivityTimer++;
+      else if (inactivityTimer == 5) Toxen.emit("inactive");
+    }, 1000);
+    document.body.addEventListener("mousemove", e => {
+      if (inactivityTimer == 5) { Toxen.emit("active") }
+      if (inactivityTimer > 0) inactivityTimer = 0;
+    });
+
+    Toxen.on("active", () => {
+      let btns = document.querySelectorAll<HTMLDivElement>(".floatingbutton");
+      for (let i  = 0; i < btns.length; i++) {
+        const btn = btns[i];
+        btn.style.opacity = "1";
+      }
+    });
+    Toxen.on("inactive", () => {
+      let btns = document.querySelectorAll<HTMLDivElement>(".floatingbutton");
+      for (let i  = 0; i < btns.length; i++) {
+        const btn = btns[i];
+        btn.style.opacity = "0";
+      }
+    });
+  }
+
+  static inactivityState = false;
+
   /**
    * Restarts Toxen immediately.
    */
@@ -85,7 +130,7 @@ export class Toxen {
     browserWindow.reload();
   }
 
-  static ffmpegAvailable() {
+  static ffmpegAvailable(): boolean {
     return Settings.current.ffmpegPath != null || commandExists.sync("ffmpeg");
   }
 
@@ -189,6 +234,12 @@ export class Toxen {
   static on(event: "play", callback: (song: Song) => void): void;
   static on(event: "pause", callback: () => void): void;
   static on(event: "unpause", callback: () => void): void;
+  static on(event: "songpanelopen", callback: () => void): void;
+  static on(event: "songpanelclose", callback: () => void): void;
+  static on(event: "settingspanelopen", callback: () => void): void;
+  static on(event: "settingspanelclose", callback: () => void): void;
+  static on(event: "inactive", callback: () => void): void;
+  static on(event: "active", callback: () => void): void;
   static on(event: string, callback: (...args) => void) {
     Toxen.eventEmitter.on(event, callback);
   }
@@ -200,7 +251,13 @@ export class Toxen {
   static emit(event: "play", song: Song): void
   static emit(event: "pause"): void;
   static emit(event: "unpause"): void;
-  static emit(event: string, ...args) {
+  static emit(event: "songpanelopen"): void;
+  static emit(event: "songpanelclose"): void;
+  static emit(event: "settingspanelopen"): void;
+  static emit(event: "settingspanelclose"): void;
+  static emit(event: "inactive"): void;
+  static emit(event: "active"): void;
+  static emit(event: string, ...args: any[]) {
     if (Array.isArray(args)) {
       Toxen.eventEmitter.emit(event, ...args);
     }
@@ -347,9 +404,9 @@ export class Settings {
 
   /**
    * Set the media's volume.
-   * @param {number} value Volume value.
+   * @param value Volume value.
    */
-  setVolume(value) {
+  setVolume(value: number) {
     this.volume = value;
     SongManager.player.volume = value / 100;
   }
@@ -414,8 +471,7 @@ export class Settings {
   }
 
   /**
-   * 
-   * @param {boolean} newInstance If `true`, returns a new instance of a playlist and without the "No playlist selected" option.
+   * @param newInstance If `true`, returns a new instance of a playlist and without the "No playlist selected" option.
    */
   reloadPlaylists(newInstance = false) {
     let selection: HTMLSelectElement;
@@ -455,10 +511,7 @@ export class Settings {
     return selection;
   }
 
-  /**
-   * @param {string} playlist 
-   */
-  selectPlaylist(playlist) {
+  selectPlaylist(playlist: string) {
     Settings.current.playlist = playlist == "%null%" ? null : playlist;
     if (document.querySelector<HTMLSelectElement>("#playlistselection").value != playlist) {
       document.querySelector<HTMLSelectElement>("#playlistselection").value = playlist;
@@ -468,9 +521,6 @@ export class Settings {
     SongManager.search();
   }
 
-  /**
-   * @param {string} name 
-   */
   addPlaylist() {
     let inpName = document.createElement("input");
     inpName.classList.add("fancyinput");
@@ -542,10 +592,7 @@ export class Settings {
     });
   }
 
-  /**
-   * @param {boolean} force
-   */
-  toggleVideo(force) {
+  toggleVideo(force: boolean) {
     if (typeof force == "boolean") {
       Settings.current.video = force;
     }
@@ -557,9 +604,6 @@ export class Settings {
     return Settings.current.video;
   }
 
-  /**
-   * @param {boolean} force
-   */
   toggleSongPanelLock(force?: boolean) {
     const element = document.getElementById("lockPanel");
     if (typeof force == "boolean") {
@@ -570,15 +614,17 @@ export class Settings {
       element.innerText = "🔒";
       element.style.opacity = "1";
       this.songMenuLocked = true;
+      Toxen.emit("songpanelopen");
     }
     else {
       element.innerText = "🔓";
       element.style.opacity = "0.5";
       this.songMenuLocked = false;
+      Toxen.emit("songpanelclose");
     }
     
     document.getElementById("songmenusidebar").toggleAttribute("open", this.songMenuLocked);
-    this.saveToFile();
+    // this.saveToFile();
     return this.songMenuLocked;
   }
 
@@ -597,7 +643,7 @@ export class Settings {
   }
 
   /**
-   * @param {boolean} force
+   * @param force
    */
   toggleSettingsPanelLock(force?: boolean) {
     let locked = document.getElementById("settingsmenusidebar").hasAttribute("open");
@@ -609,10 +655,7 @@ export class Settings {
     return locked;
   }
 
-  /**
-   * @param {boolean} force
-   */
-  toggleSongPanelToRight(force) {
+  toggleSongPanelToRight(force: boolean) {
     if (typeof force == "boolean") {
       this.songMenuToRight = force;
     }
@@ -650,9 +693,9 @@ export class Settings {
   }
 
   /**
-   * @param {Settings["lightThemeBase"]} base
+   * @param base
    */
-  setThemeBase(base) {
+  setThemeBase(base: boolean) {
     Settings.current.lightThemeBase = base;
     // browserWindow.setIcon(Settings.current.lightThemeBase ? "./iconlight.ico" : "./icon.ico");
     if (Settings.current.lightThemeBase) {
@@ -665,9 +708,8 @@ export class Settings {
 
   /**
    * Set the progress bar spot.
-   * @param {number} spotid 
    */
-  setProgressBarSpot(spotid) {
+  setProgressBarSpot(spotid: number) {
     this.progressBarSpot = spotid;
     let bar = document.getElementById("progress");
     switch (this.progressBarSpot) {
@@ -834,9 +876,8 @@ export class Settings {
   playlist: string = null;
   /**
    * All selected playlist.
-   * @type {string[]}
    */
-  playlists = [];
+  playlists: string[] = [];
   /**
    * Display the tutorial the first time toxen launches.
    */
@@ -857,6 +898,11 @@ export class Settings {
    * `2` Progress bar stays at the bottom of the screen and is visible at all times.  
    */
   progressBarSpot = 0;
+  /**
+   * `true` Panel buttons are activated by hovering over them.  
+   * `false` Panel buttons are activated by clicking over them.
+   */
+  buttonActivationByHover: boolean = false;
 }
 
 /**
@@ -1928,10 +1974,7 @@ export class SongManager {
     }
   }
 
-  /**
-   * @type {HTMLDivElement}
-   */
-  static songListElement = null;
+  static songListElement: HTMLDivElement = null;
 
   static player: HTMLVideoElement = null;
 
@@ -2380,85 +2423,79 @@ export class SongManager {
               name: files[fileIndex].split(/\\|\//g).pop(),
               path: files[fileIndex]
             }
-            importFile(file, fileIndex == files.length - 1);
+            importFile(file as File, fileIndex == files.length - 1);
           }
 
           setTimeout(() => {
             SongManager.scanDirectory();
-            // SongManager.saveToFile();
-            // SongManager.refreshList();
           }, 100);
         });
       });
 
-          /**
-           * @param {File} file 
-           */
-          function importFile(file, playOnDone = true) {
-            const song = new Song();
-            let ext;
-            let fileNoExt = (function() {
-              let a = file.name.split(".");
-              ext = a.pop();
-              return a.join(".");
-            })();
-            if (!validExtensions.includes(ext)) {
-              new Prompt("Invalid File", [
-                "You can only select files with the following extension:",
-                validExtensions.join(", ")
-              ]);
-              return;
-            }
-            let songPath = Settings.current.songFolder + "/" + fileNoExt;
-            let surfix = 0;
-            while (fs.existsSync(songPath)) {
-              let len = surfix.toString().length + 3;
-              if (surfix == 0) {
-                songPath += ` (${surfix.toString()})`;
-              }
-              else {
-                songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
-              }
-              surfix++;
-            }
-            fs.mkdirSync(songPath, {recursive: true});
-            // let ws = fs.createWriteStream(songPath + "/" + file.name);
-            fs.copyFileSync(file.path, songPath + "/" + file.name);
-            song.songId = SongManager.songList.length;
-            while(SongManager.songList.find(s => s.songId == song.songId)) {
-              song.songId++;
-            } 
-            song.path = fileNoExt;
-            song.songPath = song.getFullPath("path") + "/" + file.name;
-            let parts = fileNoExt.split(" - ");
-            if (parts.length == 1) {
-              song.details.artist = "Unknown"
-              song.details.title = parts[0];
-            }
-            else if (parts.length >= 2) {
-              song.details.artist = parts.shift();
-              song.details.title = parts.join(" - ");
-            }
-
-            if (ext.toLowerCase() == "txs") {
-              let zip = new Zip(file.path);
-              zip.extractAllTo(songPath + "/", true);
-              fs.unlinkSync(file.path);
-              fs.unlinkSync(songPath + "/" + file.name);
-            }
-            
-            SongManager.songList.push(song);
-            // song.saveDetails();
-            if (playOnDone) {
-              // song.focus();
-              SongManager.refreshList();
-              p.close();
-              setTimeout(() => {
-                song.focus();
-              }, 10);
-            }
+      function importFile(file: File, playOnDone = true) {
+        const song = new Song();
+        let ext: string;
+        let fileNoExt = (function() {
+          let a = file.name.split(".");
+          ext = a.pop();
+          return a.join(".");
+        })();
+        if (!validExtensions.includes(ext)) {
+          new Prompt("Invalid File", [
+            "You can only select files with the following extension:",
+            validExtensions.join(", ")
+          ]);
+          return;
+        }
+        let songPath = Settings.current.songFolder + "/" + fileNoExt;
+        let surfix = 0;
+        while (fs.existsSync(songPath)) {
+          let len = surfix.toString().length + 3;
+          if (surfix == 0) {
+            songPath += ` (${surfix.toString()})`;
           }
-      
+          else {
+            songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
+          }
+          surfix++;
+        }
+        fs.mkdirSync(songPath, {recursive: true});
+        // let ws = fs.createWriteStream(songPath + "/" + file.name);
+        fs.copyFileSync(file.path, songPath + "/" + file.name);
+        song.songId = SongManager.songList.length;
+        while(SongManager.songList.find(s => s.songId == song.songId)) {
+          song.songId++;
+        } 
+        song.path = fileNoExt;
+        song.songPath = song.getFullPath("path") + "/" + file.name;
+        let parts = fileNoExt.split(" - ");
+        if (parts.length == 1) {
+          song.details.artist = "Unknown"
+          song.details.title = parts[0];
+        }
+        else if (parts.length >= 2) {
+          song.details.artist = parts.shift();
+          song.details.title = parts.join(" - ");
+        }
+
+        if (ext.toLowerCase() == "txs") {
+          let zip = new Zip(file.path);
+          zip.extractAllTo(songPath + "/", true);
+          fs.unlinkSync(file.path);
+          fs.unlinkSync(songPath + "/" + file.name);
+        }
+        
+        SongManager.songList.push(song);
+        // song.saveDetails();
+        if (playOnDone) {
+          // song.focus();
+          SongManager.refreshList();
+          p.close();
+          setTimeout(() => {
+            song.focus();
+          }, 10);
+        }
+      }
       return main;
     })());
     p.addContent("or other options:");
@@ -2483,10 +2520,11 @@ export class SongManager {
       "buttonLabel": "Add file",
       "filters": [
         {
-          "name": "",
+          "name": "Valid Toxen Media Files",
           "extensions": [
             "mp3",
-            "mp4"
+            "mp4",
+            "txn"
           ]
         }
       ]
@@ -2501,6 +2539,9 @@ export class SongManager {
       }
       return str;
     }
+
+    let audioTotal: number = 0;
+    let videoTotal: number = 0;
 
     let p = new Prompt("Download YouTube Audio");
     p.closeOnEscape();
@@ -2524,6 +2565,19 @@ export class SongManager {
     ytInputTitle.style.width = "90%";
     ytInputTitle.style.margin = "auto";
     ytInputTitle.placeholder = "Title*";
+    
+    let ytVideoCheckContainer = document.createElement("div");
+    let ytInputVideo = document.createElement("input");
+    ytInputVideo.type = "checkbox";
+    ytInputVideo.id = "_ytinputvideo";
+    let _ytVideoCheckContainerText = document.createElement("label");
+    _ytVideoCheckContainerText.setAttribute("for", "_ytinputvideo");
+    _ytVideoCheckContainerText.style.display = "inline";
+    _ytVideoCheckContainerText.innerText = "Download Video";
+    ytVideoCheckContainer.style.width = "93%";
+    ytVideoCheckContainer.style.margin = "auto";
+    ytVideoCheckContainer.appendChild(ytInputVideo);
+    ytVideoCheckContainer.appendChild(_ytVideoCheckContainerText);
 
     let sl = new SelectList(SongManager.getAllArtists().map(artist => {
       return {
@@ -2567,6 +2621,17 @@ export class SongManager {
       }
     });
 
+    var isVideo = false;
+    p.addContent(ytVideoCheckContainer);
+    ytInputVideo.addEventListener("click", e => {
+      isVideo = ytInputVideo.checked;
+    });
+
+    let progressText = document.createElement("p");
+    progressText.style.display = "block";
+    progressText.style.width = "93%";
+    progressText.style.margin = "auto";
+    p.addContent(progressText);
     p.addContent(ytProgressBar);
 
     ytInput.focus();
@@ -2574,8 +2639,10 @@ export class SongManager {
     downloadYouTube.innerText = "Download";
     downloadYouTube.classList.add("color-green");
     downloadYouTube.onclick = async function() {
+      if (Toxen.ffmpegAvailable()) ffmpeg.setFfmpegPath(Toxen.ffmpegPath());
+      else return Toxen.ffmpegDownload();
       // Start Downloading...
-      p.headerText = "Downloading...";
+      p.headerText = "Downloading audio...";
 
       ytInput.disabled = true;
       ytInputArtist.disabled = true;
@@ -2656,16 +2723,93 @@ export class SongManager {
         if (cancelledByUser == true) {
           return;
         }
-        SongManager.songList.push(song);
-        SongManager.refreshList();
-        song.play();
-        song.saveDetails();
-        p.close();
         ws.close();
-        new ElectronNotification({
-          "title": song.path + " finished downloading.",
-          "body": ""
-        }).show();
+        if (!isVideo) {
+          SongManager.songList.push(song);
+          SongManager.refreshList();
+          song.play();
+          song.saveDetails();
+          p.close();
+          new ElectronNotification({
+            "title": song.path + " finished downloading.",
+            "body": ""
+          }).show();
+        }
+        else {
+          // Continue to download video
+          p.headerText = "Downloading video...";
+          let video = ytdl(url, {
+            "filter": "videoonly",
+            "quality": "highestvideo"
+          });
+          let audioPath = song.getFullPath("songPath");
+          let videoPath = song.getFullPath("songPath");
+          videoPath = videoPath.substring(0, videoPath.length - 3) + "mp4";
+          // let ws = new fs.WriteStream(videoPath as unknown);
+          
+          p.headerText = "Merging audio and video...";
+          // let videoStream = fs.createWriteStream(song.getFullPath("path") + "/output.mp4");
+          let fcmd = ffmpeg(video);
+          fcmd.format("mp4")
+          fcmd.addInput(audioPath)
+          .audioCodec("aac")
+          .videoCodec("copy")
+          // .map("0:v:0")
+          // .map("1:a:0")
+          .save(song.getFullPath("path") + "/output.mp4");
+          video.on("finish", () => {
+            // When everything has finished including downloading audio, downloading video, and merging:
+            ws.close();
+            try {
+              fs.unlink(song.getFullPath("songPath"), () => null);
+            } catch (error) {
+              console.error("oopsi, it did the bad uwu");
+            }
+            song.songPath = song.path + "/output.mp4";
+            SongManager.songList.push(song);
+            SongManager.refreshList();
+            song.saveDetails();
+            p.close();
+            new ElectronNotification({
+              "title": song.path + " finished downloading.",
+              "body": ""
+            }).show();
+            setTimeout(() => {
+              song.play();
+            }, 100);
+          })
+          .on("error", (err) => {
+            console.error(err);
+            dialog.showErrorBox("Unexpected Error", err.message);
+            ytInput.disabled = false;
+            ytInputArtist.disabled = false;
+            ytInputTitle.disabled = false;
+            downloadYouTube.disabled = false;
+            p.headerText = "Download YouTube Audio";
+          })
+          .on("progress", (chunk, downloaded, total) => {
+            videoTotal = total;
+            ytProgressBar.max = total * 2;
+            ytProgressBar.value = (total * 1) + downloaded;
+            progressText.innerText = (ytProgressBar.value / ytProgressBar.max * 100).toFixed(2) + "%";
+          })
+          .on("error", (err) => {
+            console.error(err);
+            dialog.showErrorBox("Unexpected Error", err.message);
+            ytInput.disabled = false;
+            ytInputArtist.disabled = false;
+            ytInputTitle.disabled = false;
+            downloadYouTube.disabled = false;
+            p.headerText = "Download YouTube Audio";
+          });
+          // console.log(fcmd._getArguments());
+          // console.log("ffmpeg " + fcmd._getArguments().map(v => {
+          //   if (v.includes(" ")) {
+          //     return `"${v}"`;
+          //   }
+          //   return v;
+          // }).join(" "));
+        }
       })
       .on("error", (err) => {
         ws.close();
@@ -2676,12 +2820,13 @@ export class SongManager {
         ytInputTitle.disabled = false;
         downloadYouTube.disabled = false;
         p.headerText = "Download YouTube Audio";
-      })
+      });
 
       audio.on("progress", (chunk, downloaded, total) => {
-        // const percent = downloaded / total;
-        ytProgressBar.max = total;
+        audioTotal = total;
+        ytProgressBar.max = isVideo ? total * 2 : total;
         ytProgressBar.value = downloaded;
+        progressText.innerText = (ytProgressBar.value / ytProgressBar.max * 100).toFixed(2) + "%";
       });
 
       audio.on("error", (err) => {
@@ -6232,10 +6377,94 @@ export class SelectList<SelectItemValueType = any> extends EventEmitter {
   }
 }
 
-class Tooltip {
+export class PanelManager {
+  static initialize() {
+    let songmenusidebar: HTMLDivElement = document.querySelector("#songmenusidebar");
+    let settingsmenusidebar: HTMLDivElement = document.querySelector("#settingsmenusidebar");
+    PanelManager.songPanelButton = document.querySelector("#songpanelbutton");
+    PanelManager.settingsPanelButton = document.querySelector("#settingsbutton");
+
+    // Set event listeners
+    PanelManager.songPanelButton.addEventListener("mouseenter", () => {
+      if (Settings.current.buttonActivationByHover) songmenusidebar.toggleAttribute("open", true);
+    });
+    PanelManager.songPanelButton.addEventListener("click", () => {
+      songmenusidebar.toggleAttribute("open", true);
+    });
+    PanelManager.songPanelButton.addEventListener("mouseout", () => {
+      songmenusidebar.toggleAttribute("open", false);
+    });
+    PanelManager.settingsPanelButton.addEventListener("mouseenter", () => {
+      if (Settings.current.buttonActivationByHover) settingsmenusidebar.toggleAttribute("open", true);
+    });
+    PanelManager.settingsPanelButton.addEventListener("click", () => {
+      settingsmenusidebar.toggleAttribute("open", true);
+    });
+    PanelManager.settingsPanelButton.addEventListener("mouseout", () => {
+      settingsmenusidebar.toggleAttribute("open", false);
+    });
+
+    // Listen for events
+    Toxen.on("songpanelopen", () => {
+      PanelManager.songPanelButton.style.bottom = "-128px";
+      PanelManager.songPanelButton.style.left = "-128px";
+      PanelManager.songPanelButton.style.opacity = "0";
+    })
+    Toxen.on("songpanelclose", () => {
+      PanelManager.songPanelButton.style.bottom = "-8px";
+      PanelManager.songPanelButton.style.left = "-8px";
+      PanelManager.songPanelButton.style.opacity = "1";
+    });
+    Toxen.on("settingspanelopen", () => {
+      PanelManager.settingsPanelButton.style.bottom = "-128px";
+      PanelManager.settingsPanelButton.style.right = "-128px";
+      PanelManager.settingsPanelButton.style.opacity = "0";
+    })
+    Toxen.on("settingspanelclose", () => {
+      PanelManager.settingsPanelButton.style.bottom = "-8px";
+      PanelManager.settingsPanelButton.style.right = "-8px";
+      PanelManager.settingsPanelButton.style.opacity = "1";
+    });
+
+    // Defaults
+    if (songmenusidebar.hasAttribute("open")) {
+      PanelManager.songPanelButton.style.bottom = "-128px";
+      PanelManager.songPanelButton.style.left = "-128px";
+      PanelManager.songPanelButton.style.opacity = "0";
+    }
+    else {
+      PanelManager.songPanelButton.style.bottom = "-8px";
+      PanelManager.songPanelButton.style.left = "-8px";
+      PanelManager.songPanelButton.style.opacity = "1";
+    }
+    if (settingsmenusidebar.hasAttribute("open")) {
+      PanelManager.settingsPanelButton.style.bottom = "-128px";
+      PanelManager.settingsPanelButton.style.right = "-128px";
+      PanelManager.settingsPanelButton.style.opacity = "0";
+    }
+    else {
+      PanelManager.settingsPanelButton.style.bottom = "-8px";
+      PanelManager.settingsPanelButton.style.right = "-8px";
+      PanelManager.settingsPanelButton.style.opacity = "1";
+    }
+  }
   
+  static hideButtons() {
+  
+  }
+
+  static showButtons() {
+  
+  }
+
+  static songPanelButton: HTMLDivElement;
+  static settingsPanelButton: HTMLDivElement;
 }
 
+
+class Tooltip {
+  
+} 
 
 /**
  * Start the tutorial prompts
