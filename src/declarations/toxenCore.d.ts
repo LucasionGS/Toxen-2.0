@@ -647,9 +647,9 @@ export declare class ToxenScriptManager {
     static applyVariables(text: any): any;
     /**
      * Parses ToxenScript files for storyboard effects and applies them to the current storyboard.
-     * @param {string} scriptFile Path to script file.
+     * @param scriptFile Path to script file.
      */
-    static scriptParser(scriptFile: any): Promise<void>;
+    static scriptParser(scriptFile: string): Promise<void>;
     static getEventNames(): any[];
     /**
      * Function Types for ToxenScript.

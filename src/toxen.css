@@ -525,3 +525,20 @@ div.selectlist select {
 .toxenscript_limiter {
   color: #b600ad;
 }
+
+/* SVG */
+.svg_folderopen_white:before {
+  content: url(./svg/folderopen_white.svg);
+  width: 20px;
+  float: left;
+  margin-right: 5px;
+  /* margin-top: -2px; */
+}
+
+.svg_download_white:before {
+  content: url(./svg/download_white.svg);
+  width: 20px;
+  float: left;
+  margin-right: 5px;
+  /* margin-top: -2px; */
+}

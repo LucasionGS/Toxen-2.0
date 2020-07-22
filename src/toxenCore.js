@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -82,6 +83,7 @@ class Toxen {
                 inactivityTimer = 0;
         });
         Toxen.on("active", () => {
+            document.body.style.cursor = "";
             let btns = document.querySelectorAll(".floatingbutton");
             for (let i = 0; i < btns.length; i++) {
                 const btn = btns[i];
@@ -89,6 +91,7 @@ class Toxen {
             }
         });
         Toxen.on("inactive", () => {
+            document.body.style.cursor = "none";
             let btns = document.querySelectorAll(".floatingbutton");
             for (let i = 0; i < btns.length; i++) {
                 const btn = btns[i];
@@ -3838,25 +3841,11 @@ class ToxenScriptManager {
     }
     /**
      * Parses ToxenScript files for storyboard effects and applies them to the current storyboard.
-     * @param {string} scriptFile Path to script file.
+     * @param scriptFile Path to script file.
      */
     static scriptParser(scriptFile) {
         return __awaiter(this, void 0, void 0, function* () {
             if (ToxenScriptManager.isRunning === false) {
-                // Too many unnecessary updates
-                // ToxenScriptManager.isRunning = setInterval(() => {
-                //   if (ToxenScriptManager.events.length > 0 && Settings.current.storyboard) {
-                //     for (let i = 0; i < ToxenScriptManager.events.length; i++) {
-                //       /**
-                //        * @type {ToxenEvent}
-                //        */
-                //       const e = ToxenScriptManager.events[i];
-                //       if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
-                //         e.fn();
-                //       }
-                //     }
-                //   }
-                // }, 0);
                 // Updates only when required.
                 ToxenScriptManager.isRunning = true;
                 let _gl = function () {

@@ -144,7 +144,9 @@
       <hr>
       <label for="songFolder">Song Folder</label>
       <input type="text" name="songFolder" id="songfolderValue" readonly class="fancyinput">
-      <button class="fancybutton" onclick="Settings.current.selectSongFolder();">Select</button>
+      <button class="fancybutton svg_folderopen_white" onclick="Settings.current.selectSongFolder();" id="selectfolderbutton"> Select</button>
+      <style>
+      </style>
       <br>
       <br>
       <label for="playlist">Playlist</label>
@@ -341,8 +343,8 @@
         <hr>
         <label for="songFolder">FFMPEG Path</label>
         <input type="text" name="ffmpegPath" id="ffmpegpathValue" readonly class="fancyinput">
-        <button class="fancybutton" onclick="Settings.current.selectFFMPEGPath();">Select</button>
-        <button class="fancybutton" onclick="Toxen.ffmpegDownload();">Install FFMPEG</button>
+        <button class="fancybutton svg_folderopen_white" onclick="Settings.current.selectFFMPEGPath();">Select</button>
+        <button class="fancybutton svg_download_white" onclick="Toxen.ffmpegDownload();">Install FFMPEG</button>
         <hr>
         <h2>Hue Bridge</h2>
         <sup>If you own a Philips Hue Bridge, you can allow connection to your lights to be used in the storyboard.</sup>

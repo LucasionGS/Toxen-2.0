@@ -20,7 +20,6 @@ import * as Zip from "adm-zip";
 import { EventEmitter } from "events";
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
-import * as mime from "mime-types";
 
 
 interface ToxenElectronMenuItemSong extends Electron.MenuItem {
@@ -29,10 +28,6 @@ interface ToxenElectronMenuItemSong extends Electron.MenuItem {
 
 interface ToxenElectronMenuItemSongGroup extends Electron.MenuItem {
   songGroup?: SongGroup;
-}
-
-interface HTMLToxenSong extends HTMLDivElement {
-  songObject?: Song;
 }
 
 interface HTMLToxenSongGroup extends HTMLDivElement {
@@ -98,6 +93,7 @@ export class Toxen {
     });
 
     Toxen.on("active", () => {
+      document.body.style.cursor = "";
       let btns = document.querySelectorAll<HTMLDivElement>(".floatingbutton");
       for (let i  = 0; i < btns.length; i++) {
         const btn = btns[i];
@@ -105,6 +101,7 @@ export class Toxen {
       }
     });
     Toxen.on("inactive", () => {
+      document.body.style.cursor = "none";
       let btns = document.querySelectorAll<HTMLDivElement>(".floatingbutton");
       for (let i  = 0; i < btns.length; i++) {
         const btn = btns[i];
@@ -4271,25 +4268,10 @@ export class ToxenScriptManager {
 
   /**
    * Parses ToxenScript files for storyboard effects and applies them to the current storyboard.
-   * @param {string} scriptFile Path to script file.
+   * @param scriptFile Path to script file.
    */
-  static async scriptParser(scriptFile) {
+  static async scriptParser(scriptFile: string) {
     if (ToxenScriptManager.isRunning === false) {
-      // Too many unnecessary updates
-      // ToxenScriptManager.isRunning = setInterval(() => {
-      //   if (ToxenScriptManager.events.length > 0 && Settings.current.storyboard) {
-      //     for (let i = 0; i < ToxenScriptManager.events.length; i++) {
-      //       /**
-      //        * @type {ToxenEvent}
-      //        */
-      //       const e = ToxenScriptManager.events[i];
-      //       if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
-      //         e.fn();
-      //       }
-      //     }
-      //   }
-      // }, 0);
-
       // Updates only when required.
       ToxenScriptManager.isRunning = true;
       let _gl = function() {

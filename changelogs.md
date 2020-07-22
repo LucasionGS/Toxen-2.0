@@ -40,6 +40,8 @@ Features I want to implement (This will be updated as i get more ideas and remem
   - Draggable buttons(?)
     - The ability to move the buttons on the main interface around to whichever corner you prefer.
   - Functionality and panel buttons should have icons instead of blocks of text.
+  - Center menu with Pause/Play, Repeat, Shuffle, Next and Previous (Icons)
+    - Should be revealed when the mouse goes near them/hover over the icons' container.
 
 # Toxen Change Logs
 Features and changes that has already been made to Toxen.
@@ -63,6 +65,8 @@ Features and changes that has already been made to Toxen.
   You'll need to click on the buttons to open the panels, but you can change it to only hover over in the settings by ticking `Button Activation By Hover` on  
 ![panelButtons.pngs](https://toxen.net/media/panelButtons.png)
 - Fixed the progress bar not being sticky to the top of the visible song panel.
+- The mouse and on-screen buttons hide after 5 seconds of inactivity. Becomes visible again after moving the mouse.
+- Added multiple new icons to the interface to make it look less bland with pure text. (Thanks [Bootstrap Icons](https://icons.getbootstrap.com/))
 
 
 ## 202007150445

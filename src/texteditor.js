@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TextEditor = void 0;
 class TextEditor {
     /**
      * @param {HTMLTextAreaElement | HTMLInputElement} textarea
