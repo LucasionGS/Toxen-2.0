@@ -21,7 +21,7 @@ const discord = new rpc.Client({ "transport": "ipc" });
 const clientId = '647178364511191061';
 let discordReady = false;
 discord.on("ready", () => {
-    // console.log('Logged in as', discord.application.name);
+    console.log('Discord RPC Connected');
     discordReady = true;
 });
 discordApplicationLogin();
@@ -32,10 +32,11 @@ function discordApplicationLogin(attempts = 3) {
         discord.login({ clientId }).catch(reason => {
             console.error(reason);
             tries++;
-            if (tries < attempts) {
-                console.error(`Login attempt ${tries + 1}...`);
-                _login();
-            }
+            // Re-enble if I figure out the issue.
+            // if (tries < attempts) {
+            //   console.error(`Login attempt ${tries + 1}...`);
+            //   _login();
+            // }
         });
     }
 }
@@ -70,6 +71,10 @@ function initialize() {
         }
         stats.load();
         stats.startSaveTimer();
+        if (settings.version != version) {
+            settings.version = version;
+            let declarationDir = debugMode ? "./src/declarations" : "/resources/app/src/declarations";
+        }
         Toxen.extraStyle = document.querySelector("#extracss");
         settings.setThemeBase(settings.lightThemeBase);
         // Check for update

@@ -64,10 +64,7 @@ export declare class Toxen {
     static emit(event: "toggleshuffle", toggle: boolean): void;
     static emit(event: "togglerepeat", toggle: boolean): void;
     static extraStyle: HTMLLinkElement;
-    /**
-     * @param {string} src
-     */
-    static setStyleSource(src: any): void;
+    static setStyleSource(src: string): void;
     /**
      * Object of generator objects using Toxen styling.
      */
@@ -109,6 +106,10 @@ export declare class Toxen {
 export declare class Settings {
     static current: Settings;
     constructor(doNotReplaceCurrent?: boolean);
+    /**
+     * Default settings.json file location relative to your OS.
+     */
+    static get defaultLocation(): string;
     static createFromFile(fileLocation?: string): Settings;
     loadFromFile(fileLocation?: string): void;
     saveToFile(fileLocation?: string): Promise<void>;
@@ -292,6 +293,10 @@ export declare class Settings {
      * `false` Panel buttons are activated by clicking over them.
      */
     buttonActivationByHover: boolean;
+    /**
+     * The current version.
+     */
+    version: string;
 }
 /**
  * Custom HTML Song Element that extends div.
@@ -426,6 +431,9 @@ export declare class Song {
      * @param itemToFind
      */
     getFullPath(itemToFind?: "path" | "songPath" | "subtitlePath" | "background" | "txnScript"): string;
+    /**
+     * Display the details the song has stored.
+     */
     displayInfo(): void;
     saveDetails(): boolean;
     setBackground(): void;
@@ -873,9 +881,8 @@ interface ToxenModule_data {
 export declare class ToxenModule {
     /**
      * Create a manageable Module
-     * @param {string} moduleName
      */
-    constructor(moduleName: any);
+    constructor(moduleName: string);
     moduleName: string;
     module: ToxenModule_data;
     function: (ToxenCore: unknown) => void;
@@ -889,8 +896,8 @@ export declare class ToxenModule {
      * Initialize folders
      */
     static initialize(): void;
-    static createModule(moduleName: string): any;
-    static createModule(moduleName: string, language: "js" | "ts"): any;
+    static createModule(moduleName: string): void;
+    static createModule(moduleName: string, language: "js" | "ts"): void;
     static listModules(): string[];
     /**
      * Loads and activate all of the modules.
@@ -923,10 +930,11 @@ export declare class Statistics {
      * Initialize a new statistics object.
      */
     constructor(object?: {});
+    static current: Statistics;
     /**
-     * @type {Statistics}
+     * Default stats.json file location relative to your OS.
      */
-    static current: any;
+    static get defaultLocation(): string;
     /**
      * Save the statistics to the `stats.json` file.
      */
@@ -1065,6 +1073,12 @@ export declare class PanelManager {
     static songPanelButton: HTMLDivElement;
     static settingsPanelButton: HTMLDivElement;
 }
+/**
+ * List of assets used in Toxen.
+ *
+ * A custom asset list can be imported by themes.
+ */
+export declare var Assets: {};
 /**
  * Start the tutorial prompts
  */

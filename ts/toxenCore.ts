@@ -84,6 +84,9 @@ export class Toxen {
 
     let inactivityTimer = 0;
     setInterval(() => {
+      // To prevent making more intervals, add 1 second to the statistics if the song is unpaused.
+      if (!SongManager.player.paused) Statistics.current.secondsPlayed++;
+
       if (inactivityTimer < 5) inactivityTimer++;
       else if (inactivityTimer == 5) Toxen.emit("inactive");
     }, 1000);
@@ -269,10 +272,7 @@ export class Toxen {
 
   static extraStyle: HTMLLinkElement;
 
-  /**
-   * @param {string} src 
-   */
-  static setStyleSource(src) {
+  static setStyleSource(src: string) {
     Toxen.extraStyle.href = src + (src ? "?" + Debug.generateRandomString(3) : "");
   }
   
@@ -355,14 +355,23 @@ export class Settings {
     }
   }
 
-  static createFromFile(fileLocation = "./data/settings.json") {
+  /**
+   * Default settings.json file location relative to your OS.
+   */
+  static get defaultLocation() {
+    return updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\settings.json" : process.env.HOME + "/.toxendata/data/settings.json";
+  }
+
+  static createFromFile(fileLocation = Settings.defaultLocation) {
     let newSettings = new Settings();
     try {
       if (!fs.existsSync(fileLocation)) {
         if (!fs.existsSync(path.dirname(fileLocation))) {
           fs.mkdirSync(path.dirname(fileLocation), { recursive: true });
         }
-        fs.writeFileSync(fileLocation, "{}");
+        // Moving over old files
+        if (fs.existsSync("./data/settings.json")) fs.renameSync("./data/settings.json", fileLocation);
+        else fs.writeFileSync(fileLocation, "{}");
       }
       let stgs = JSON.parse(fs.readFileSync(fileLocation, "utf8"));
       for (const key in stgs) {
@@ -377,13 +386,15 @@ export class Settings {
     }
   }
 
-  loadFromFile(fileLocation = "./data/settings.json") {
+  loadFromFile(fileLocation = Settings.defaultLocation) {
     try {
       if (!fs.existsSync(path.dirname(fileLocation))) {
         fs.mkdirSync(path.dirname(fileLocation), {recursive: true});
       }
       if (!fs.existsSync(fileLocation)) {
-        fs.writeFileSync(fileLocation, "{}");
+        // Moving over old files
+        if (fs.existsSync("./data/settings.json")) fs.renameSync("./data/settings.json", fileLocation);
+        else fs.writeFileSync(fileLocation, "{}");
       }
       let stgs = JSON.parse(fs.readFileSync(fileLocation, "utf8"));
       for (const key in stgs) {
@@ -396,7 +407,7 @@ export class Settings {
     }
   }
 
-  async saveToFile(fileLocation = "./data/settings.json") {
+  async saveToFile(fileLocation = Settings.defaultLocation) {
     if (!fs.existsSync(path.dirname(fileLocation))) {
       fs.mkdirSync(path.dirname(fileLocation), { recursive: true });
     } 
@@ -906,6 +917,10 @@ export class Settings {
    * `false` Panel buttons are activated by clicking over them.
    */
   buttonActivationByHover: boolean = false;
+  /**
+   * The current version.
+   */
+  version: string = "0";
 }
 
 /**
@@ -1477,6 +1492,9 @@ export class Song {
     return fp;
   }
 
+  /**
+   * Display the details the song has stored.
+   */
   displayInfo() {
     let self = this;
     /**
@@ -1485,20 +1503,15 @@ export class Song {
     let panel = document.querySelector("div#songinfo");
 
     /**
-     * 
-     * @param {string} name 
-     * @param {string} title 
-     * @param {string} detailsItemName 
-     * @param {string} isArraySeparatedBy If this is set, the value is an array.
+     * @param name 
+     * @param title 
+     * @param detailsItemName 
+     * @param isArraySeparatedBy If this is set, the value is an array.
      */
-    function makeElement(name, title, detailsItemName, isArraySeparatedBy = null) {
-      // any
-      /**
-       * @type {HTMLParagraphElement}
-       */
-      let p = panel.querySelector('p[name="'+name+'"]');
+    function makeElement(name: string, title: string, detailsItemName: string, isArraySeparatedBy: string = null) {
+      let p: HTMLParagraphElement = panel.querySelector('p[name="'+name+'"]');
       interface ToxenInputWithOnsearch extends HTMLInputElement {
-        onsearch(e: KeyboardEvent);
+        onsearch(e: KeyboardEvent): void;
       }
       /**
        * @type {HTMLInputElement}
@@ -5804,9 +5817,8 @@ interface ToxenModule_data {
 export class ToxenModule {
   /**
    * Create a manageable Module
-   * @param {string} moduleName 
    */
-  constructor(moduleName) {
+  constructor(moduleName: string) {
     try {
       this.moduleName = moduleName;
       if (!fs.existsSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json")) {
@@ -5860,7 +5872,7 @@ export class ToxenModule {
     }
   }
 
-  static moduleFolder = "toxenModules";
+  static moduleFolder = updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\toxenModules" : process.env.HOME + "/.toxendata/data/toxenModules";
   /**
    * Initialize folders
    */
@@ -5870,10 +5882,10 @@ export class ToxenModule {
     }
   }
 
-  static createModule(moduleName: string);
-  static createModule(moduleName: string, language: "js" | "ts");
-  static createModule(moduleName: string, language: "js" | "ts" = "js") {
-    if (!fs.existsSync(moduleName)) {
+  static createModule(moduleName: string): void;
+  static createModule(moduleName: string, language: "js" | "ts"): void;
+  static createModule(moduleName: string, language: "js" | "ts" = "js"): void {
+    if (!fs.existsSync(ToxenModule.moduleFolder + "/" + moduleName)) {
       fs.mkdirSync(ToxenModule.moduleFolder + "/" + moduleName, { recursive: true });
       // JavaScript
       if (language == "js") fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/index.js",
@@ -5881,7 +5893,7 @@ export class ToxenModule {
  * JavaScript Module.
  * Your main function is required to be exported as \`exports.toxenModule\`.  
  * Otherwise, your module will not work.
- * @param {import("../../src/declarations/toxenCore")} Core
+ * @param {import("../../declarations/toxenCore")} Core
  */
 exports.toxenModule = (Core) => {
   // You can export specific functionality from the Toxen Core if you'll be using them often
@@ -5894,14 +5906,14 @@ exports.toxenModule = (Core) => {
 }`
       );
       // TypeScript
-      if (language == "ts") {
+      else if (language == "ts") {
         fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/index.ts",
 `/**
  * TypeScript Module.
  * Your main function is required to be exported as \`export var toxenModule\`.  
  * Otherwise, your module will not work.
  */
-export var toxenModule = (Core: typeof import("../../src/declarations/toxenCore")) => {
+export var toxenModule = (Core: typeof import("../../declarations/toxenCore")) => {
   // You can export specific functionality from the Toxen Core if you'll be using them often
   const {
     // SongManager
@@ -5924,6 +5936,10 @@ export var toxenModule = (Core: typeof import("../../src/declarations/toxenCore"
         fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/tsconfig.json", JSON.stringify(tsconfig, null, 2));
 
       }
+      else {
+        throw `${language} is not a valid language for Toxen Modules.`;
+      }
+
       let module: ToxenModule_data = {
         "author": "Anonymous",
         "name": moduleName,
@@ -5933,8 +5949,12 @@ export var toxenModule = (Core: typeof import("../../src/declarations/toxenCore"
       }
 
       fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json", JSON.stringify(module, null, 2));
+      fs.writeFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/index.js", "exports.toxenModule = () => {} // The TS file has yet to be compiled, so this is a placeholder.");
+      shell.openExternal(ToxenModule.moduleFolder + "/" + moduleName);
     }
     else {
+      dialog.showErrorBox("Error creating module", "This module already exists")
+      shell.openExternal(ToxenModule.moduleFolder + "/" + moduleName);
       console.error("This module already exists");
     }
   }
@@ -6051,40 +6071,57 @@ export class Statistics {
     Statistics.current = this;
   }
 
+  static current: Statistics;
+
   /**
-   * @type {Statistics}
+   * Default stats.json file location relative to your OS.
    */
-  static current;
+  static get defaultLocation() {
+    return updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\stats.json" : process.env.HOME + "/.toxendata/data/stats.json";
+  }
 
   /**
    * Save the statistics to the `stats.json` file.
    */
-  save(statsFile = "./data/stats.json") {
+  save(statsFile = Statistics.defaultLocation) {
     fs.writeFileSync(statsFile, JSON.stringify(this));
   }
   /**
    * Load the statistics from the `stats.json` file and return new object.
    */
-  static loadFromFile(statsFile = "./data/stats.json") {
+  static loadFromFile(statsFile = Statistics.defaultLocation) {
     if (!fs.existsSync(path.dirname(statsFile))) {
       fs.mkdirSync(path.dirname(statsFile), {recursive: true});
     }
     if (!fs.existsSync(statsFile)) {
-      console.log("No existing statistics file! Creating file.");
-      let s = new Statistics({});
-      s.save();
-      return s;
+      if (fs.existsSync("./data/stats.json")) {
+        fs.renameSync("./data/stats.json", statsFile);
+      }
+      else {
+        console.log("No existing statistics file! Creating file.");
+        let s = new Statistics({});
+        s.save();
+        return s;
+      }
     }
     return new Statistics(JSON.parse(fs.readFileSync(statsFile, "utf-8")));
   }
   /**
    * Load the statistics from the `stats.json` file.
    */
-  load(statsFile = "./data/stats.json") {
+  load(statsFile = Statistics.defaultLocation) {
+    if (!fs.existsSync(path.dirname(statsFile))) {
+      fs.mkdirSync(path.dirname(statsFile), {recursive: true});
+    }
     if (!fs.existsSync(statsFile)) {
-      console.error("No existing file! Creating file");
-      this.save();
-      return;
+      if (fs.existsSync("./data/stats.json")) {
+        fs.renameSync("./data/stats.json", statsFile);
+      }
+      else {
+        console.error("No existing file! Creating file");
+        this.save();
+        return;
+      }
     }
     let object = JSON.parse(fs.readFileSync(statsFile, "utf-8"));
     for (const key in this) {
@@ -6393,46 +6430,102 @@ export class PanelManager {
 
     // Listen for events
     Toxen.on("songpanelopen", () => {
-      PanelManager.songPanelButton.style.bottom = "-128px";
-      PanelManager.songPanelButton.style.left = "-128px";
-      PanelManager.songPanelButton.style.opacity = "0";
+      if (Settings.current.songMenuToRight) {
+        PanelManager.songPanelButton.style.bottom = "-128px";
+        PanelManager.songPanelButton.style.right = "-128px";
+        PanelManager.songPanelButton.style.opacity = "0";
+      }
+      else {
+        PanelManager.songPanelButton.style.bottom = "-128px";
+        PanelManager.songPanelButton.style.left = "-128px";
+        PanelManager.songPanelButton.style.opacity = "0";
+      }
     })
     Toxen.on("songpanelclose", () => {
-      PanelManager.songPanelButton.style.bottom = "-8px";
-      PanelManager.songPanelButton.style.left = "-8px";
-      PanelManager.songPanelButton.style.opacity = "1";
+      if (Settings.current.songMenuToRight) {
+        PanelManager.songPanelButton.style.bottom = "-18px";
+        PanelManager.songPanelButton.style.right = "-18px";
+        PanelManager.songPanelButton.style.opacity = "1";
+      }
+      else {
+        PanelManager.songPanelButton.style.bottom = "-18px";
+        PanelManager.songPanelButton.style.left = "-18px";
+        PanelManager.songPanelButton.style.opacity = "1";
+      }
     });
     Toxen.on("settingspanelopen", () => {
-      PanelManager.settingsPanelButton.style.bottom = "-128px";
-      PanelManager.settingsPanelButton.style.right = "-128px";
-      PanelManager.settingsPanelButton.style.opacity = "0";
+      if (Settings.current.songMenuToRight) {
+        PanelManager.settingsPanelButton.style.bottom = "-128px";
+        PanelManager.settingsPanelButton.style.left = "-128px";
+        PanelManager.settingsPanelButton.style.opacity = "0";
+      }
+      else {
+        PanelManager.settingsPanelButton.style.bottom = "-128px";
+        PanelManager.settingsPanelButton.style.right = "-128px";
+        PanelManager.settingsPanelButton.style.opacity = "0";
+      }
     })
     Toxen.on("settingspanelclose", () => {
-      PanelManager.settingsPanelButton.style.bottom = "-8px";
-      PanelManager.settingsPanelButton.style.right = "-8px";
-      PanelManager.settingsPanelButton.style.opacity = "1";
+      if (Settings.current.songMenuToRight) {
+        PanelManager.settingsPanelButton.style.bottom = "-18px";
+        PanelManager.settingsPanelButton.style.left = "-18px";
+        PanelManager.settingsPanelButton.style.opacity = "1";
+      }
+      else {
+        PanelManager.settingsPanelButton.style.bottom = "-18px";
+        PanelManager.settingsPanelButton.style.right = "-18px";
+        PanelManager.settingsPanelButton.style.opacity = "1";
+      }
     });
 
     // Defaults
     if (songmenusidebar.hasAttribute("open")) {
-      PanelManager.songPanelButton.style.bottom = "-128px";
-      PanelManager.songPanelButton.style.left = "-128px";
-      PanelManager.songPanelButton.style.opacity = "0";
+      if (Settings.current.songMenuToRight) {
+        PanelManager.songPanelButton.style.bottom = "-128px";
+        PanelManager.songPanelButton.style.right = "-128px";
+        PanelManager.songPanelButton.style.opacity = "0";
+      }
+      else {
+        PanelManager.songPanelButton.style.bottom = "-128px";
+        PanelManager.songPanelButton.style.left = "-128px";
+        PanelManager.songPanelButton.style.opacity = "0";
+      }
     }
     else {
-      PanelManager.songPanelButton.style.bottom = "-8px";
-      PanelManager.songPanelButton.style.left = "-8px";
-      PanelManager.songPanelButton.style.opacity = "1";
+      if (Settings.current.songMenuToRight) {
+        PanelManager.songPanelButton.style.bottom = "-18px";
+        PanelManager.songPanelButton.style.right = "-18px";
+        PanelManager.songPanelButton.style.opacity = "1";
+      }
+      else {
+        PanelManager.songPanelButton.style.bottom = "-18px";
+        PanelManager.songPanelButton.style.left = "-18px";
+        PanelManager.songPanelButton.style.opacity = "1";
+      }
     }
     if (settingsmenusidebar.hasAttribute("open")) {
-      PanelManager.settingsPanelButton.style.bottom = "-128px";
-      PanelManager.settingsPanelButton.style.right = "-128px";
-      PanelManager.settingsPanelButton.style.opacity = "0";
+      if (Settings.current.songMenuToRight) {
+        PanelManager.settingsPanelButton.style.bottom = "-128px";
+        PanelManager.settingsPanelButton.style.left = "-128px";
+        PanelManager.settingsPanelButton.style.opacity = "0";
+      }
+      else {
+        PanelManager.settingsPanelButton.style.bottom = "-128px";
+        PanelManager.settingsPanelButton.style.right = "-128px";
+        PanelManager.settingsPanelButton.style.opacity = "0";
+      }
     }
     else {
-      PanelManager.settingsPanelButton.style.bottom = "-8px";
-      PanelManager.settingsPanelButton.style.right = "-8px";
-      PanelManager.settingsPanelButton.style.opacity = "1";
+      if (Settings.current.songMenuToRight) {
+        PanelManager.settingsPanelButton.style.bottom = "-18px";
+        PanelManager.settingsPanelButton.style.left = "-18px";
+        PanelManager.settingsPanelButton.style.opacity = "1";
+      }
+      else {
+        PanelManager.settingsPanelButton.style.bottom = "-18px";
+        PanelManager.settingsPanelButton.style.right = "-18px";
+        PanelManager.settingsPanelButton.style.opacity = "1";
+      }
     }
   }
   
@@ -6448,6 +6541,14 @@ export class PanelManager {
   static settingsPanelButton: HTMLDivElement;
 }
 
+/**
+ * List of assets used in Toxen.
+ * 
+ * A custom asset list can be imported by themes.
+ */
+export var Assets = {
+
+}
 
 class Tooltip {
   

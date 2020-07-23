@@ -43,6 +43,11 @@ Features I want to implement (This will be updated as i get more ideas and remem
   - Better sorting in settings. Possibly a top menu for categories.
   - A page with all shortcuts (God damn it then I need to remember them all >_>)
 
+- Change the location of Toxen's `data` file structure to `%appdata%\Toxen\data\` on Windows and `~/.toxen/data/` on Linux (And Mac if possible)
+  - Remember to move over old settings files from the local data files if they exist. (The check and move should be removed in the final product, it's just for current testers)
+  - Files that should be in `data`: `settings.json`, `stats.json`, `toxenModules/`, `themes/`
+  - Make a copy of the declarations files whenever the software updates. (Store the last launched update in `settings.json["version"]`)
+
 # Toxen Change Logs
 Features and changes that has already been made to Toxen.
 
@@ -61,14 +66,15 @@ Features and changes that has already been made to Toxen.
 - Added artist name quick-select in the YouTube Downloader for if you are downloading a song from an artist you already have other songs from.  
 ![youtubeArtistQuickSelect.gif](https://toxen.net/media/youtubeArtistQuickSelect.gif)
 - Added Video download to the YouTube Downloader (Tick `Download Video` to download the video)
-- Added buttons to pull out the side panels. (Sprites are still placeholders, will likely be replaced)  
-  You'll need to click on the buttons to open the panels, but you can change it to only hover over in the settings by ticking `Button Activation By Hover` on  
-![panelButtons.pngs](https://toxen.net/media/panelButtons.png)
+- Added buttons to pull out the side panels.  
+- Added a centered set of buttons to `Go to previous, next, play/pause, shuffle` and `repeat` functions. As of now, they haven't fully replaced the old methods, but are also possible.
+  You'll need to click on the buttons in the corners to open the panels, but you can change it to only hover over in the settings by ticking `Button Activation By Hover` on.  
+  ![panelButtons.pngs](https://toxen.net/media/panelButtons.png)
 - Fixed the progress bar not being sticky to the top of the visible song panel.
 - The mouse and on-screen buttons hide after 5 seconds of inactivity. Becomes visible again after moving the mouse.
 - Added multiple new icons to the interface to make it look less bland with pure text. (Thanks [Bootstrap Icons](https://icons.getbootstrap.com/))
-- Added a centered set of buttons to `Go to previous, next, play/pause, shuffle` and `repeat` functions. As of now, they haven't fully replaced the old methods, but are also possible.
 - Added shortcuts `CTRL + Arrow up` to turn audio up by 5% and `CTRL + Arrow down` to turn audio down by 5%
+- Removed the progress bar being able to be in the bottom of the screen due to overlaps.
 
 
 ## 202007150445
