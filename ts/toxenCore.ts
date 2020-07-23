@@ -113,6 +113,13 @@ export class Toxen {
     });
   }
 
+  static toggleFullScreen(): void;
+  static toggleFullScreen(mode: boolean): void;
+  static toggleFullScreen(mode = !browserWindow.isFullScreen()) {
+    browserWindow.setFullScreen(mode);
+    browserWindow.setMenuBarVisibility(!mode);
+  }
+
   static inactivityState = false;
 
   /**
@@ -920,7 +927,7 @@ export class Settings {
   /**
    * The current version.
    */
-  version: string = "0";
+  version: number = 0;
 }
 
 /**
@@ -3746,9 +3753,7 @@ function reloadMenu() {
         {
           label:"Toggle Fullscreen",
           click() {
-            let mode = !browserWindow.isFullScreen();
-            browserWindow.setFullScreen(mode);
-            browserWindow.setMenuBarVisibility(!mode);
+            Toxen.toggleFullScreen();
           },
           accelerator: "F11"
         }

@@ -294,7 +294,23 @@ async function initialize() {
     if (e.button == 0) document.querySelector<HTMLProgressElement>("#progressbar").clicking = true;
   });
 
-
+  // Confine window and panels.
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 0 || window.scrollX > 0) {
+      window.scrollTo(0, 0);
+    }
+  });
+  document.getElementById("songmenusidebar").addEventListener("scroll", function() {
+    if (this.scrollLeft > 0) {
+      this.scrollTo(0, 0);
+    }
+  });
+  document.getElementById("settingsmenusidebar").addEventListener("scroll", function() {
+    if (this.scrollLeft > 0) {
+      this.scrollTo(0, 0);
+    }
+  });
+  
   // Enable debug mode
   if (debugMode) {
     // _debugModeLoop();
@@ -302,7 +318,7 @@ async function initialize() {
       // Insert logic to go some shit here I suppose
       requestAnimationFrame(_debugModeLoop);
     }
-
+    
     setInterval(() => {
       Debug.updateCSS();
     }, 1000);

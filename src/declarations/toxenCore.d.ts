@@ -14,6 +14,8 @@ declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 40
  */
 export declare class Toxen {
     static initialize(): void;
+    static toggleFullScreen(): void;
+    static toggleFullScreen(mode: boolean): void;
     static inactivityState: boolean;
     /**
      * Restarts Toxen immediately.
@@ -296,7 +298,7 @@ export declare class Settings {
     /**
      * The current version.
      */
-    version: string;
+    version: number;
 }
 /**
  * Custom HTML Song Element that extends div.

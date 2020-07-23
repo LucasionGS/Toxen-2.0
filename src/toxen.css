@@ -25,6 +25,8 @@ body {
   padding: 0;
   font-family: var(--basefont);
   overflow: hidden;
+  width: 100vw;
+  height: 100vh;
 }
 
 #storyboard {
@@ -117,7 +119,9 @@ div.floatingbutton#midpanelcontainer > img {
   user-select: none;
   position: absolute;
   bottom: 0;
-  width: 100%;
+  max-width: 120%;
+  width: 120%;
+  transform: translateX(-8%);
   height: 75%;
 }
 

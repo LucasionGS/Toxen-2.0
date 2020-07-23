@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -101,6 +100,10 @@ class Toxen {
                 btn.style.opacity = "0";
             }
         });
+    }
+    static toggleFullScreen(mode = !browserWindow.isFullScreen()) {
+        browserWindow.setFullScreen(mode);
+        browserWindow.setMenuBarVisibility(!mode);
     }
     /**
      * Restarts Toxen immediately.
@@ -436,7 +439,7 @@ class Settings {
         /**
          * The current version.
          */
-        this.version = "0";
+        this.version = 0;
         if (!doNotReplaceCurrent) {
             Settings.current = this;
         }
@@ -3417,9 +3420,7 @@ function reloadMenu() {
                 {
                     label: "Toggle Fullscreen",
                     click() {
-                        let mode = !browserWindow.isFullScreen();
-                        browserWindow.setFullScreen(mode);
-                        browserWindow.setMenuBarVisibility(!mode);
+                        Toxen.toggleFullScreen();
                     },
                     accelerator: "F11"
                 }
