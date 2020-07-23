@@ -171,12 +171,10 @@ function initialize() {
             let { key, ctrlKey: ctrl, shiftKey: shift, altKey: alt, } = e;
             key = key.toLowerCase();
             function hasInputFocus() {
-                if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
                     return true;
-                }
-                else {
+                else
                     return false;
-                }
             }
             if (!ctrl && key == " " && !hasInputFocus()) {
                 e.preventDefault();
@@ -200,6 +198,12 @@ function initialize() {
             }
             if (ctrl && shift && key == "l") {
                 settings.toggleSettingsPanelLock();
+            }
+            if (ctrl && !shift && key == "arrowup") {
+                settings.setVolume(Math.min(settings.volume + 5, 100));
+            }
+            if (ctrl && !shift && key == "arrowdown") {
+                settings.setVolume(Math.max(settings.volume - 5, 0));
             }
         });
         window.addEventListener("resize", (e) => {
@@ -266,6 +270,12 @@ function initialize() {
         // Create "on" events.
         Toxen.on("play", () => {
             stats.songsPlayed++;
+            let spb = document.getElementById("svgplaybutton");
+            spb.src = spb.getAttribute("svgpause");
+        });
+        Toxen.on("pause", () => {
+            let spb = document.getElementById("svgplaybutton");
+            spb.src = spb.getAttribute("svgplay");
         });
         // Finish
         settings.reloadPlaylists();

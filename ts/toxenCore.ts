@@ -237,6 +237,8 @@ export class Toxen {
   static on(event: "settingspanelclose", callback: () => void): void;
   static on(event: "inactive", callback: () => void): void;
   static on(event: "active", callback: () => void): void;
+  static on(event: "toggleshuffle", callback: (toggle: boolean) => void): void;
+  static on(event: "togglerepeat", callback: (toggle: boolean) => void): void;
   static on(event: string, callback: (...args) => void) {
     Toxen.eventEmitter.on(event, callback);
   }
@@ -254,6 +256,8 @@ export class Toxen {
   static emit(event: "settingspanelclose"): void;
   static emit(event: "inactive"): void;
   static emit(event: "active"): void;
+  static emit(event: "toggleshuffle", toggle: boolean): void;
+  static emit(event: "togglerepeat", toggle: boolean): void;
   static emit(event: string, ...args: any[]) {
     if (Array.isArray(args)) {
       Toxen.eventEmitter.emit(event, ...args);
@@ -406,6 +410,8 @@ export class Settings {
   setVolume(value: number) {
     this.volume = value;
     SongManager.player.volume = value / 100;
+    let volumeRange = document.querySelector<HTMLInputElement>("#volumeValue");
+    if (+volumeRange.value != value) volumeRange.value = value + "";
   }
 
   applySettingsToPanel() {
@@ -755,7 +761,7 @@ export class Settings {
   /**
    * Audio volume.
    */
-  volume: number = 100;
+  volume: number = 50;
   /**
    * Full path to the current song folder.
    */
@@ -1187,7 +1193,7 @@ export class Song {
       this.element.style.background = "";
     }
 
-    this.click = function() {
+    this.click = () => {
       this.play();
     };
   }
@@ -1327,7 +1333,6 @@ export class Song {
     this.element.toggleAttribute("playing", true);
     this.focus();
 
-    // if (SongManager.player.getAttribute("songid") != id) {
     if (cur == null || cur.songId != id) {
       Toxen.emit("play", this);
       SongManager.player.setAttribute("songid", id.toString());
@@ -1432,9 +1437,11 @@ export class Song {
     else {
       if (!SongManager.player.paused) {
         SongManager.player.pause();
+        Toxen.emit("pause");
       }
       else {
         SongManager.player.play();
+        Toxen.emit("play");
       }
     }
 
@@ -2193,10 +2200,7 @@ export class SongManager {
     SongManager.playSong(SongManager.getSong(id));
   }
 
-  /**
-   * @param {Song} song 
-   */
-  static playSong(song) {
+  static playSong(song: Song) {
     song.play();
   }
 
@@ -2279,6 +2283,7 @@ export class SongManager {
     if (typeof force == "boolean") {
       Settings.current.shuffle = !force;
     }
+    Toxen.emit("toggleshuffle", Settings.current.shuffle);
 
     if (Settings.current.shuffle == false) {
       element.classList.replace("color-red", "color-green");
@@ -2304,6 +2309,8 @@ export class SongManager {
     if (typeof force == "boolean") {
       Settings.current.repeat = !force;
     }
+
+    Toxen.emit("togglerepeat", Settings.current.repeat);
 
     if (Settings.current.repeat == false) {
       element.classList.replace("color-red", "color-green");
@@ -3663,7 +3670,6 @@ function reloadMenu() {
           click() {
             SongManager.playRandom();
           },
-          // "accelerator": "CTRL + ArrowLeft"
         },
         { type: "separator" },
         {
@@ -3671,7 +3677,6 @@ function reloadMenu() {
           click() {
             SongManager.toggleShuffle();
           },
-          // "accelerator": "CTRL + ArrowLeft"
         },
         { type: "separator" },
         {

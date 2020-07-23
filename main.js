@@ -22,8 +22,8 @@ function createWindow () {
   // Create the browser window.
   win = new BrowserWindow({
     title: "Toxen",
-    minWidth: 400,
-    minHeight: 384,
+    minWidth: 800,
+    minHeight: 600,
     width: winWidth,
     height: winHeight,
     webPreferences: {

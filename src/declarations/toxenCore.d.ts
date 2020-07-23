@@ -46,6 +46,8 @@ export declare class Toxen {
     static on(event: "settingspanelclose", callback: () => void): void;
     static on(event: "inactive", callback: () => void): void;
     static on(event: "active", callback: () => void): void;
+    static on(event: "toggleshuffle", callback: (toggle: boolean) => void): void;
+    static on(event: "togglerepeat", callback: (toggle: boolean) => void): void;
     /**
      * Emit an event.
      */
@@ -59,6 +61,8 @@ export declare class Toxen {
     static emit(event: "settingspanelclose"): void;
     static emit(event: "inactive"): void;
     static emit(event: "active"): void;
+    static emit(event: "toggleshuffle", toggle: boolean): void;
+    static emit(event: "togglerepeat", toggle: boolean): void;
     static extraStyle: HTMLLinkElement;
     /**
      * @param {string} src
@@ -484,10 +488,7 @@ export declare class SongManager {
     static getCurrentlyPlayingSong(): Song;
     static moveToTime(timeInSeconds: number): boolean;
     static playSongById(id: number): void;
-    /**
-     * @param {Song} song
-     */
-    static playSong(song: any): void;
+    static playSong(song: Song): void;
     static playRandom(): void;
     static playNext(): void;
     static playPrev(): void;

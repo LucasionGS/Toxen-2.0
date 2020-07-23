@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -294,7 +293,7 @@ class Settings {
         /**
          * Audio volume.
          */
-        this.volume = 100;
+        this.volume = 50;
         /**
          * Full path to the current song folder.
          */
@@ -492,6 +491,9 @@ class Settings {
     setVolume(value) {
         this.volume = value;
         SongManager.player.volume = value / 100;
+        let volumeRange = document.querySelector("#volumeValue");
+        if (+volumeRange.value != value)
+            volumeRange.value = value + "";
     }
     applySettingsToPanel() {
         for (const key in this) {
@@ -1109,7 +1111,7 @@ class Song {
         else {
             this.element.style.background = "";
         }
-        this.click = function () {
+        this.click = () => {
             this.play();
         };
     }
@@ -1146,7 +1148,6 @@ class Song {
             SongManager.songList.forEach(s => s.element.toggleAttribute("playing", false));
         this.element.toggleAttribute("playing", true);
         this.focus();
-        // if (SongManager.player.getAttribute("songid") != id) {
         if (cur == null || cur.songId != id) {
             Toxen.emit("play", this);
             SongManager.player.setAttribute("songid", id.toString());
@@ -1243,9 +1244,11 @@ class Song {
         else {
             if (!SongManager.player.paused) {
                 SongManager.player.pause();
+                Toxen.emit("pause");
             }
             else {
                 SongManager.player.play();
+                Toxen.emit("play");
             }
         }
         SongManager.onplay(this);
@@ -1953,9 +1956,6 @@ class SongManager {
     static playSongById(id) {
         SongManager.playSong(SongManager.getSong(id));
     }
-    /**
-     * @param {Song} song
-     */
     static playSong(song) {
         song.play();
     }
@@ -2040,6 +2040,7 @@ class SongManager {
         if (typeof force == "boolean") {
             Settings.current.shuffle = !force;
         }
+        Toxen.emit("toggleshuffle", Settings.current.shuffle);
         if (Settings.current.shuffle == false) {
             element.classList.replace("color-red", "color-green");
             Settings.current.shuffle = true;
@@ -2062,6 +2063,7 @@ class SongManager {
         if (typeof force == "boolean") {
             Settings.current.repeat = !force;
         }
+        Toxen.emit("togglerepeat", Settings.current.repeat);
         if (Settings.current.repeat == false) {
             element.classList.replace("color-red", "color-green");
             Settings.current.repeat = true;

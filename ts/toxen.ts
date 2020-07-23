@@ -207,12 +207,7 @@ async function initialize() {
     key = key.toLowerCase();
 
     function hasInputFocus() {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return true;
-      }
-      else {
-        return false;
-      }
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return true; else return false;
     }
 
     if (!ctrl && key == " " && !hasInputFocus()) {
@@ -242,6 +237,14 @@ async function initialize() {
 
     if (ctrl && shift && key == "l") {
       settings.toggleSettingsPanelLock();
+    }
+    
+    if (ctrl && !shift && key == "arrowup") {
+      settings.setVolume(Math.min(settings.volume + 5, 100));
+    }
+    
+    if (ctrl && !shift && key == "arrowdown") {
+      settings.setVolume(Math.max(settings.volume - 5, 0));
     }
   });
 
@@ -327,6 +330,13 @@ async function initialize() {
   // Create "on" events.
   Toxen.on("play", () => {
     stats.songsPlayed++;
+    
+    let spb: HTMLImageElement = document.getElementById("svgplaybutton") as HTMLImageElement;
+    spb.src = spb.getAttribute("svgpause");
+  });
+  Toxen.on("pause", () => {
+    let spb: HTMLImageElement = document.getElementById("svgplaybutton") as HTMLImageElement;
+    spb.src = spb.getAttribute("svgplay");
   });
 
   // Finish

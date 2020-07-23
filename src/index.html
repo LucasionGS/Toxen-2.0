@@ -221,6 +221,8 @@
       <label for="lightthemebaseToggle">Light Theme Base</label>
       <sup>
         Enable this to willingly burn your eyes up.
+        <br>
+        <span style="text-decoration: underline;">Not recommended to use.<br>This might be fixed or possibily removed in a future update.</span>
       </sup>
       <br>
       <label>Visualizer Color</label>
@@ -291,8 +293,8 @@
       <label for="progressbarspot=0">Side Menu</label><br>
       <input type="radio" name="pbsstyle" id="progressbarspot=1" value="1" onclick="settings.setProgressBarSpot(1); settings.saveToFile();">
       <label for="progressbarspot=1">Top of screen</label><br>
-      <input type="radio" name="pbsstyle" id="progressbarspot=2" value="2" onclick="settings.setProgressBarSpot(2); settings.saveToFile();">
-      <label for="progressbarspot=2">Bottom of screen</label><br>
+      <!-- <input type="radio" name="pbsstyle" id="progressbarspot=2" value="2" onclick="settings.setProgressBarSpot(2); settings.saveToFile();">
+      <label for="progressbarspot=2">Bottom of screen</label><br> -->
       <hr>
       <label for="backgrounddimValue">Background Dimming</label>
       <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = this.value" onmouseup="settings.saveToFile();">
@@ -375,16 +377,34 @@
       <br>
       <div id="moduleActivation"></div>
       <br>
-      <button id="restartToxenButton" class="fancybutton" onclick="Toxen.restart()">Restart Toxen</button>
+      <button id="restartToxenButton" class="fancybutton svg_reload_white" onclick="Toxen.restart()">Restart Toxen</button>
       <hr>
     </div>
     <p id="subtitles"></p>
   </div>
-  <div id="songpanelbutton" class="floatingbutton">
-    <img src="./img/songpanel.png" alt="songpanel.png">
+  <div id="midpanelcontainer" class="floatingbutton">
+    <img src="./img/midpanel.png" alt="midpanel.png" draggable="false">
+    <div id="smallprevbutton" class="smallfloatingbutton" style="transform: translateX(16px);" onclick="SongManager.playPrev()" title="Go to the previous song">
+      <img src="./svg/prev_black.svg" alt="prev_black.svg" draggable="false">
+    </div>
+    <div id="smallplaybutton" class="smallfloatingbutton" style="transform: translateX(80px);" onclick="SongManager.getCurrentlyPlayingSong().play();" title="Pause/play the current song">
+      <img src="./svg/pause_black.svg" id="svgplaybutton" svgplay="./svg/play_black.svg" svgpause="./svg/pause_black.svg" draggable="false">
+    </div>
+    <div id="smallnextbutton" class="smallfloatingbutton" style="transform: translateX(144px);" onclick="local_playNext()" title="Play the next song">
+      <img src="./svg/next_black.svg" alt="next_black.svg" draggable="false">
+    </div>
+    <div id="smallshufflebutton" class="smallfloatingbutton" style="transform: translateX(208px);" onclick="SongManager.toggleShuffle()" title="Toggle Shuffling">
+      <img src="./svg/shuffle_black.svg" alt="shuffle_black.svg" draggable="false">
+    </div>
+    <div id="smallrepeatbutton" class="smallfloatingbutton" style="transform: translateX(272px);" onclick="SongManager.toggleRepeat()" title="Toggle Repeating">
+      <img src="./svg/repeat_black.svg" alt="repeat_black.svg" draggable="false">
+    </div>
   </div>
-  <div id="settingsbutton" class="floatingbutton">
-    <img src="./img/settings.png" alt="settings.png">
+  <div id="songpanelbutton" class="floatingbutton" title="Open the Song Panel">
+    <img src="./svg/doublemusicnote_white.svg" alt="doublemusicnote_white.svg" draggable="false">
+  </div>
+  <div id="settingsbutton" class="floatingbutton" title="Open the Settings Panel">
+    <img src="./svg/settings_white.svg" alt="settings_white.svg" draggable="false">
   </div>
 </body>
 </html>
