@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -28,21 +29,6 @@ const Zip = require("adm-zip");
 const events_1 = require("events");
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
-var updatePlatform;
-switch (process.platform) {
-    case "win32":
-        updatePlatform = "win";
-        break;
-    case "linux":
-        updatePlatform = "linux";
-        break;
-    case "darwin":
-        updatePlatform = "mac";
-        break;
-    default:
-        updatePlatform = null;
-        break;
-}
 /**
  * General Toxen functionality.
  *
@@ -135,7 +121,7 @@ class Toxen {
             Prompt.close("ffmpegdownload");
             let p = new Prompt("Install FFMPEG", "FFMPEG is a tool for media conversion and editing, and Toxen is dependent on this software to modify media files.");
             p.name = "ffmpegdownload";
-            p.addContent(updatePlatform === "win" ?
+            p.addContent(Toxen.updatePlatform === "win" ?
                 "Do you want Toxen to install FFMPEG automatically?<br><br><code>If you already have it installed in the correct location, it'll just be applied and used instead.</code>" :
                 `You'll need to go to <a href="#ffmpeg" onclick="shell.openExternal(this.innerText)">https://ffmpeg.org/download.html</a> to install FFMPEG and you should either set it as a global command, or open the settings panel, go under <b>Advanced Settings</b>, and find the executable ffmpeg file after installation.
 <br><br>
@@ -150,7 +136,7 @@ class Toxen {
             cancel.addEventListener("click", () => {
                 p.close();
             });
-            if (updatePlatform !== "win")
+            if (Toxen.updatePlatform !== "win")
                 install.remove();
             return p.promise.then((v) => __awaiter(this, void 0, void 0, function* () {
                 if (v == null) {
@@ -284,6 +270,20 @@ Toxen.generate = {
         }
     },
 };
+switch (process.platform) {
+    case "win32":
+        Toxen.updatePlatform = "win";
+        break;
+    case "linux":
+        Toxen.updatePlatform = "linux";
+        break;
+    case "darwin":
+        Toxen.updatePlatform = "mac";
+        break;
+    default:
+        Toxen.updatePlatform = null;
+        break;
+}
 class Settings {
     constructor(doNotReplaceCurrent = false) {
         // 
@@ -448,7 +448,7 @@ class Settings {
      * Default settings.json file location relative to your OS.
      */
     static get defaultLocation() {
-        return updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\settings.json" : process.env.HOME + "/.toxendata/data/settings.json";
+        return Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\settings.json" : process.env.HOME + "/.toxendata/data/settings.json";
     }
     static createFromFile(fileLocation = Settings.defaultLocation) {
         let newSettings = new Settings();
@@ -5075,18 +5075,18 @@ class Update {
      */
     static check(currentVersion) {
         return __awaiter(this, void 0, void 0, function* () {
-            document.getElementById("currentversion").innerText = "vers. " + currentVersion + `${updatePlatform != null ? ` (${updatePlatform})` : ""}`;
+            document.getElementById("currentversion").innerText = "vers. " + currentVersion + `${Toxen.updatePlatform != null ? ` (${Toxen.updatePlatform})` : ""}`;
             /**
              * @type {HTMLButtonElement}
              */
             let btn = document.querySelector("#updatetoxen");
-            if (updatePlatform == null) {
+            if (Toxen.updatePlatform == null) {
                 btn.disabled = true;
                 btn.innerText = "Undeterminable release";
                 return;
             }
             btn.innerText = "Checking for updates...";
-            let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${updatePlatform}&get=version`;
+            let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${Toxen.updatePlatform}&get=version`;
             fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
                 if (latest > currentVersion) {
                     btn.innerText = "Download Latest Update";
@@ -5113,11 +5113,11 @@ class Update {
     }
     static downloadLatest() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (updatePlatform == null) {
+            if (Toxen.updatePlatform == null) {
                 dialog.showErrorBox("Unidentified release", "No release found for your current operating system (" + process.platform + ")");
                 return;
             }
-            let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${updatePlatform}&get=url`;
+            let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${Toxen.updatePlatform}&get=url`;
             let toxenLatestURL = yield fetch(toxenGetLatestURL).then(res => res.text());
             let dl = new ion.Download("https://" + toxenLatestURL, "./latest.zip");
             let dlText = document.createElement("p");
@@ -5304,7 +5304,7 @@ class ToxenModule {
                 }, null, 2));
             }
             this.module = JSON.parse(fs.readFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json", "utf8"));
-            this.function = require("../" + ToxenModule.moduleFolder + "/" + moduleName + "/" + (this.module.main ? this.module.main : "index.js")).toxenModule;
+            this.function = require(ToxenModule.moduleFolder + "/" + moduleName + "/" + (this.module.main ? this.module.main : "index.js")).toxenModule;
         }
         catch (error) {
             let p = new Prompt("Module Error", [
@@ -5485,7 +5485,7 @@ export var toxenModule = (Core: typeof import("../../declarations/toxenCore")) =
 }
 exports.ToxenModule = ToxenModule;
 ToxenModule.installedModules = [];
-ToxenModule.moduleFolder = updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\toxenModules" : process.env.HOME + "/.toxendata/data/toxenModules";
+ToxenModule.moduleFolder = Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\toxenModules" : process.env.HOME + "/.toxendata/data/toxenModules";
 class Statistics {
     /**
      * Initialize a new statistics object.
@@ -5510,7 +5510,7 @@ class Statistics {
      * Default stats.json file location relative to your OS.
      */
     static get defaultLocation() {
-        return updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\stats.json" : process.env.HOME + "/.toxendata/data/stats.json";
+        return Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\stats.json" : process.env.HOME + "/.toxendata/data/stats.json";
     }
     /**
      * Save the statistics to the `stats.json` file.

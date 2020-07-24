@@ -20,6 +20,8 @@ const {
 } = ToxenCore;
 import * as rpc from "discord-rpc";
 import * as version from "./version.json";
+import * as path from "path";
+import rimraf = require("rimraf");
 const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;
 
@@ -85,9 +87,27 @@ async function initialize() {
   stats.load();
   stats.startSaveTimer();
 
-  if (settings.version != version) {
+  if ((!debugMode && settings.version != version) || debugMode) {
     settings.version = version;
-    let declarationDir = debugMode ? "./src/declarations" : "/resources/app/src/declarations";
+    let declarationDir = path.resolve(debugMode ? "./src/declarations/" : "./resources/app/src/declarations/");
+    let declarationTarget = Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\declarations" : process.env.HOME + "/.toxendata/data/declarations";
+    if (fs.existsSync(declarationTarget)) rimraf.sync(declarationTarget);
+    copyFilesRecursively(declarationDir, declarationTarget);
+    function copyFilesRecursively(srcDir: string, targetDir: string) {
+      fs.exists(targetDir, async exists => {
+        if (!exists) await fs.promises.mkdir(targetDir);
+        fs.readdir(srcDir, {withFileTypes: true}, (err, files) => {
+          files.forEach(file => {
+            if (file.isFile()) {
+              fs.copyFile(path.resolve(srcDir, file.name), path.resolve(targetDir, file.name), err => {
+                if (err) { console.error(err); return; }
+              });
+            }
+            else if (file.isDirectory()) copyFilesRecursively(path.resolve(srcDir, file.name), path.resolve(targetDir, file.name));
+          });
+        });
+      });
+    }
   }
 
   Toxen.extraStyle = document.querySelector("#extracss");

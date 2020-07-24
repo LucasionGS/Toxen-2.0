@@ -14,6 +14,8 @@ const ToxenCore = require("./toxenCore");
 const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Debug, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, showTutorial, } = ToxenCore;
 const rpc = require("discord-rpc");
 const version = require("./version.json");
+const path = require("path");
+const rimraf = require("rimraf");
 const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;
 // Discord RPC
@@ -71,9 +73,33 @@ function initialize() {
         }
         stats.load();
         stats.startSaveTimer();
-        if (settings.version != version) {
+        if ((!debugMode && settings.version != version) || debugMode) {
             settings.version = version;
-            let declarationDir = debugMode ? "./src/declarations" : "/resources/app/src/declarations";
+            let declarationDir = path.resolve(debugMode ? "./src/declarations/" : "./resources/app/src/declarations/");
+            let declarationTarget = Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\declarations" : process.env.HOME + "/.toxendata/data/declarations";
+            if (fs.existsSync(declarationTarget))
+                rimraf.sync(declarationTarget);
+            copyFilesRecursively(declarationDir, declarationTarget);
+            function copyFilesRecursively(srcDir, targetDir) {
+                fs.exists(targetDir, (exists) => __awaiter(this, void 0, void 0, function* () {
+                    if (!exists)
+                        yield fs.promises.mkdir(targetDir);
+                    fs.readdir(srcDir, { withFileTypes: true }, (err, files) => {
+                        files.forEach(file => {
+                            if (file.isFile()) {
+                                fs.copyFile(path.resolve(srcDir, file.name), path.resolve(targetDir, file.name), err => {
+                                    if (err) {
+                                        console.error(err);
+                                        return;
+                                    }
+                                });
+                            }
+                            else if (file.isDirectory())
+                                copyFilesRecursively(path.resolve(srcDir, file.name), path.resolve(targetDir, file.name));
+                        });
+                    });
+                }));
+            }
         }
         Toxen.extraStyle = document.querySelector("#extracss");
         settings.setThemeBase(settings.lightThemeBase);

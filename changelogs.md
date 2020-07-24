@@ -23,6 +23,7 @@ Features I want to implement (This will be updated as i get more ideas and remem
 - Remove playlist feature
 - Visualizer Quanity Customizer (Interface buttons for `Storyboard`.`setAnalyserFftLevel` and `Storyboard`.`setAnalyserFftSize`)
 - Music Playback Rate Changer (Like the first version of Toxen used to have)
+
 - [Toxen.net](https://toxen.net/) website
   - Hub for downloading modules, storyboards, subtitles, custom themes, etc...
     - https://toxen.net/listings/SUBJECT
@@ -42,11 +43,6 @@ Features I want to implement (This will be updated as i get more ideas and remem
   - Functionality and panel buttons should have icons instead of blocks of text.
   - Better sorting in settings. Possibly a top menu for categories.
   - A page with all shortcuts (God damn it then I need to remember them all >_>)
-
-- Change the location of Toxen's `data` file structure to `%appdata%\Toxen\data\` on Windows and `~/.toxen/data/` on Linux (And Mac if possible)
-  - Remember to move over old settings files from the local data files if they exist. (The check and move should be removed in the final product, it's just for current testers)
-  - Files that should be in `data`: `settings.json`, `stats.json`, `toxenModules/`, `themes/`
-  - Make a copy of the declarations files whenever the software updates. (Store the last launched update in `settings.json["version"]`)
 
 # Toxen Change Logs
 Features and changes that has already been made to Toxen.
@@ -74,6 +70,8 @@ Features and changes that has already been made to Toxen.
 - The mouse and on-screen buttons hide after 5 seconds of inactivity. Becomes visible again after moving the mouse.
 - Added multiple new icons to the interface to make it look less bland with pure text. (Thanks [Bootstrap Icons](https://icons.getbootstrap.com/))
 - Added shortcuts `CTRL + Arrow up` to turn audio up by 5% and `CTRL + Arrow down` to turn audio down by 5%
+- Added improvements to the Toxen Module system.
+- Moved Toxen user data like settings, stats, and modules to `%appdata%/ToxenData` instead of in the installation. (`~/.toxendata` on Linux)
 - Removed the progress bar being able to be in the bottom of the screen due to overlaps.
 
 

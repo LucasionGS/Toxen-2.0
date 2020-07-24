@@ -42,23 +42,6 @@ type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 819
 
 declare function local_playNext(): void;
 
-var updatePlatform: "win" | "linux" | "mac";
-switch (process.platform) {
-  case "win32":
-    updatePlatform = "win";
-    break;
-  case "linux":
-    updatePlatform = "linux";
-    break;
-  case "darwin":
-    updatePlatform = "mac";
-    break;
-
-  default:
-    updatePlatform = null;
-    break;
-}
-
 /**
  * General Toxen functionality.
  * 
@@ -120,6 +103,8 @@ export class Toxen {
     browserWindow.setMenuBarVisibility(!mode);
   }
 
+  static updatePlatform: "win" | "linux" | "mac";
+
   static inactivityState = false;
 
   /**
@@ -158,7 +143,7 @@ export class Toxen {
       "FFMPEG is a tool for media conversion and editing, and Toxen is dependent on this software to modify media files.",
     );
     p.name = "ffmpegdownload";
-    p.addContent(updatePlatform === "win" ?
+    p.addContent(Toxen.updatePlatform === "win" ?
     "Do you want Toxen to install FFMPEG automatically?<br><br><code>If you already have it installed in the correct location, it'll just be applied and used instead.</code>":
 `You'll need to go to <a href="#ffmpeg" onclick="shell.openExternal(this.innerText)">https://ffmpeg.org/download.html</a> to install FFMPEG and you should either set it as a global command, or open the settings panel, go under <b>Advanced Settings</b>, and find the executable ffmpeg file after installation.
 <br><br>
@@ -175,7 +160,7 @@ export class Toxen {
       p.close();
     });
 
-    if (updatePlatform !== "win") install.remove();
+    if (Toxen.updatePlatform !== "win") install.remove();
 
     return p.promise.then(async v => {
       if (v == null) {
@@ -353,6 +338,22 @@ export class Toxen {
   }
 }
 
+switch (process.platform) {
+  case "win32":
+    Toxen.updatePlatform = "win";
+    break;
+  case "linux":
+    Toxen.updatePlatform = "linux";
+    break;
+  case "darwin":
+    Toxen.updatePlatform = "mac";
+    break;
+
+  default:
+    Toxen.updatePlatform = null;
+    break;
+}
+
 export class Settings {
   static current: Settings = null;
 
@@ -366,7 +367,7 @@ export class Settings {
    * Default settings.json file location relative to your OS.
    */
   static get defaultLocation() {
-    return updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\settings.json" : process.env.HOME + "/.toxendata/data/settings.json";
+    return Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\settings.json" : process.env.HOME + "/.toxendata/data/settings.json";
   }
 
   static createFromFile(fileLocation = Settings.defaultLocation) {
@@ -5586,18 +5587,18 @@ export class Update {
    * `YYYYMMDDHHmm`
    */
   static async check(currentVersion) {
-    document.getElementById("currentversion").innerText = "vers. " + currentVersion + `${updatePlatform != null ? ` (${updatePlatform})` : ""}`;
+    document.getElementById("currentversion").innerText = "vers. " + currentVersion + `${Toxen.updatePlatform != null ? ` (${Toxen.updatePlatform})` : ""}`;
     /**
      * @type {HTMLButtonElement}
      */
     let btn = document.querySelector<HTMLButtonElement>("#updatetoxen");
-    if (updatePlatform == null) {
+    if (Toxen.updatePlatform == null) {
       btn.disabled = true;
       btn.innerText = "Undeterminable release";
       return;
     }
     btn.innerText = "Checking for updates...";
-    let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${updatePlatform}&get=version`;
+    let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${Toxen.updatePlatform}&get=version`;
     fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
       if (latest > currentVersion) {
         btn.innerText = "Download Latest Update";
@@ -5623,11 +5624,11 @@ export class Update {
   }
   
   static async downloadLatest() {
-    if (updatePlatform == null) {
+    if (Toxen.updatePlatform == null) {
       dialog.showErrorBox("Unidentified release", "No release found for your current operating system (" + process.platform + ")");
       return;
     }
-    let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${updatePlatform}&get=url`;
+    let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${Toxen.updatePlatform}&get=url`;
     let toxenLatestURL = await fetch(toxenGetLatestURL).then(res => res.text());
     let dl = new ion.Download("https://"+toxenLatestURL, "./latest.zip");
     
@@ -5833,7 +5834,7 @@ export class ToxenModule {
         }, null, 2))
       }
       this.module = JSON.parse(fs.readFileSync(ToxenModule.moduleFolder + "/" + moduleName + "/module.json", "utf8"));
-      this.function = require("../" + ToxenModule.moduleFolder + "/" + moduleName + "/" + (this.module.main ? this.module.main : "index.js")).toxenModule;
+      this.function = require(ToxenModule.moduleFolder + "/" + moduleName + "/" + (this.module.main ? this.module.main : "index.js")).toxenModule;
     } catch (error) {
       let p = new Prompt("Module Error", [
        `Unable to load module "${moduleName}"`,
@@ -5877,7 +5878,7 @@ export class ToxenModule {
     }
   }
 
-  static moduleFolder = updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\toxenModules" : process.env.HOME + "/.toxendata/data/toxenModules";
+  static moduleFolder = Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\toxenModules" : process.env.HOME + "/.toxendata/data/toxenModules";
   /**
    * Initialize folders
    */
@@ -6082,7 +6083,7 @@ export class Statistics {
    * Default stats.json file location relative to your OS.
    */
   static get defaultLocation() {
-    return updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\stats.json" : process.env.HOME + "/.toxendata/data/stats.json";
+    return Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\stats.json" : process.env.HOME + "/.toxendata/data/stats.json";
   }
 
   /**

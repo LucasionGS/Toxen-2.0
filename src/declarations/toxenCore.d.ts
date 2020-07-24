@@ -16,6 +16,7 @@ export declare class Toxen {
     static initialize(): void;
     static toggleFullScreen(): void;
     static toggleFullScreen(mode: boolean): void;
+    static updatePlatform: "win" | "linux" | "mac";
     static inactivityState: boolean;
     /**
      * Restarts Toxen immediately.
