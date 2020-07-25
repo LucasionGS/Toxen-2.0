@@ -203,6 +203,12 @@ class Toxen {
     }
 }
 exports.Toxen = Toxen;
+/**
+ * Current stored version of Toxen.
+ *
+ * `Note: This should be set by the Client`
+ */
+Toxen.version = 0;
 Toxen.inactivityState = false;
 Toxen.eventEmitter = new events_1.EventEmitter(
 // {
@@ -3446,6 +3452,13 @@ function reloadMenu() {
                     click() {
                         // Open Toxen.net
                         shell.openExternal("https://toxen.net/");
+                    }
+                },
+                {
+                    label: "Change Notes",
+                    click() {
+                        // Open latest github change notes
+                        shell.openExternal("https://github.com/LucasionGS/Toxen-2.0/blob/master/changelogs.md#" + Toxen.version);
                     }
                 },
                 {

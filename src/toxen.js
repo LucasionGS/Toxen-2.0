@@ -13,9 +13,10 @@ const fs = require("fs");
 const ToxenCore = require("./toxenCore");
 const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Debug, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, showTutorial, } = ToxenCore;
 const rpc = require("discord-rpc");
-const version = require("./version.json");
 const path = require("path");
 const rimraf = require("rimraf");
+const __toxenVersion = require("./version.json");
+Toxen.version = __toxenVersion;
 const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;
 // Discord RPC
@@ -73,8 +74,8 @@ function initialize() {
         }
         stats.load();
         stats.startSaveTimer();
-        if ((!debugMode && settings.version != version) || debugMode) {
-            settings.version = version;
+        if ((!debugMode && settings.version != Toxen.version) || debugMode) {
+            settings.version = Toxen.version;
             let declarationDir = path.resolve(debugMode ? "./src/declarations/" : "./resources/app/src/declarations/");
             let declarationTarget = Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\declarations" : process.env.HOME + "/.toxendata/data/declarations";
             if (fs.existsSync(declarationTarget))
@@ -104,7 +105,7 @@ function initialize() {
         Toxen.extraStyle = document.querySelector("#extracss");
         settings.setThemeBase(settings.lightThemeBase);
         // Check for update
-        Update.check(version);
+        Update.check(Toxen.version);
         // Initialize onplay & Discord RPC
         SongManager.onplay = function (song) {
             return __awaiter(this, void 0, void 0, function* () {
@@ -231,9 +232,11 @@ function initialize() {
                 settings.toggleSettingsPanelLock();
             }
             if (ctrl && !shift && key == "arrowup") {
+                e.preventDefault();
                 settings.setVolume(Math.min(settings.volume + 5, 100));
             }
             if (ctrl && !shift && key == "arrowdown") {
+                e.preventDefault();
                 settings.setVolume(Math.max(settings.volume - 5, 0));
             }
         });
@@ -348,7 +351,7 @@ function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
             }
             else {
                 let options = {
-                    "details": `${ScriptEditor.window != null ? "Editing a storyboard" : song.isVideo ? "Watching a video" : "Listening to a song"} (vers. ${version})`,
+                    "details": `${ScriptEditor.window != null ? "Editing a storyboard" : song.isVideo ? "Watching a video" : "Listening to a song"}`,
                     "largeImageKey": Settings.current.lightThemeBase ? "toxenlight" : "toxen"
                 };
                 if (settings.discordPresenceShowDetails) {
@@ -356,7 +359,8 @@ function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
                     // options["endTimestamp"] = Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000; // For Time left
                     options["startTimestamp"] = Date.now() - (SongManager.player.currentTime * 1000); // For Time Elapsed
                     options["details"] = (`${ScriptEditor.window != null ? "Editing " : song.isVideo ? "Watching " : "Listening to "}`) + `${song.details.artist} - ${song.details.title}`;
-                    options["state"] = (song.details.source ? `\nFrom ${song.details.source} ` : "") + `(Vers. ${version})`;
+                    if (song.details.source)
+                        options["state"] = `\nFrom ${song.details.source}`;
                 }
                 discord.setActivity(options);
                 break;

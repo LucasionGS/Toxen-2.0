@@ -14,6 +14,12 @@ declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 40
  */
 export declare class Toxen {
     static initialize(): void;
+    /**
+     * Current stored version of Toxen.
+     *
+     * `Note: This should be set by the Client`
+     */
+    static version: number;
     static toggleFullScreen(): void;
     static toggleFullScreen(mode: boolean): void;
     static updatePlatform: "win" | "linux" | "mac";

@@ -96,6 +96,13 @@ export class Toxen {
     });
   }
 
+  /**
+   * Current stored version of Toxen.
+   * 
+   * `Note: This should be set by the Client`
+   */
+  static version: number = 0;
+
   static toggleFullScreen(): void;
   static toggleFullScreen(mode: boolean): void;
   static toggleFullScreen(mode = !browserWindow.isFullScreen()) {
@@ -3781,6 +3788,13 @@ function reloadMenu() {
           click(){
             // Open Toxen.net
             shell.openExternal("https://toxen.net/");
+          }
+        },
+        {
+          label:"Change Notes",
+          click(){
+            // Open latest github change notes
+            shell.openExternal("https://github.com/LucasionGS/Toxen-2.0/blob/master/changelogs.md#"+Toxen.version);
           }
         },
         {

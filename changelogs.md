@@ -48,6 +48,7 @@ Features I want to implement (This will be updated as i get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+- Removed version numbering from Discord Rich Presence. (I'm not even entirely sure why I considered it a good idea in the first place)
 
 ## 202007252047
 - Added select/deselect all songs in a group
