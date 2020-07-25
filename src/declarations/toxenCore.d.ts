@@ -868,11 +868,22 @@ export declare class ScriptEditor {
 export declare class Effect {
     /**
      * Highlight an element with a flash that lasts 2 seconds.
-     * @param {HTMLElement} element HTML Element to highlight with a flash.
-     * @param {string} color CSS color to flash with.
-     * @param {number} ms Total time in millseconds it should be visible. (Including fade in and out)
+     * @param element HTML Element to highlight with a flash.
      */
-    static flashElement(element: any, color?: string, ms?: number): void;
+    static flashElement(element: HTMLElement): void;
+    /**
+     * Highlight an element with a flash that lasts 2 seconds.
+     * @param element HTML Element to highlight with a flash.
+     * @param color CSS color to flash with.
+     */
+    static flashElement(element: HTMLElement, color: string): void;
+    /**
+     * Highlight an element with a flash that lasts 2 seconds.
+     * @param element HTML Element to highlight with a flash.
+     * @param color CSS color to flash with.
+     * @param ms Total time in millseconds it should be visible. (Including fade in and out)
+     */
+    static flashElement(element: HTMLElement, color: string, ms: number): void;
 }
 interface ToxenModule_data {
     "main"?: string;

@@ -48,6 +48,8 @@ Features I want to implement (This will be updated as i get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+
+## 202007252047
 - Added select/deselect all songs in a group
 - ToxenScript now understands more common ways of executing a function, e.g using `()`
   - On top of all the other ways of pointing to parameters, you can now write functions like this

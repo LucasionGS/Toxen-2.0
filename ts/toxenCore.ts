@@ -3929,12 +3929,12 @@ export class Storyboard {
             const item = valid[i];
             if (fs.existsSync(Settings.current.songFolder + "/default." + item)) {
               defImg = Settings.current.songFolder + "/default." + item;
-              Storyboard.currentBackground = defImg;
-              body.style.background = "url(\"" + defImg.replace(/\\/g, "/") + "?" + queryString + "\") no-repeat center center fixed black";
-              body.style.backgroundSize = "cover";
               break;
             }
           }
+          Storyboard.currentBackground = defImg;
+          body.style.background = "url(\"" + defImg.replace(/\\/g, "/") + "?" + queryString + "\") no-repeat center center fixed black";
+          body.style.backgroundSize = "cover";
         }
         else {
           Storyboard.currentBackground = defImg;
@@ -5775,11 +5775,23 @@ export class ScriptEditor {
 export class Effect {
   /**
    * Highlight an element with a flash that lasts 2 seconds.
-   * @param {HTMLElement} element HTML Element to highlight with a flash.
-   * @param {string} color CSS color to flash with.
-   * @param {number} ms Total time in millseconds it should be visible. (Including fade in and out)
+   * @param element HTML Element to highlight with a flash.
    */
-  static flashElement(element, color = "#fff", ms = 2000) {
+  static flashElement(element: HTMLElement): void;
+  /**
+   * Highlight an element with a flash that lasts 2 seconds.
+   * @param element HTML Element to highlight with a flash.
+   * @param color CSS color to flash with.
+   */
+  static flashElement(element: HTMLElement, color: string): void;
+  /**
+   * Highlight an element with a flash that lasts 2 seconds.
+   * @param element HTML Element to highlight with a flash.
+   * @param color CSS color to flash with.
+   * @param ms Total time in millseconds it should be visible. (Including fade in and out)
+   */
+  static flashElement(element: HTMLElement, color: string, ms: number): void;
+  static flashElement(element: HTMLElement, color: string = "#fff", ms: number = 2000) {
     let ef = document.createElement("div");
     ef.style.pointerEvents = "none";
     ef.style.zIndex = "1000";

@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -3569,12 +3568,12 @@ class Storyboard {
                         const item = valid[i];
                         if (fs.existsSync(Settings.current.songFolder + "/default." + item)) {
                             defImg = Settings.current.songFolder + "/default." + item;
-                            Storyboard.currentBackground = defImg;
-                            body.style.background = "url(\"" + defImg.replace(/\\/g, "/") + "?" + queryString + "\") no-repeat center center fixed black";
-                            body.style.backgroundSize = "cover";
                             break;
                         }
                     }
+                    Storyboard.currentBackground = defImg;
+                    body.style.background = "url(\"" + defImg.replace(/\\/g, "/") + "?" + queryString + "\") no-repeat center center fixed black";
+                    body.style.backgroundSize = "cover";
                 }
                 else {
                     Storyboard.currentBackground = defImg;
@@ -5245,12 +5244,6 @@ ScriptEditor.command = null;
  */
 ScriptEditor.currentSong = null;
 class Effect {
-    /**
-     * Highlight an element with a flash that lasts 2 seconds.
-     * @param {HTMLElement} element HTML Element to highlight with a flash.
-     * @param {string} color CSS color to flash with.
-     * @param {number} ms Total time in millseconds it should be visible. (Including fade in and out)
-     */
     static flashElement(element, color = "#fff", ms = 2000) {
         let ef = document.createElement("div");
         ef.style.pointerEvents = "none";
