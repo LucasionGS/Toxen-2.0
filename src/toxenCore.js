@@ -26,6 +26,7 @@ const ytdl = require("ytdl-core");
 const ion = require("ionodelib");
 const Zip = require("adm-zip");
 const events_1 = require("events");
+const mm = require("music-metadata");
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 /**
@@ -722,19 +723,6 @@ class Settings {
         // this.saveToFile();
         return this.songMenuLocked;
     }
-    revealSongPanel() {
-        if (!this.songMenuLocked) {
-            let self = this;
-            document.getElementById("songmenusidebar").toggleAttribute("open", true);
-            var _a = function () {
-                if (!self.songMenuLocked) {
-                    document.getElementById("songmenusidebar").toggleAttribute("open", false);
-                }
-                document.getElementById("songmenusidebar").removeEventListener("mouseover", _a);
-            };
-            document.getElementById("songmenusidebar").addEventListener("mouseover", _a);
-        }
-    }
     /**
      * @param force
      */
@@ -875,6 +863,8 @@ class Song {
             source: null,
             sourceLink: null,
             language: null,
+            year: null,
+            genre: null,
             tags: [],
             playlists: [],
             songLength: 0,
@@ -1060,7 +1050,6 @@ class Song {
             console.log(sp);
             console.log(tmpPath);
             console.log(fc._getArguments().join(" "));
-            // ffmpeg -ss 6.118 -i C:\Users\Lucas\Music\Nhato_-_Bad_Apple\audio.mp3 -y -to 9.528 C:\Users\Lucas\Music\Nhato_-_Bad_Apple\tmp_audio.mp3
         });
     }
     /**
@@ -1370,6 +1359,8 @@ class Song {
         makeElement("source", "Source", "source");
         makeElement("sourceLink", "Source Link", "sourceLink");
         makeElement("language", "Language", "language");
+        makeElement("year", "Year", "year");
+        makeElement("genre", "Genre", "genre");
         makeElement("tags", "Tags", "tags", ",");
     }
     saveDetails() {
@@ -1601,14 +1592,7 @@ class SongManager {
             let noGrouping = false;
             // Group Songs
             if (typeof Settings.current.songGrouping == "number" && Settings.current.songGrouping > 0 && Settings.current.songGrouping <= 6) {
-                /**
-                 * @type {{[key: string]: Song[]}}
-                 */
                 let groups = {};
-                /**
-                 * @param {string} name
-                 * @param {Song} song
-                 */
                 let addToGroup = function (name, song, missingText = "No group set") {
                     if (name == null || (typeof name == "string" && name.trim() == "")) {
                         name = missingText;
@@ -1767,9 +1751,26 @@ class SongManager {
             }
         }
     }
+    /**
+     * Reveal the song panel.
+     */
+    static revealSongPanel() {
+        let self = Settings.current;
+        if (!self.songMenuLocked) {
+            document.getElementById("songmenusidebar").toggleAttribute("open", true);
+            var _a = function () {
+                if (!self.songMenuLocked) {
+                    document.getElementById("songmenusidebar").toggleAttribute("open", false);
+                }
+                document.getElementById("songmenusidebar").removeEventListener("mouseover", _a);
+            };
+            document.getElementById("songmenusidebar").addEventListener("mouseover", _a);
+        }
+    }
     static scanDirectory(location = Settings.current.songFolder + "/") {
         if (Settings.current.remote) {
-            return console.error("Cannot scan directory as it is a remote.");
+            console.error("Cannot scan directory as it is a remote.");
+            return [];
         }
         if (!fs.existsSync(location)) {
             fs.mkdirSync(location, {
@@ -1783,9 +1784,6 @@ class SongManager {
             let files = fs.readdirSync(location, {
                 withFileTypes: true
             });
-            /**
-             * @type {Song[]}
-             */
             let songs = [];
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
@@ -2202,66 +2200,140 @@ class SongManager {
                 });
             });
             function importFile(file, playOnDone = true) {
-                const song = new Song();
-                let ext;
-                let fileNoExt = (function () {
-                    let a = file.name.split(".");
-                    ext = a.pop();
-                    return a.join(".");
-                })();
-                if (!validExtensions.includes(ext)) {
-                    new Prompt("Invalid File", [
-                        "You can only select files with the following extension:",
-                        validExtensions.join(", ")
-                    ]);
-                    return;
-                }
-                let songPath = Settings.current.songFolder + "/" + fileNoExt;
-                let surfix = 0;
-                while (fs.existsSync(songPath)) {
-                    let len = surfix.toString().length + 3;
-                    if (surfix == 0) {
-                        songPath += ` (${surfix.toString()})`;
+                return __awaiter(this, void 0, void 0, function* () {
+                    const song = new Song();
+                    let ext;
+                    let fileNoExt = (function () {
+                        let a = file.name.split(".");
+                        ext = a.pop();
+                        return a.join(".");
+                    })();
+                    if (!validExtensions.includes(ext)) {
+                        new Prompt("Invalid File", [
+                            "You can only select files with the following extension:",
+                            validExtensions.join(", ")
+                        ]);
+                        return;
                     }
-                    else {
-                        songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
+                    let songPath = Settings.current.songFolder + "/" + fileNoExt;
+                    let surfix = 0;
+                    while (fs.existsSync(songPath)) {
+                        let len = surfix.toString().length + 3;
+                        if (surfix == 0) {
+                            songPath += ` (${surfix.toString()})`;
+                        }
+                        else {
+                            songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
+                        }
+                        surfix++;
                     }
-                    surfix++;
-                }
-                fs.mkdirSync(songPath, { recursive: true });
-                // let ws = fs.createWriteStream(songPath + "/" + file.name);
-                fs.copyFileSync(file.path, songPath + "/" + file.name);
-                song.songId = SongManager.songList.length;
-                while (SongManager.songList.find(s => s.songId == song.songId)) {
-                    song.songId++;
-                }
-                song.path = fileNoExt;
-                song.songPath = song.getFullPath("path") + "/" + file.name;
-                let parts = fileNoExt.split(" - ");
-                if (parts.length == 1) {
-                    song.details.artist = "Unknown";
-                    song.details.title = parts[0];
-                }
-                else if (parts.length >= 2) {
-                    song.details.artist = parts.shift();
-                    song.details.title = parts.join(" - ");
-                }
-                if (ext.toLowerCase() == "txs") {
-                    let zip = new Zip(file.path);
-                    zip.extractAllTo(songPath + "/", true);
-                    fs.unlinkSync(file.path);
-                    fs.unlinkSync(songPath + "/" + file.name);
-                }
-                SongManager.songList.push(song);
-                // song.saveDetails();
-                if (playOnDone) {
-                    // song.focus();
-                    SongManager.refreshList();
-                    p.close();
-                    setTimeout(() => {
-                        song.focus();
-                    }, 10);
-                }
+                    fs.mkdirSync(songPath, { recursive: true });
+                    // let ws = fs.createWriteStream(songPath + "/" + file.name);
+                    fs.copyFileSync(file.path, songPath + "/" + file.name);
+                    song.songId = SongManager.songList.length;
+                    while (SongManager.songList.find(s => s.songId == song.songId)) {
+                        song.songId++;
+                    }
+                    song.path = fileNoExt;
+                    song.songPath = song.getFullPath("path") + "/" + file.name;
+                    if (ext.toLowerCase() == "txs") {
+                        let zip = new Zip(file.path);
+                        zip.extractAllTo(songPath + "/", true);
+                        fs.unlinkSync(file.path);
+                        fs.unlinkSync(songPath + "/" + file.name);
+                    }
+                    // Apply metadata
+                    let meta = yield mm.parseFile(song.getFullPath("songPath"));
+                    console.log(meta, { showHidden: false, depth: null });
+                    let _tags = [];
+                    if (meta.common.artist) {
+                        song.details.artist = meta.common.artist;
+                    }
+                    if (meta.common.title) {
+                        song.details.title = meta.common.title;
+                    }
+                    if (!song.details.artist && !song.details.title) {
+                        let parts = fileNoExt.split(" - ");
+                        if (parts.length == 1) {
+                            song.details.artist = "Unknown";
+                            song.details.title = parts[0];
+                        }
+                        else if (parts.length >= 2) {
+                            song.details.artist = parts.shift();
+                            song.details.title = parts.join(" - ");
+                        }
+                    }
+                    else if (!song.details.artist) {
+                        song.details.artist = "Unknown";
+                    }
+                    if (!song.details.album && meta.common.album) {
+                        song.details.album = meta.common.album;
+                    }
+                    if (!song.details.language && meta.common.language) {
+                        song.details.language = meta.common.language;
+                    }
+                    if (!song.details.genre && meta.common.genre) {
+                        song.details.genre = meta.common.genre.join(", ");
+                    }
+                    if (!song.details.year && meta.common.year) {
+                        song.details.year = meta.common.year.toString();
+                    }
+                    if (!song.details.source && meta.common.tvShow) {
+                        song.details.source = meta.common.tvShow;
+                    }
+                    if (meta.common.artists) {
+                        if (!meta.common.artist && meta.common.artists.length == 1) {
+                            song.details.artist = meta.common.artists[0];
+                        }
+                        if (meta.common.artists.length > 1 || meta.common.artists[0] != meta.common.artist) {
+                            _tags.concat(meta.common.artists);
+                        }
+                    }
+                    if (meta.common.albumartist) {
+                        if (!meta.common.artist) {
+                            song.details.artist = meta.common.albumartist;
+                        }
+                        else {
+                            _tags.push(meta.common.albumartist);
+                        }
+                    }
+                    if (meta.common.composer) {
+                        if (meta.common.composer.length > 1) {
+                            _tags.concat(meta.common.composer);
+                        }
+                    }
+                    if (meta.common.picture) {
+                        meta.common.picture.forEach((p, i) => {
+                            fs.writeFile(song.getFullPath("path") + `/picture_${i}.` + (typeof p.format ? p.format.split("/").pop() : "jpg"), p.data, err => {
+                                if (err)
+                                    console.error(err);
+                                else {
+                                    console.log("Picture added.");
+                                }
+                            });
+                        });
+                    }
+                    song.details.tags = [...new Set(_tags)];
+                    song.saveDetails();
+                    SongManager.songList.push(song);
+                    // song.saveDetails();
+                    if (playOnDone) {
+                        p.close();
+                        SongManager.revealSongPanel();
+                    }
+                    setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                        // song.focus();
+                        // song.play();
+                        SongManager.scanDirectory();
+                        if (playOnDone) {
+                            let _song = SongManager.songList.find(s => s.path === song.path);
+                            if (_song) {
+                                _song.focus();
+                                _song.play();
+                            }
+                        }
+                    }), 10);
+                });
             }
             return main;
         })());
@@ -2815,7 +2887,13 @@ SongManager.songList = [];
  * List of playable songs from a search.
  */
 SongManager.playableSongs = [];
+/**
+ * The div element containing all of the songs elements.
+ */
 SongManager.songListElement = null;
+/**
+ * Toxen's Media Player.
+ */
 SongManager.player = null;
 /**
  * This should be set by the client.
@@ -2903,10 +2981,11 @@ class SongGroup {
     }
     focus() {
         this.element.scrollIntoViewIfNeeded();
-        Settings.current.revealSongPanel();
+        SongManager.revealSongPanel();
     }
     /**
-     * @param {boolean} collapsedCondition Whether it should return all with collapsed true, or collapsed false. Omit to ignore and return all.
+     * return all of the song groups.
+     * @param collapsedCondition Whether it should return all with collapsed true, or collapsed false. Omit to ignore and return all.
      */
     static getAllGroups(collapsedCondition = null) {
         let _a = [...document.querySelectorAll(".songgroup")].map((e) => {
@@ -3112,7 +3191,7 @@ const menus = {
         {
             label: "Focus currently playing song.",
             click: () => {
-                Settings.current.revealSongPanel();
+                SongManager.revealSongPanel();
                 SongManager.getCurrentlyPlayingSong().focus();
             }
         },
@@ -3182,7 +3261,7 @@ const menus = {
         {
             label: "Focus currently playing song.",
             click: () => {
-                Settings.current.revealSongPanel();
+                SongManager.revealSongPanel();
                 SongManager.getCurrentlyPlayingSong().focus();
             }
         },
@@ -3270,7 +3349,7 @@ const menus = {
         {
             label: "Focus currently playing song.",
             click: () => {
-                Settings.current.revealSongPanel();
+                SongManager.revealSongPanel();
                 SongManager.getCurrentlyPlayingSong().focus();
             }
         },
@@ -3405,7 +3484,7 @@ function reloadMenu() {
                 {
                     label: "Show currently playing song",
                     click() {
-                        Settings.current.revealSongPanel();
+                        SongManager.revealSongPanel();
                         SongManager.getCurrentlyPlayingSong().focus();
                     },
                     "accelerator": "CTRL + SHIFT + F"

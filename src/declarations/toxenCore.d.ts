@@ -137,7 +137,6 @@ export declare class Settings {
     selectSongFolder(): Promise<void>;
     toggleVideo(force: boolean): boolean;
     toggleSongPanelLock(force?: boolean): boolean;
-    revealSongPanel(): void;
     /**
      * @param force
      */
@@ -402,6 +401,14 @@ export declare class Song {
          */
         language: string;
         /**
+         * The year this song was released.
+         */
+        year: string;
+        /**
+         * The genre of this song
+         */
+        genre: string;
+        /**
          * List of tags to better help find this song in searches.
          */
         tags: string[];
@@ -493,9 +500,27 @@ export declare class SongManager {
      * @param {string} search Search for a string
      */
     static search(search?: string): void;
+    /**
+     * The div element containing all of the songs elements.
+     */
     static songListElement: HTMLDivElement;
+    /**
+     * Toxen's Media Player.
+     */
     static player: HTMLVideoElement;
-    static scanDirectory(location?: string): void | any[];
+    /**
+     * Reveal the song panel.
+     */
+    static revealSongPanel(): void;
+    /**
+     * Scan a song folder.
+     */
+    static scanDirectory(): Song[];
+    /**
+     * Scan a song folder.
+     * @param location Location to scan. Defaults to current song folder if omitted.
+     */
+    static scanDirectory(location: string): Song[];
     static loadFromFile(fileLocation?: string): Promise<void>;
     static saveToFile(fileLocation?: string): void;
     /**
@@ -573,9 +598,10 @@ export declare class SongGroup {
     collapse(): void;
     focus(): void;
     /**
-     * @param {boolean} collapsedCondition Whether it should return all with collapsed true, or collapsed false. Omit to ignore and return all.
+     * return all of the song groups.
      */
-    static getAllGroups(collapsedCondition?: any): SongGroup[];
+    static getAllGroups(): SongGroup[];
+    static getAllGroups(collapsedCondition: boolean): SongGroup[];
     /**
      * @param {boolean} collapsedCondition Omit to ignore and return all
      */

@@ -1,6 +1,7 @@
 # Toxen Next
-Features I want to implement (This will be updated as i get more ideas and remember to write them down):
-- Defineable actions that are callable in ToxenScript.
+Features I want to implement (This will be updated as I get more ideas and remember to write them down)  
+(Post-release) means it's a feature I will work on after the official release and will be added as future updates.
+- Defineable actions that are callable in ToxenScript. (Post-release)
   - An idea could be something like this
   ```js
   :ActionStart("redblue")
@@ -13,13 +14,11 @@ Features I want to implement (This will be updated as i get more ideas and remem
   1/1 [5-8] Action("redblue") // It will repeat from 5 seconds to 8 seconds, repeating the action in "redblue" every 1/1th of a second (each second)
   ```
 - Custom Themes
-- Graphical Storyboard Editor Interface
-- Built-in Graphical SRT(subtitle) creator
-- Proper module support with prebuilds for JS and TS
+- Graphical Storyboard Editor Interface (Post-release)
+- Built-in Graphical SRT(subtitle) creator (Post-release)
 - Better and more media conversions to supported files.
 - Better song info editing
   - Multi-song info editing
-- Auto-import data from media files (Things like artist, album, etc...)
 - Remove playlist feature
 - Visualizer Quanity Customizer (Interface buttons for `Storyboard`.`setAnalyserFftLevel` and `Storyboard`.`setAnalyserFftSize`)
 - Music Playback Rate Changer (Like the first version of Toxen used to have)
@@ -30,7 +29,6 @@ Features I want to implement (This will be updated as i get more ideas and remem
   - A Toxen forum where you can ask questions or suggest ideas for future updates.
 
 - Smoother Redesign (Check ref)
-  - Different way of accessing panels
   - More panels
     - Song Panel
     - Setting Panel
@@ -40,15 +38,16 @@ Features I want to implement (This will be updated as i get more ideas and remem
     - Songs could be pushed further out towards the center (and more visible) the closer it goes to the center of the visible part song list.
   - Draggable buttons(?)
     - The ability to move the buttons on the main interface around to whichever corner you prefer.
-  - Functionality and panel buttons should have icons instead of blocks of text.
   - Better sorting in settings. Possibly a top menu for categories.
-  - A page with all shortcuts (God damn it then I need to remember them all >_>)
+  - An info  page with all shortcuts (God damn it then I need to remember them all >_>)
 
 # Toxen Change Logs
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
 - Removed version numbering from Discord Rich Presence. (I'm not even entirely sure why I considered it a good idea in the first place)
+- Change the default music folder for new users from `~/Music` to `~/Music/ToxenMusic`. This doesn't effect existing users.
+- Added imported songs now attempting to import metadata if it's already available on the media file. It will also import any pictures the media file has stored.
 
 ## 202007252047
 - Added select/deselect all songs in a group

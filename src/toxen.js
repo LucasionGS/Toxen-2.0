@@ -61,11 +61,11 @@ function initialize() {
         if (settings.songFolder == null) {
             switch (process.platform) {
                 case "win32":
-                    settings.songFolder = process.env.HOMEDRIVE + process.env.HOMEPATH + "/Music/";
+                    settings.songFolder = process.env.HOMEDRIVE + process.env.HOMEPATH + "/Music/ToxenMusic";
                     break;
                 case "linux":
                 case "darwin":
-                    settings.songFolder = process.env.HOME + "/Music/";
+                    settings.songFolder = process.env.HOME + "/Music/ToxenMusic";
                     break;
             }
         }
@@ -216,7 +216,7 @@ function initialize() {
                 window.location.reload();
             }
             if (ctrl && !shift && key == "s" || ctrl && !shift && key == "f") {
-                settings.revealSongPanel();
+                SongManager.revealSongPanel();
                 search.focus();
                 search.setSelectionRange(0, search.value.length);
                 SongManager.songListElement.parentElement.scrollLeft = 0;
