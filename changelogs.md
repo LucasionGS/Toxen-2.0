@@ -45,9 +45,28 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
-- Removed version numbering from Discord Rich Presence. (I'm not even entirely sure why I considered it a good idea in the first place)
-- Change the default music folder for new users from `~/Music` to `~/Music/ToxenMusic`. This doesn't effect existing users.
-- Added imported songs now attempting to import metadata if it's already available on the media file. It will also import any pictures the media file has stored.
+- New stuff
+  - Added imported songs now attempting to import metadata if it's already available on the media file. It will also import any pictures the media file has stored.
+  - Added `(Paused)` to Discord Rich Presence when the song is paused.
+  - Added toggling colors for Shuffle and Repeat buttons in the center.
+  - Added more sorting methods: `By Genre` and `By Year`
+  - Added `Time listened` statistics that you can view in the statistics prompt. (Press in the top right `File` then press `Statistics`)
+  - Added new shortcuts
+    - `Ctrl + A` now selects all **visible** songs. (i.e it selects the ones that are in an open group or everything if not songs aren't grouped)
+    - `Ctrl + Escape` now deselects every song you have selected. (Including songs that are not visible)
+  - Added an import metadata button in the song panel to import data from the current song.
+    - You can also import data by right-clicking on the song in the panel and pressing `Import metadata`.
+    - If you have multiple songs selected you can also multi-import metadata by right-clicking and pressing `Import metadata from selected songs`
+  - If Toxen crashes during the start up process, you'll get an option to send the bug report to me directly. It'll be an anonymous report and it'll help me find the source of the bug, so pressing the send button would be appreciated.
+  You'll be shown what will be sent in the error panel if you want to know what is going to be sent. (It opens automatically when something happens, and is pointed out to you)
+  If you are highly against it, you can choose not to send the report.
+
+- Changes
+  - Change the default music folder for new users from `~/Music` to `~/Music/ToxenMusic`. This doesn't effect existing users.
+
+- House keeping
+  - Removed version numbering from Discord Rich Presence. (I'm not even entirely sure why I considered it a good idea in the first place)
+  - Removed old song panel toggle buttons in favor of the new centered buttons.
 
 ## 202007252047
 - Added select/deselect all songs in a group

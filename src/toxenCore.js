@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -27,6 +28,7 @@ const ion = require("ionodelib");
 const Zip = require("adm-zip");
 const events_1 = require("events");
 const mm = require("music-metadata");
+const axios_1 = require("axios");
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 /**
@@ -87,6 +89,32 @@ class Toxen {
             }
         });
     }
+    static sendReport(reportMessage, logRequest = false) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (logRequest)
+                console.log("Sending report...");
+            let body = new FormData();
+            body.set("reportmessage", reportMessage);
+            console.log(body);
+            return axios_1.default.post("http://toxen.net/internal/report.php", body, {
+                "headers": { "Content-Type": "multipart/form-data" }
+            })
+                .then(r => {
+                if (typeof r == "boolean")
+                    return r;
+                console.log(r);
+                let res = r.data;
+                if (logRequest)
+                    console.log("Response:", res);
+                return res.success;
+            }).catch(reason => {
+                console.error(reason);
+                if (logRequest)
+                    console.error("Error Reason:", reason);
+                return false;
+            });
+        });
+    }
     static toggleFullScreen(mode = !browserWindow.isFullScreen()) {
         browserWindow.setFullScreen(mode);
         browserWindow.setMenuBarVisibility(!mode);
@@ -103,6 +131,12 @@ class Toxen {
      */
     static reload() {
         browserWindow.reload();
+    }
+    /**
+     * Close the Toxen application immediately.
+     */
+    static close() {
+        app.exit();
     }
     static ffmpegAvailable() {
         return Settings.current.ffmpegPath != null || commandExists.sync("ffmpeg");
@@ -226,6 +260,15 @@ Toxen.mediaExtensions = [
     "txn"
 ];
 /**
+ * A list of valid media extension
+ */
+Toxen.imageExtensions = [
+    "jpg",
+    "jpeg",
+    "png",
+    "gif"
+];
+/**
  * Current stored version of Toxen.
  *
  * `Note: This should be set by the Client`
@@ -243,12 +286,6 @@ Toxen.eventEmitter = new events_1.EventEmitter(
 Toxen.generate = {
     /**
      * Generate an input.
-     * @param {object} opts
-     * @param {(obj: HTMLInputElement) => void} opts.modify Modify this object using a function. This will always happen before the other options get applied.
-     * @param {string} opts.id Id for this item.
-     *
-     * @param {string} opts.value Default value for the input.
-     * @param {string} opts.placeholder Default placeholder for the input.
      */
     input(opts = {}) {
         if (opts !== null && typeof opts === "object") {
@@ -269,13 +306,6 @@ Toxen.generate = {
     },
     /**
      * Generate a button.
-     * @param {object} opts
-     * @param {(obj: HTMLButtonElement) => void} opts.modify Modify this object using a function. This will always happen before the other options get applied.
-     * @param {string} opts.id Id for this item.
-     *
-     * @param {string} opts.text Text to be displayed on the button. Supports HTML.
-     * @param {string} opts.backgroundColor Background color in CSS.
-     * @param {(ev: MouseEvent) => void} opts.click Function to execute on the click of this button.
      */
     button(opts = {}) {
         if (opts !== null && typeof opts === "object") {
@@ -980,7 +1010,7 @@ class Song {
             end.value = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.currentTime);
         });
         /**
-         * @param {string} timestamp
+         * Verify if timestamp is valid.
          */
         function verify(timestamp) {
             try {
@@ -1158,16 +1188,12 @@ class Song {
     getPlayableListIndex() {
         return SongManager.playableSongs.findIndex(s => s.songId === this.songId);
     }
-    /**
-     * @param {HTMLDivElement | HTMLSongElement} elm
-     */
     setElement(elm) {
         this.element = elm;
         this.element.song = this;
     }
     /**
      * Executes when a song is played.
-     * @param {Song} song
      */
     onplay(song) { }
     /**
@@ -1325,9 +1351,6 @@ class Song {
      */
     displayInfo() {
         let self = this;
-        /**
-         * @type {HTMLDivElement}
-         */
         let panel = document.querySelector("div#songinfo");
         /**
          * @param name
@@ -1337,9 +1360,6 @@ class Song {
          */
         function makeElement(name, title, detailsItemName, isArraySeparatedBy = null) {
             let p = panel.querySelector('p[name="' + name + '"]');
-            /**
-             * @type {HTMLInputElement}
-             */
             let input = panel.querySelector('input[name="' + name + '"]');
             if (self.details[detailsItemName] == null) {
                 if (typeof isArraySeparatedBy === "string") {
@@ -1386,6 +1406,7 @@ class Song {
     }
     saveDetails() {
         try {
+            this.details.tags = this.details.tags.filter(t => t.trim() !== "");
             fs.writeFileSync(this.getFullPath("path") + "/details.json", JSON.stringify(this.details, null, 2));
             SongManager.saveToFile();
             return true;
@@ -1492,7 +1513,7 @@ class Song {
             // Apply metadata
             let meta = yield mm.parseFile(this.getFullPath("songPath"));
             console.log(meta, { showHidden: false, depth: null });
-            let _tags = [];
+            let _tags = this.details.tags;
             if (meta.common.artist) {
                 this.details.artist = meta.common.artist;
             }
@@ -1582,8 +1603,6 @@ class SongManager {
     }
     /**
      * Export every song into a folder.
-     * @param {string} location
-     * @param {Song[]} songList
      */
     static exportAll(location = null, songList = null) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -1634,10 +1653,6 @@ class SongManager {
             Settings.current.sortBy = sortBy;
         }
         if (this.songListElement) {
-            /**
-             * @param {Song} a
-             * @param {Song} b
-             */
             let sortFunc = (a, b) => { return 0; };
             try {
                 switch (Settings.current.sortBy) {
@@ -1679,10 +1694,6 @@ class SongManager {
             }
             catch (error) {
             }
-            /**
-             * @param {Song} a
-             * @param {Song} b
-             */
             var _sort = function (a, b) {
                 // Make order reversable
                 return sortFunc(a, b);
@@ -1710,32 +1721,42 @@ class SongManager {
                 switch (Settings.current.songGrouping) {
                     case 1:
                         SongManager.songList.forEach(s => {
-                            addToGroup(s.details.artist, s, "No artist set");
+                            addToGroup(s.details.artist, s, "[No artist set]");
                         });
                         break;
                     case 2:
                         SongManager.songList.forEach(s => {
-                            addToGroup(s.details.album, s, "No album set");
+                            addToGroup(s.details.album, s, "[No album set]");
                         });
                         break;
                     case 3:
                         SongManager.songList.forEach(s => {
-                            addToGroup(s.details.source, s, "No source set");
+                            addToGroup(s.details.source, s, "[No source set]");
                         });
                         break;
                     case 4:
                         SongManager.songList.forEach(s => {
-                            addToGroup(s.details.language, s, "No language set");
+                            addToGroup(s.details.language, s, "[No language set]");
                         });
                         break;
                     case 5:
                         SongManager.songList.forEach(s => {
-                            addToGroup(s.details.artist[0].toUpperCase(), s, "!Missing Artist!");
+                            addToGroup(s.details.genre, s, "[No genre set]");
                         });
                         break;
                     case 6:
                         SongManager.songList.forEach(s => {
-                            addToGroup(s.details.title[0].toUpperCase(), s, "!Missing Title!");
+                            addToGroup(s.details.year, s, "[No year set]");
+                        });
+                        break;
+                    case 7:
+                        SongManager.songList.forEach(s => {
+                            addToGroup(s.details.artist[0].toUpperCase(), s, "[No artist set]");
+                        });
+                        break;
+                    case 8:
+                        SongManager.songList.forEach(s => {
+                            addToGroup(s.details.title[0].toUpperCase(), s, "[No title set]");
                         });
                         break;
                     default:
@@ -1776,11 +1797,10 @@ class SongManager {
         }
     }
     /**
-     * @param {string} search Search for a string
+     * @param search Search for a string
      */
     static search(search = document.querySelector("#search").value) {
         search = search.toLowerCase();
-        /** @param {string | string[]} string */
         function match(string) {
             if (Array.isArray(string)) {
                 string = string.join(" ");
@@ -1795,8 +1815,7 @@ class SongManager {
             return true;
         }
         /**
-         * Escape the required characters in a RegExp string
-         * @param {string} str
+         * Escape the required characters in a RegExp string.
          */
         function escapeRegex(str) {
             return str.replace(/[\[\\\^\$\.\|\?\*\+\(\)\]]/g, "\\$&");
@@ -1899,14 +1918,7 @@ class SongManager {
                     for (let i2 = 0; i2 < items.length; i2++) {
                         const item = items[i2];
                         // Media file
-                        if (
-                        // Audios
-                        item.endsWith(".mp3") // Standard
-                            || item.endsWith(".wma")
-                            || item.endsWith(".ogg")
-                            // Videos
-                            || item.endsWith(".mp4") // Standard
-                        ) {
+                        if (Toxen.mediaExtensions.filter(f => f != "txn").find(f => item.endsWith("." + f))) {
                             song.songPath = file.name + "/" + item;
                         }
                         // Subtitle file
@@ -1918,14 +1930,11 @@ class SongManager {
                             song.txnScript = file.name + "/" + item;
                         }
                         // Graphical background file
-                        if (item.endsWith(".png") || item.endsWith(".jpg") || item.endsWith(".jpeg") || item.endsWith(".gif")) {
+                        if (Toxen.imageExtensions.find(f => item.endsWith("." + f))) {
                             song.background = file.name + "/" + item;
                         }
                         if (item == "details.json") {
                             try {
-                                /**
-                                 * @type {Song["details"]}
-                                 */
                                 let info = JSON.parse(fs.readFileSync(songDir + item, "utf8"));
                                 song.details = info;
                             }
@@ -1993,9 +2002,6 @@ class SongManager {
                     if (!fs.existsSync(fileLocation)) {
                         fs.writeFileSync(fileLocation, "{}");
                     }
-                    /**
-                     * @type {Song[]}
-                     */
                     let songList = JSON.parse(fs.readFileSync(fileLocation, "utf8"));
                     for (let i = 0; i < songList.length; i++) {
                         const song = songList[i];
@@ -2018,9 +2024,6 @@ class SongManager {
             // Fix
             else {
                 try {
-                    /**
-                     * @type {Song[]}
-                     */
                     let songList = yield (yield fetch(fileLocation)).json();
                     for (let i = 0; i < songList.length; i++) {
                         const song = songList[i];
@@ -2043,9 +2046,6 @@ class SongManager {
     }
     static saveToFile(fileLocation = Settings.current.songFolder + "/db.json") {
         let list = Array.from(SongManager.songList);
-        /**
-         * @type {HTMLSongElement[]}
-         */
         let elementList = [];
         for (let i = 0; i < list.length; i++) {
             const s = list[i];
@@ -2162,59 +2162,42 @@ class SongManager {
             _songs[_songs.length - 1].play();
         }
     }
-    /**
-     * @param {boolean} force
-     */
     static toggleShuffle(force) {
-        /**
-         * @type {HTMLButtonElement}
-         */
-        const element = document.getElementById("toggleShuffle");
+        const element = document.getElementById("smallshufflebutton");
         if (typeof force == "boolean") {
             Settings.current.shuffle = !force;
         }
         Toxen.emit("toggleshuffle", Settings.current.shuffle);
         if (Settings.current.shuffle == false) {
-            element.classList.replace("color-red", "color-green");
+            element.firstElementChild.src = (element.firstElementChild).getAttribute("svgon");
             Settings.current.shuffle = true;
         }
         else {
-            element.classList.replace("color-green", "color-red");
+            element.firstElementChild.src = (element.firstElementChild).getAttribute("svgoff");
             Settings.current.shuffle = false;
         }
         Settings.current.saveToFile();
         return Settings.current.shuffle;
     }
-    /**
-     * @param {boolean} force
-     */
     static toggleRepeat(force) {
-        /**
-         * @type {HTMLButtonElement}
-         */
-        const element = document.getElementById("toggleRepeat");
+        // const element: HTMLButtonElement = document.getElementById("toggleRepeat") as HTMLButtonElement;
+        const element = document.getElementById("smallrepeatbutton");
         if (typeof force == "boolean") {
             Settings.current.repeat = !force;
         }
         Toxen.emit("togglerepeat", Settings.current.repeat);
         if (Settings.current.repeat == false) {
-            element.classList.replace("color-red", "color-green");
+            element.firstElementChild.src = (element.firstElementChild).getAttribute("svgon");
             Settings.current.repeat = true;
         }
         else {
-            element.classList.replace("color-green", "color-red");
+            element.firstElementChild.src = (element.firstElementChild).getAttribute("svgoff");
             Settings.current.repeat = false;
         }
         Settings.current.saveToFile();
         return Settings.current.repeat;
     }
-    /**
-     * @param {boolean} force
-     */
     static toggleOnlyVisible(force) {
-        /**
-         * @type {HTMLButtonElement}
-         */
         const element = document.getElementById("toggleOnlyvisible");
         if (typeof force == "boolean") {
             Settings.current.onlyVisible = !force;
@@ -2248,7 +2231,7 @@ class SongManager {
             main.style.width = "256px";
             main.style.height = "256px";
             // Text
-            text.innerHTML = "Drag <code>mp3/mp4/txs</code> files here or click to select";
+            text.innerHTML = "Drag <code>" + Toxen.mediaExtensions.join("/") + "</code> files here or click to select";
             text.style.textAlign = "center";
             text.style.boxSizing = "borderbox";
             text.style.paddingTop = "calc(128px - 1em)";
@@ -2721,25 +2704,23 @@ class SongManager {
             sl.on("select", s => ytInputArtist.value = s.value);
         }, 0);
     }
+    static importCurrentMetadata() {
+        let song = SongManager.getCurrentlyPlayingSong();
+        song.importMetadata().then(() => {
+            song.displayInfo();
+        });
+    }
     static selectBackground(song = SongManager.getCurrentlyPlayingSong()) {
         dialog.showOpenDialog(remote.getCurrentWindow(), {
             "buttonLabel": "Select Image",
             "filters": [
                 {
-                    "extensions": [
-                        "jpg",
-                        "jpeg",
-                        "png",
-                        "gif"
-                    ],
+                    "extensions": Toxen.imageExtensions,
                     "name": ""
                 }
             ]
         })
             .then(handler);
-        /**
-         * @param {string} pathObject
-         */
         function handler(pathObject) {
             // TODO: Drag and Drop backgrounds directly
             if (pathObject.filePaths.length == 0) {
@@ -2782,9 +2763,6 @@ class SongManager {
                 url
             ]);
             p.addButtons([dlBg, "Close"], "fancybutton", true);
-            /**
-             * @type {string}
-             */
             let imageUrl = yield p.promise;
             if (imageUrl == null) {
                 return;
@@ -2940,13 +2918,7 @@ class SongGroup {
          * List of songs in this group
          */
         this.songList = [];
-        /**
-         * @type {string}
-         */
         this.name = null;
-        /**
-         * @type {HTMLSongGroupElement}
-         */
         this.element = null;
         this.name = name;
         this.element = document.createElement("div");
@@ -3015,15 +2987,8 @@ class SongGroup {
         this.element.scrollIntoViewIfNeeded();
         SongManager.revealSongPanel();
     }
-    /**
-     * return all of the song groups.
-     * @param collapsedCondition Whether it should return all with collapsed true, or collapsed false. Omit to ignore and return all.
-     */
     static getAllGroups(collapsedCondition = null) {
         let _a = [...document.querySelectorAll(".songgroup")].map((e) => {
-            /**
-             * @type {HTMLSongGroupElement}
-             */
             const item = e;
             if (typeof collapsedCondition == "boolean") {
                 if ((collapsedCondition && item.hasAttribute("collapsed")) || (!collapsedCondition && !item.hasAttribute("collapsed"))) {
@@ -3045,13 +3010,10 @@ class SongGroup {
         return _a;
     }
     /**
-     * @param {boolean} collapsedCondition Omit to ignore and return all
+     * @param collapsedCondition Omit to ignore and return all
      */
     static getAllGroupNames(collapsedCondition = null) {
         let _a = [...document.querySelectorAll(".songgroup")].map((e) => {
-            /**
-             * @type {HTMLSongGroupElement}
-             */
             const item = e;
             if (typeof collapsedCondition == "boolean") {
                 if ((collapsedCondition && item.hasAttribute("collapsed")) || (!collapsedCondition && !item.hasAttribute("collapsed"))) {
@@ -3079,9 +3041,6 @@ const menus = {
         {
             label: "Display info",
             click: (menuItem) => {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     song.displayInfo();
@@ -3092,9 +3051,6 @@ const menus = {
         {
             label: "Select/Deselect",
             click: (menuItem) => {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     song.toggleSelect();
@@ -3104,9 +3060,6 @@ const menus = {
         {
             label: "Add to playlist...",
             click: (menuItem) => {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     song.addToPlaylist();
@@ -3116,9 +3069,6 @@ const menus = {
         {
             label: "Open song folder",
             click: (menuItem) => {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     let path = song.getFullPath("path");
@@ -3129,11 +3079,21 @@ const menus = {
             }
         },
         {
+            label: "Import metadata",
+            click(menuItem) {
+                const song = menuItem.songObject;
+                if (song instanceof Song) {
+                    song.importMetadata().then(() => {
+                        SongManager.revealSongPanel();
+                        song.refreshElement();
+                        song.displayInfo();
+                    });
+                }
+            }
+        },
+        {
             label: "Set Background",
             click(menuItem) {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     SongManager.selectBackground(song);
@@ -3143,9 +3103,6 @@ const menus = {
         {
             label: "Set Background from URL",
             click(menuItem) {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     SongManager.selectBackgroundFromURL(song);
@@ -3155,9 +3112,6 @@ const menus = {
         {
             label: "Edit Storyboard Script",
             click: (menuItem) => {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     // if (song.txnScript != null && fs.existsSync(song.getFullPath("txnScript"))) {
@@ -3173,9 +3127,6 @@ const menus = {
         {
             label: "Export song",
             click: (menuItem) => {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     song.export();
@@ -3185,9 +3136,6 @@ const menus = {
         {
             label: "Trim song",
             click: (menuItem) => {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     song.trim();
@@ -3197,9 +3145,6 @@ const menus = {
         {
             label: "Delete song",
             click: (menuItem) => {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     let path = song.getFullPath("path");
@@ -3232,19 +3177,20 @@ const menus = {
         {
             label: "Export songs",
             click: (menuItem) => {
-                /**
-                 * @type {Song[]}
-                 */
                 const songs = SongManager.getSelectedSongs();
                 SongManager.exportAll(null, songs);
             }
         },
         {
+            label: "Import metadata from selected songs",
+            click: (menuItem) => {
+                const songs = SongManager.getSelectedSongs();
+                songs.forEach((s) => __awaiter(void 0, void 0, void 0, function* () { yield s.importMetadata(); s.refreshElement(); }));
+            }
+        },
+        {
             label: "Delete songs",
             click: (menuItem) => {
-                /**
-                 * @type {Song[]}
-                 */
                 const songs = SongManager.getSelectedSongs();
                 let ans = dialog.showMessageBoxSync(remote.getCurrentWindow(), {
                     "buttons": [
@@ -3274,9 +3220,6 @@ const menus = {
         {
             label: "Select/Deselect",
             click: (menuItem) => {
-                /**
-                 * @type {Song}
-                 */
                 const song = menuItem.songObject;
                 if (song instanceof Song) {
                     song.toggleSelect();
@@ -3302,9 +3245,6 @@ const menus = {
         {
             label: "Toggle group",
             click: (menuItem) => {
-                /**
-                 * @type {SongGroup}
-                 */
                 const songGroup = menuItem.songGroup;
                 if (songGroup instanceof SongGroup) {
                     songGroup.collapse();
@@ -3314,9 +3254,6 @@ const menus = {
         {
             label: "Open only this group",
             click: (menuItem) => {
-                /**
-                 * @type {SongGroup}
-                 */
                 const songGroup = menuItem.songGroup;
                 if (songGroup instanceof SongGroup) {
                     SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
@@ -3332,9 +3269,6 @@ const menus = {
         {
             label: "Open all groups",
             click: (menuItem) => {
-                /**
-                 * @type {SongGroup}
-                 */
                 const songGroup = menuItem.songGroup;
                 SongGroup.getAllGroups(true).forEach(sg => sg.collapsed = false);
                 if (songGroup instanceof SongGroup) {
@@ -3347,9 +3281,6 @@ const menus = {
             label: "Close all groups",
             click: (menuItem) => {
                 SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
-                /**
-                 * @type {SongGroup}
-                 */
                 const songGroup = menuItem.songGroup;
                 if (songGroup instanceof SongGroup) {
                     songGroup.focus();
@@ -3402,8 +3333,7 @@ const menus = {
     ])
 };
 /**
- * Electron Menu
- * @type {Electron.Menu}
+ * Electron Menu.
  */
 var menu = reloadMenu();
 function reloadMenu() {
@@ -3709,7 +3639,6 @@ class Storyboard {
     }
     /**
      * Set the intensity of the visualizer.
-     * @param {number} value
      */
     static setIntensity(value) {
         Storyboard.visualizerIntensity = value;
@@ -3739,7 +3668,6 @@ Storyboard.visualizerDirection = 0;
  * @readonly
  * The currently shown background dim value.
  * **Note:** This is often different from the ``Settings.backgroundDim`` setting, as this is dynamic.
- * @type {number}
  */
 Storyboard.currentBackgroundDim = 0;
 Storyboard.currentBackground = "";
@@ -3840,17 +3768,8 @@ Subtitles.isRendering = false;
  */
 class Pulse {
     constructor() {
-        /**
-         * @type {Pulse[]}
-         */
         this.allPulses = [];
-        /**
-         * @type {HTMLDivElement}
-         */
         this.left = null;
-        /**
-         * @type {HTMLDivElement}
-         */
         this.right = null;
         this._width = 0;
         this.lastPulse = 0;
@@ -3858,8 +3777,8 @@ class Pulse {
             if (this.width > 0) {
                 this.width -= Math.max(Math.min(this.width, 1), (this.width / Storyboard.visualizerIntensity) * 2);
                 let opacity = (this.width / this.lastPulse);
-                this.left.style.opacity = opacity;
-                this.right.style.opacity = opacity;
+                this.left.style.opacity = opacity + "";
+                this.right.style.opacity = opacity + "";
             }
         }, 10);
         const leftDiv = document.createElement("div");
@@ -3890,9 +3809,6 @@ class Pulse {
     get width() {
         return this._width;
     }
-    /**
-     * @param {Number} width
-     */
     pulse(width) {
         this.lastPulse = width;
         this.width = width;
@@ -3921,13 +3837,9 @@ class StoryboardObject {
         this.fill = fill;
     }
 }
-/**
- * @type {{[name: string]: StoryboardObject}}
- */
 StoryboardObject.objects = {};
 /**
- * This is temporary plz
- * @type {Pulse}
+ * This is temporary plz.
  */
 var testPulse;
 window.addEventListener("load", () => testPulse = new Pulse());
@@ -3970,7 +3882,6 @@ class ToxenScriptManager {
     }
     /**
      * Apply the variables to the text.
-     * @param {string} text
      */
     static applyVariables(text) {
         for (const key in ToxenScriptManager.variables) {
@@ -3994,9 +3905,6 @@ class ToxenScriptManager {
                 let _gl = function () {
                     if (Settings.current.storyboard && ToxenScriptManager.events.length > 0) {
                         for (let i = 0; i < ToxenScriptManager.events.length; i++) {
-                            /**
-                             * @type {ToxenEvent}
-                             */
                             const e = ToxenScriptManager.events[i];
                             if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
                                 e.fn();
@@ -4303,12 +4211,9 @@ class ToxenScriptManager {
     }
     /**
      * Parse ToxenScript into HTML Highlighting
-     * @param {string} code
+     * @param code Raw code string to highlight with HTML.
      */
     static syntaxHighlightToxenScript(code, validEventNames = ToxenScriptManager.getEventNames()) {
-        /**
-         * @type {{[key: string]: {"expression": RegExp, "function": ($0: string, ...$n: string[]) => string}}}
-         */
         const regex = {
             "value": {
                 "expression": /"(.*?[^\\])"/g,
@@ -4428,7 +4333,6 @@ class ToxenScriptManager {
     }
     /**
      * Convert seconds to digital time format.
-     * @param {number} seconds
      */
     static convertSecondsToDigitalClock(seconds, trim = false) {
         var milliseconds = seconds * 1000;
@@ -4484,6 +4388,9 @@ class ToxenScriptManager {
         while (trim == true && time.startsWith("00:")) {
             time = time.substring(3);
         }
+        if (trim == true && time.endsWith(".000")) {
+            time = time.substring(0, time.length - 4);
+        }
         return time;
     }
 }
@@ -4491,12 +4398,10 @@ exports.ToxenScriptManager = ToxenScriptManager;
 ToxenScriptManager.currentScriptFile = "";
 ToxenScriptManager.isRunning = false;
 /**
- * @type {{[$name: string]: string}}
  */
 ToxenScriptManager.variables = {};
 /**
  * Default variable set.
- * @type {{[$name: string]: string}}
  */
 ToxenScriptManager.defaultVariables = {
     "$end": function () {
@@ -4518,7 +4423,6 @@ ToxenScriptManager.defaultVariables = {
 ToxenScriptManager.eventFunctions = {
     /**
      * Change the image of the background.
-     * @param {[string]} args Arguments.
      */
     background: function (args) {
         let song = SongManager.getCurrentlyPlayingSong();
@@ -4583,7 +4487,6 @@ ToxenScriptManager.eventFunctions = {
     },
     /**
      * Change the intensity of the visualizer
-     * @param {[string | number, string | number, string | number]} args Arguments
      */
     visualizerintensity: function (args) {
         if (args[1] && args[1].toLowerCase() == "smooth") {
@@ -4603,7 +4506,6 @@ ToxenScriptManager.eventFunctions = {
     },
     /**
      * Change the style of the visualizer
-     * @param {[string | number]} args Arguments
      */
     visualizerstyle: function ([style]) {
         style = style + "";
@@ -4634,7 +4536,6 @@ ToxenScriptManager.eventFunctions = {
     },
     /**
      * Change the direction of the visualizer. (Default is `right`)
-     * @param {["left" | "right"]} args Arguments
      */
     visualizerdirection: function ([direction]) {
         switch (direction) {
@@ -4648,7 +4549,6 @@ ToxenScriptManager.eventFunctions = {
     },
     /**
      * Change the color of a Hue Light.
-     * @param {[string | number, string | number, string | number, string | number, string | number]} args Arguments
      */
     huecolor: function (args) {
         if (!isNaN(args[1])) {
@@ -4710,10 +4610,6 @@ ToxenScriptManager.eventFunctions = {
             for (let i = 0; i < lights.length; i++)
                 exports.hueApi.lights.setLightState(+lights[i], new node_hue_api_1.v3.lightStates.LightState().on(true).rgb(+args[1], +args[2], +args[3]).brightness(brightness));
     },
-    /**
-     *
-     * @param {[number]} args
-     */
     pulse: function ([intensity]) {
         if (!SongManager.player.paused && !isNaN(intensity)) {
             testPulse.pulse(Storyboard.visualizerIntensity * 32 * +intensity);
@@ -4773,7 +4669,6 @@ ToxenScriptManager.eventFunctions = {
 };
 /**
  * Function Types for ToxenScript
- * @type {{[eventName: string]: string}}
  */
 ToxenScriptManager.eventDocs = {};
 /**
@@ -4783,8 +4678,8 @@ ToxenScriptManager.events = [];
 class ToxenEvent {
     /**
      * Create a new Event
-     * @param {number} startPoint Starting point in seconds.
-     * @param {number} endPoint Ending point in seconds.
+     * @param startPoint Starting point in seconds.
+     * @param endPoint Ending point in seconds.
      * @param fn Function to run at this interval.
      */
     constructor(startPoint, endPoint, fn) {
@@ -4809,10 +4704,6 @@ class Debug {
             }
         }
     }
-    /**
-     *
-     * @param {string[]} exceptions
-     */
     static refreshOnChange(exceptions = []) {
         fs.watch("./", {
             recursive: true
@@ -4832,18 +4723,11 @@ class Debug {
         }
         return string;
     }
-    /**
-     * @param {number} max
-     * @param {number} min
-     */
     static randomInt(max, min = 0) {
         return Math.floor(Math.random() * (max - min)) + min;
     }
     // Yeeted from StackOverflow
     // https://stackoverflow.com/a/5624139/8614415
-    /**
-     * @param {number} c
-     */
     static componentToHex(c) {
         var hex = c.toString(16);
         return hex.length == 1 ? "0" + hex : hex;
@@ -4853,9 +4737,6 @@ class Debug {
     }
     static hexToRgb(hex) {
         var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        /**
-         * @type {RGB}
-         */
         let rgb = {
             red: 0,
             green: 0,
@@ -5008,8 +4889,7 @@ class Prompt {
      * Removes everything inside the content field and appends `content`.
      *
      * `Identical to Prompt.addContent, but it clears the content first.`
-     * @param {HTMLElement | string} content
-     * @param {boolean} textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
+     * @param textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
      */
     setContent(content, textAsHTML = true) {
         this.clearContent();
@@ -5023,13 +4903,9 @@ class Prompt {
     }
     /**
      * Append content to the content field.
-     * @param {HTMLElement | string} content
-     * @param {boolean} textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
+     * @param textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
      */
     addContent(content, textAsHTML = true) {
-        /**
-         * @type {HTMLElement}
-         */
         let element;
         if (typeof content == "string") {
             element = document.createElement("p");
@@ -5050,7 +4926,6 @@ class Prompt {
         let self = this;
         /**
          * Checks for a default button type.
-         * @param {string} text
          */
         function isDefault(text) {
             var _t;
@@ -5114,9 +4989,6 @@ class Prompt {
     get width() {
         return this.main.clientWidth;
     }
-    /**
-     * @param {number | string} value
-     */
     set width(value) {
         if (typeof value == "number") {
             value = `${value}px`;
@@ -5126,9 +4998,6 @@ class Prompt {
     get height() {
         return this.main.clientHeight;
     }
-    /**
-     * @param {number | string} value
-     */
     set height(value) {
         if (typeof value == "number") {
             value = `${value}px`;
@@ -5139,7 +5008,7 @@ class Prompt {
      * Close the prompt.
      *
      * `Automatically resolves promise with null`
-     * @param {number} ms Optionally, close in `ms` milliseconds.
+     * @param ms Optionally, close in `ms` milliseconds.
      */
     close(ms = 0) {
         if (typeof ms == "number" && ms > 0) {
@@ -5191,7 +5060,7 @@ exports.Prompt = Prompt;
 class Update {
     /**
      *
-     * @param {number} currentVersion Current version number.
+     * @param currentVersion Current version number.
      * It is formatted as a 12 digit timestamp, starting from the year and onwards to the minute.
      * `M` is Month and `m` is minute
      * `YYYYMMDDHHmm`
@@ -5199,9 +5068,6 @@ class Update {
     static check(currentVersion) {
         return __awaiter(this, void 0, void 0, function* () {
             document.getElementById("currentversion").innerText = "vers. " + currentVersion + `${Toxen.updatePlatform != null ? ` (${Toxen.updatePlatform})` : ""}`;
-            /**
-             * @type {HTMLButtonElement}
-             */
             let btn = document.querySelector("#updatetoxen");
             if (Toxen.updatePlatform == null) {
                 btn.disabled = true;
@@ -5211,7 +5077,7 @@ class Update {
             btn.innerText = "Checking for updates...";
             let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${Toxen.updatePlatform}&get=version`;
             fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
-                if (latest > currentVersion) {
+                if (+latest > currentVersion) {
                     btn.innerText = "Download Latest Update";
                     btn.onclick = function () {
                         Update.downloadLatest();
@@ -5308,9 +5174,6 @@ ipcRenderer.on("editor.request.data", () => {
     ScriptEditor.currentSong.element = element;
 });
 class ScriptEditor {
-    /**
-     * @param {Song} song
-     */
     static open(song) {
         if (song.txnScript == null) {
             song.txnScript = song.path + "/storyboard.txn";
@@ -5363,9 +5226,6 @@ ScriptEditor.listening = false;
 //   ScriptEditor.window.webContents.send("editor.command", value);
 // }
 ScriptEditor.command = null;
-/**
- * @type {Song}
- */
 ScriptEditor.currentSong = null;
 class Effect {
     static flashElement(element, color = "#fff", ms = 2000) {
@@ -5535,9 +5395,6 @@ export var toxenModule = (Core: typeof import("../../declarations/toxenCore")) =
     static loadAllModules(activate = true) {
         ToxenModule.installedModules = [];
         let modules = ToxenModule.listModules().map(m => new ToxenModule(m));
-        /**
-         * @type {HTMLDivElement}
-         */
         let panel = document.getElementById("moduleActivation");
         panel.innerHTML = "";
         modules.forEach(m => {
@@ -5683,6 +5540,7 @@ class Statistics {
         let p = new Prompt("Statistics", [
             `Songs: ${this.songCount}`,
             `Song length: ${this.collectiveSongLengthAsStamp}`,
+            `Time listened: ${ToxenScriptManager.convertSecondsToDigitalClock(this.secondsPlayed, true)}`,
             `Songs played: ${this.songsPlayed}`,
             `Modules installed: ${this.modulesInstalled}`,
             `Modules enabled: ${this.modulesEnabled}`
@@ -5786,9 +5644,6 @@ class Theme {
 exports.Theme = Theme;
 class Themeable {
     constructor(element, selector = null) {
-        /**
-         * @type {ThemeableConstructor}
-         */
         this.getStyle = () => {
             return this.element.style;
         };

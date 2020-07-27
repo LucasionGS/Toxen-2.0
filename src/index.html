@@ -47,7 +47,7 @@
       </div>
       <hr>
       <div class="flex">
-        <button
+        <!-- <button
         class="fancybutton color-red"
         id="toggleShuffle"
         title="Shuffle makes songs play randomly instead of in a list order"
@@ -56,16 +56,13 @@
         class="fancybutton color-red"
         id="toggleRepeat"
         title="Repeat make the current song repeat forever"
-        onclick="SongManager.toggleRepeat()">Repeat</button>
+        onclick="SongManager.toggleRepeat()">Repeat</button> -->
         <button
         class="fancybutton color-red"
         id="toggleOnlyvisible"
         title="Only Visible makes sure only songs that are visible (i.e is inside an open Song Group)"
-        onclick="SongManager.toggleOnlyVisible()">Only Visible</button>
+        onclick="SongManager.toggleOnlyVisible()">Only play songs visible in the panel</button>
       </div>
-      <div class="flex">
-        <button class="fancybutton color-blue" onclick="SongManager.playPrev()">Previous Song</button>
-        <button class="fancybutton color-blue" onclick="local_playNext()">Next Song</button>
         <script>
           function local_playNext() {
             if (settings.repeat == true) {
@@ -78,7 +75,10 @@
             }
           }
         </script>
-      </div>
+      <!-- <div class="flex">
+        <button class="fancybutton color-blue" onclick="SongManager.playPrev()">Previous Song</button>
+        <button class="fancybutton color-blue" onclick="local_playNext()">Next Song</button>
+      </div> -->
       <hr>
       <div class="flex">
         <button class="fancybutton" onclick="SongManager.scanDirectory();" title="Refresh the music library">Refresh Music Library</button>
@@ -88,6 +88,7 @@
       <hr>
       <div class="flex">
         <button id="setbackgroundbutton" class="fancybutton" onclick="SongManager.selectBackground()" title="Set the background for the currently playing song">Set Background</button>
+        <button id="importmetadatabutton" class="fancybutton" onclick="SongManager.importCurrentMetadata();" title="Import metadata from the currently playing song">Import metadata</button>
         <button id="setsubtitlesbutton" class="fancybutton" onclick="SongManager.selectSubtitles()" title="Set the subtitles file for the currently playing song">Set Subtitles</button>
         <button id="setstoryboardbutton" class="fancybutton" onclick="SongManager.selectStoryboard()" title="Set the storyboard file for the currently playing song">Set Storyboard</button>
       </div>
@@ -179,9 +180,13 @@
       <input type="radio" name="sgstyle" id="songgrouping=4" value="4" onclick="settings.songGrouping = 4; settings.saveToFile(); SongManager.refreshList();">
       <label for="songgrouping=4">By Language</label><br>
       <input type="radio" name="sgstyle" id="songgrouping=5" value="5" onclick="settings.songGrouping = 5; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=5">Alphabetically (Artist)</label><br>
+      <label for="songgrouping=5">By Genre</label><br>
       <input type="radio" name="sgstyle" id="songgrouping=6" value="6" onclick="settings.songGrouping = 6; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=6">Alphabetically (Title)</label>
+      <label for="songgrouping=6">By Year</label><br>
+      <input type="radio" name="sgstyle" id="songgrouping=7" value="7" onclick="settings.songGrouping = 7; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=7">Alphabetically (Artist)</label><br>
+      <input type="radio" name="sgstyle" id="songgrouping=8" value="8" onclick="settings.songGrouping = 8; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=8">Alphabetically (Title)</label>
       <hr>
       <h3>Visual Settings</h3>
       <label>Visualizer Style</label>
@@ -405,11 +410,11 @@
     <div id="smallnextbutton" class="smallfloatingbutton" style="transform: translateX(144px);" onclick="local_playNext()" title="Play the next song">
       <img src="./svg/next_black.svg" alt="next_black.svg" draggable="false">
     </div>
-    <div id="smallshufflebutton" class="smallfloatingbutton" style="transform: translateX(208px);" onclick="SongManager.toggleShuffle()" title="Toggle Shuffling">
-      <img src="./svg/shuffle_black.svg" alt="shuffle_black.svg" draggable="false">
+    <div id="smallshufflebutton" class="smallfloatingbutton" style="transform: translateX(208px);" onclick="SongManager.toggleShuffle()" title="Shuffle makes songs play randomly instead of in a list order">
+      <img src="./svg/shuffle_black.svg" svgoff="./svg/shuffle_black.svg" svgon="./svg/shuffle_black_enabled.svg" alt="shuffle_black.svg" draggable="false">
     </div>
-    <div id="smallrepeatbutton" class="smallfloatingbutton" style="transform: translateX(272px);" onclick="SongManager.toggleRepeat()" title="Toggle Repeating">
-      <img src="./svg/repeat_black.svg" alt="repeat_black.svg" draggable="false">
+    <div id="smallrepeatbutton" class="smallfloatingbutton" style="transform: translateX(272px);" onclick="SongManager.toggleRepeat()" title="Repeat make the current song repeat forever until disabled">
+      <img src="./svg/repeat_black.svg" svgoff="./svg/repeat_black.svg" svgon="./svg/repeat_black_enabled.svg" alt="repeat_black.svg" draggable="false">
     </div>
   </div>
   <div id="songpanelbutton" class="floatingbutton" title="Open the Song Panel">

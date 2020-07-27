@@ -11,11 +11,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const ToxenCore = require("./toxenCore");
-const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Debug, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, showTutorial, } = ToxenCore;
+const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Debug, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, SongGroup, showTutorial, } = ToxenCore;
 const rpc = require("discord-rpc");
 const path = require("path");
 const rimraf = require("rimraf");
 const __toxenVersion = require("./version.json");
+const util = require("util");
 Toxen.version = __toxenVersion;
 const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;
@@ -53,7 +54,53 @@ let settings = new Settings();
  */
 // This is automatically set to Statistics.current as well
 let stats = new Statistics();
-window.addEventListener("load", initialize);
+window.addEventListener("load", () => {
+    new Prompt("Loading Toxen...").close(100);
+    setTimeout(() => {
+        initialize().then(() => new Prompt("Toxen is ready.").close(1000)).catch(err => {
+            console.clear();
+            const errReport = util.inspect(err, true);
+            console.log("⬇⬇⬇ This error caused Toxen to not load ⬇⬇⬇ -----------------------------\n⬇⬇⬇ Send this error message to the developer ⬇⬇⬇ ------------------------");
+            console.error(err);
+            console.log("⬆⬆⬆ This error caused Toxen to not load ⬆⬆⬆ -----------------------------\n⬆⬆⬆ Send this error message to the developer ⬆⬆⬆ ------------------------");
+            let p = new Prompt("Error loading Toxen.", "Please check the <span style='color: red'>Console</span> log for error messages");
+            p.addButtons([
+                Toxen.generate.button({
+                    text: "Send anonymous error report",
+                    click() {
+                        Toxen.sendReport(errReport, true).then(b => {
+                            if (b) {
+                                this.innerText = "Report sent!";
+                                this.disabled = true;
+                            }
+                            else {
+                                this.innerText = "Report failed to send";
+                            }
+                        }).catch(reason => {
+                            console.error(reason);
+                            this.innerText = "Report failed to send";
+                        });
+                    }
+                }),
+                Toxen.generate.button({
+                    text: "Open Dev. Tools",
+                    click() {
+                        remote.getCurrentWindow().webContents.openDevTools();
+                    }
+                }),
+                Toxen.generate.button({
+                    text: "Restart Toxen",
+                    click() {
+                        Toxen.restart();
+                    },
+                    modify(b) {
+                        b.classList.add("svg_reload_white");
+                    }
+                }),
+            ]);
+        });
+    }, 100);
+});
 function initialize() {
     return __awaiter(this, void 0, void 0, function* () {
         // Load settings (IMPORTANT TO BE DONE FIRST)
@@ -212,6 +259,24 @@ function initialize() {
                 e.preventDefault();
                 SongManager.getCurrentlyPlayingSong().play();
             }
+            if (!ctrl && key == "escape" && !hasInputFocus()) {
+                e.preventDefault();
+                SongManager.getSelectedSongs().forEach(s => s.deselect());
+            }
+            if (ctrl && key == "a" && !hasInputFocus()) {
+                e.preventDefault();
+                SongManager.playableSongs.forEach(s => {
+                    if (Settings.current.songGrouping === 0) {
+                        s.select();
+                    }
+                    else {
+                        let grp = s.getGroup();
+                        if (grp && !grp.collapsed) {
+                            s.select();
+                        }
+                    }
+                });
+            }
             if (ctrl && key == "r") {
                 window.location.reload();
             }
@@ -357,8 +422,13 @@ function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
                 if (settings.discordPresenceShowDetails) {
                     // options["startTimestamp"] = Date.now(); // For Time left
                     // options["endTimestamp"] = Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000; // For Time left
-                    options["startTimestamp"] = Date.now() - (SongManager.player.currentTime * 1000); // For Time Elapsed
-                    options["details"] = (`${ScriptEditor.window != null ? "Editing " : song.isVideo ? "Watching " : "Listening to "}`) + `${song.details.artist} - ${song.details.title}`;
+                    if (!SongManager.player.paused)
+                        options["startTimestamp"] = Date.now() - (SongManager.player.currentTime * 1000); // For Time Elapsed
+                    options["details"] = (SongManager.player.paused ? "(Paused) " : "")
+                        + (`${ScriptEditor.window != null ? "Editing "
+                            : song.isVideo ? "Watching "
+                                : "Listening to "}`)
+                        + `${song.details.artist} - ${song.details.title}`;
                     if (song.details.source)
                         options["state"] = `\nFrom ${song.details.source}`;
                 }

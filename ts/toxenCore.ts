@@ -19,6 +19,7 @@ import * as Zip from "adm-zip";
 import { EventEmitter } from "events";
 import * as mm from "music-metadata";
 import * as util from "util";
+import axios, { AxiosResponse } from "axios";
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 
@@ -96,6 +97,33 @@ export class Toxen {
     });
   }
 
+  static async sendReport(reportMessage: string): Promise<boolean>;
+  static async sendReport(reportMessage: string, logRequest: boolean): Promise<boolean>;
+  static async sendReport(reportMessage: string, logRequest = false) {
+    if (logRequest) console.log("Sending report...");
+    let body = new FormData();
+    body.set("reportmessage", reportMessage);
+    console.log(body);
+    
+    return axios.post<string>("http://toxen.net/internal/report.php", body, {
+      "headers": { "Content-Type": "multipart/form-data" }
+    })
+    .then(r => {
+      if (typeof r == "boolean") return r;
+      console.log(r);
+      let res: {
+        "success": boolean,
+        "response": string
+      } = r.data as any;
+      if (logRequest) console.log("Response:", res);
+      return res.success;
+    }).catch(reason => {
+      console.error(reason);
+      if (logRequest) console.error("Error Reason:", reason);
+      return false;
+    })
+  }
+
   /**
    * A list of valid media extension
    */
@@ -116,6 +144,15 @@ export class Toxen {
      * Packaged Toxen media format.
      */
     "txn"
+  ];
+  /**
+   * A list of valid media extension
+   */
+  static imageExtensions = [
+    "jpg",
+    "jpeg",
+    "png",
+    "gif"
   ];
 
   /**
@@ -149,6 +186,13 @@ export class Toxen {
    */
   static reload() {
     browserWindow.reload();
+  }
+
+  /**
+   * Close the Toxen application immediately.
+   */
+  static close() {
+    app.exit();
   }
 
   static ffmpegAvailable(): boolean {
@@ -303,18 +347,24 @@ export class Toxen {
   static generate = {
     /**
      * Generate an input.
-     * @param {object} opts
-     * @param {(obj: HTMLInputElement) => void} opts.modify Modify this object using a function. This will always happen before the other options get applied.
-     * @param {string} opts.id Id for this item.
-     * 
-     * @param {string} opts.value Default value for the input.
-     * @param {string} opts.placeholder Default placeholder for the input.
      */
     input(opts:
       {
-        modify?: Function,
+        /**
+         * Modify this object using a function. This will always happen before the other options get applied.
+         */
+        modify?: (input: HTMLInputElement) => void,
+        /**
+         * Id for this item.
+         */
         id?: string,
+        /**
+         * Default value for the input.
+         */
         value?: string,
+        /**
+         * Default placeholder for the input.
+         */
         placeholder?: string,
       } = {}) {
       if (opts !== null && typeof opts === "object") {
@@ -333,20 +383,28 @@ export class Toxen {
     },
     /**
      * Generate a button.
-     * @param {object} opts
-     * @param {(obj: HTMLButtonElement) => void} opts.modify Modify this object using a function. This will always happen before the other options get applied.
-     * @param {string} opts.id Id for this item.
-     * 
-     * @param {string} opts.text Text to be displayed on the button. Supports HTML.
-     * @param {string} opts.backgroundColor Background color in CSS.
-     * @param {(ev: MouseEvent) => void} opts.click Function to execute on the click of this button.
      */
     button(opts:
       {
-        modify?: Function,
+        /**
+         * Modify this object using a function. This will always happen before the other options get applied.
+         */
+        modify?: (button: HTMLButtonElement) => void,
+        /**
+         * Id for this item.
+         */
         id?: string,
+        /**
+         * Text to be displayed on the button. Supports HTML.
+         */
         text?: string,
+        /**
+         * Background color in CSS.
+         */
         backgroundColor?: string,
+        /**
+         * Function to execute on the click of this button.
+         */
         click?: (this: HTMLButtonElement, ev: MouseEvent) => any,
       } = {}) {
       if (opts !== null && typeof opts === "object") {
@@ -1059,9 +1117,9 @@ export class Song {
     });
 
     /**
-     * @param {string} timestamp 
+     * Verify if timestamp is valid.
      */
-    function verify(timestamp) {
+    function verify(timestamp: string) {
       try {
         ToxenScriptManager.timeStampToSeconds(timestamp, true);
         return true;
@@ -1351,19 +1409,15 @@ export class Song {
 
   element: HTMLSongElement = null;
 
-  /**
-   * @param {HTMLDivElement | HTMLSongElement} elm 
-   */
-  setElement(elm) {
+  setElement(elm: HTMLDivElement | HTMLSongElement) {
     this.element = elm;
     this.element.song = this;
   }
 
   /**
    * Executes when a song is played.
-   * @param {Song} song 
    */
-  onplay(song) { }
+  onplay(song: Song) { }
 
   /**
    * A randomly generated hash to cache files correctly.
@@ -1532,10 +1586,7 @@ export class Song {
    */
   displayInfo() {
     let self = this;
-    /**
-     * @type {HTMLDivElement}
-     */
-    let panel = document.querySelector("div#songinfo");
+    let panel: HTMLDivElement = document.querySelector("div#songinfo");
 
     /**
      * @param name 
@@ -1548,9 +1599,6 @@ export class Song {
       interface ToxenInputWithOnsearch extends HTMLInputElement {
         onsearch(e: KeyboardEvent): void;
       }
-      /**
-       * @type {HTMLInputElement}
-       */
       let input: ToxenInputWithOnsearch = panel.querySelector('input[name="'+name+'"]');
       if (self.details[detailsItemName] == null) {
         if (typeof isArraySeparatedBy === "string") {
@@ -1599,6 +1647,7 @@ export class Song {
 
   saveDetails() {
     try {
+      this.details.tags = this.details.tags.filter(t => t.trim() !== "")
       fs.writeFileSync(this.getFullPath("path") + "/details.json", JSON.stringify(this.details, null, 2));
       SongManager.saveToFile();
       return true;
@@ -1712,7 +1761,7 @@ export class Song {
     // Apply metadata
     let meta = await mm.parseFile(this.getFullPath("songPath"));
     console.log(meta, {showHidden: false, depth: null });
-    let _tags: string[] = [];
+    let _tags: string[] = this.details.tags;
     if (meta.common.artist) {
       this.details.artist = meta.common.artist;
     }
@@ -1814,10 +1863,8 @@ export class SongManager {
 
   /**
    * Export every song into a folder.
-   * @param {string} location
-   * @param {Song[]} songList
    */
-  static async exportAll(location = null, songList = null) {
+  static async exportAll(location: string = null, songList: Song[] = null) {
     let songs = Array.isArray(songList) ? songList : SongManager.songList;
     let ans = typeof location === "string" ? location : dialog.showSaveDialogSync(browserWindow, {
       "title": `Zip ${songs.length} Toxen song file${songs.length > 1 ? "s" : ""}`,
@@ -1871,11 +1918,7 @@ export class SongManager {
       Settings.current.sortBy = sortBy;
     }
     if (this.songListElement) {
-      /**
-       * @param {Song} a 
-       * @param {Song} b
-       */
-      let sortFunc = (a, b) => { return 0; };
+      let sortFunc = (a: Song, b: Song) => { return 0; };
       try {
         switch (Settings.current.sortBy) {
           case "title":
@@ -1916,11 +1959,7 @@ export class SongManager {
       } catch (error) {
         
       }
-      /**
-       * @param {Song} a 
-       * @param {Song} b 
-       */
-      var _sort = function(a, b) {
+      var _sort = function(a: Song, b: Song) {
         // Make order reversable
         return sortFunc(a, b);
       }
@@ -1948,32 +1987,42 @@ export class SongManager {
         switch (Settings.current.songGrouping) {
           case 1:
             SongManager.songList.forEach(s => {
-              addToGroup(s.details.artist, s, "No artist set");
+              addToGroup(s.details.artist, s, "[No artist set]");
             });
             break;
           case 2:
             SongManager.songList.forEach(s => {
-              addToGroup(s.details.album, s, "No album set");
+              addToGroup(s.details.album, s, "[No album set]");
             });
             break;
           case 3:
             SongManager.songList.forEach(s => {
-              addToGroup(s.details.source, s, "No source set");
+              addToGroup(s.details.source, s, "[No source set]");
             });
             break;
           case 4:
             SongManager.songList.forEach(s => {
-              addToGroup(s.details.language, s, "No language set");
+              addToGroup(s.details.language, s, "[No language set]");
             });
             break;
           case 5:
             SongManager.songList.forEach(s => {
-              addToGroup(s.details.artist[0].toUpperCase(), s, "!Missing Artist!");
+              addToGroup(s.details.genre, s, "[No genre set]");
             });
             break;
           case 6:
             SongManager.songList.forEach(s => {
-              addToGroup(s.details.title[0].toUpperCase(), s, "!Missing Title!");
+              addToGroup(s.details.year, s, "[No year set]");
+            });
+            break;
+          case 7:
+            SongManager.songList.forEach(s => {
+              addToGroup(s.details.artist[0].toUpperCase(), s, "[No artist set]");
+            });
+            break;
+          case 8:
+            SongManager.songList.forEach(s => {
+              addToGroup(s.details.title[0].toUpperCase(), s, "[No title set]");
             });
             break;
         
@@ -2017,12 +2066,11 @@ export class SongManager {
     }
   }
   /**
-   * @param {string} search Search for a string
+   * @param search Search for a string
    */
-  static search(search = document.querySelector<HTMLInputElement>("#search").value) {
+  static search(search: string = document.querySelector<HTMLInputElement>("#search").value) {
     search = search.toLowerCase();
-    /** @param {string | string[]} string */
-    function match(string) {
+    function match(string: string | string[]) {
       if (Array.isArray(string)) {
         string = string.join(" ");
       }
@@ -2037,10 +2085,9 @@ export class SongManager {
     }
 
     /**
-     * Escape the required characters in a RegExp string
-     * @param {string} str 
+     * Escape the required characters in a RegExp string.
      */
-    function escapeRegex(str) {
+    function escapeRegex(str: string) {
       return str.replace(/[\[\\\^\$\.\|\?\*\+\(\)\]]/g, "\\$&");
     }
 
@@ -2170,14 +2217,7 @@ export class SongManager {
           for (let i2 = 0; i2 < items.length; i2++) {
             const item = items[i2];
             // Media file
-            if (
-              // Audios
-              item.endsWith(".mp3") // Standard
-              || item.endsWith(".wma") 
-              || item.endsWith(".ogg")
-              // Videos
-              || item.endsWith(".mp4") // Standard
-            ) {
+            if (Toxen.mediaExtensions.filter(f => f != "txn").find(f => item.endsWith("."+f))) {
               song.songPath = file.name + "/" + item;
             }
             // Subtitle file
@@ -2189,15 +2229,12 @@ export class SongManager {
               song.txnScript = file.name + "/" + item;
             }
             // Graphical background file
-            if (item.endsWith(".png") || item.endsWith(".jpg") || item.endsWith(".jpeg") || item.endsWith(".gif")) {
+            if (Toxen.imageExtensions.find(f => item.endsWith("."+f))) {
               song.background = file.name + "/" + item;
             }
             if (item == "details.json") {
               try {
-                /**
-                 * @type {Song["details"]}
-                 */
-                let info = JSON.parse(fs.readFileSync(songDir + item, "utf8"));
+                let info: Song["details"] = JSON.parse(fs.readFileSync(songDir + item, "utf8"));
                 song.details = info;
               } catch (error) {
                 console.error("Unable to parse details for \"" + songDir + item + "\"", error);
@@ -2266,10 +2303,7 @@ export class SongManager {
         if (!fs.existsSync(fileLocation)) {
           fs.writeFileSync(fileLocation, "{}");
         }
-        /**
-         * @type {Song[]}
-         */
-        let songList = JSON.parse(fs.readFileSync(fileLocation, "utf8"));
+        let songList: Song[] = JSON.parse(fs.readFileSync(fileLocation, "utf8"));
         for (let i = 0; i < songList.length; i++) {
           const song = songList[i];
           songList[i] = new Song();
@@ -2290,10 +2324,7 @@ export class SongManager {
     // Fix
     else {
       try {
-        /**
-         * @type {Song[]}
-         */
-        let songList = await (await fetch(fileLocation)).json();
+        let songList: Song[] = await (await fetch(fileLocation)).json();
         for (let i = 0; i < songList.length; i++) {
           const song = songList[i];
           songList[i] = new Song();
@@ -2314,10 +2345,7 @@ export class SongManager {
 
   static saveToFile(fileLocation = Settings.current.songFolder + "/db.json") {
     let list = Array.from(SongManager.songList);
-    /**
-     * @type {HTMLSongElement[]}
-     */
-    let elementList = [];
+    let elementList: HTMLSongElement[] = [];
     for (let i = 0; i < list.length; i++) {
       const s = list[i];
       elementList.push(s.element);
@@ -2456,25 +2484,19 @@ export class SongManager {
     }
   }
 
-  /**
-   * @param {boolean} force
-   */
   static toggleShuffle(force?: boolean) {
-    /**
-     * @type {HTMLButtonElement}
-     */
-    const element = document.getElementById("toggleShuffle");
+    const element: HTMLDivElement = document.getElementById("smallshufflebutton") as HTMLDivElement;
     if (typeof force == "boolean") {
       Settings.current.shuffle = !force;
     }
     Toxen.emit("toggleshuffle", Settings.current.shuffle);
 
     if (Settings.current.shuffle == false) {
-      element.classList.replace("color-red", "color-green");
+      (element.firstElementChild as HTMLImageElement).src = (element.firstElementChild).getAttribute("svgon");
       Settings.current.shuffle = true;
     }
     else {
-      element.classList.replace("color-green", "color-red");
+      (element.firstElementChild as HTMLImageElement).src = (element.firstElementChild).getAttribute("svgoff");
       Settings.current.shuffle = false;
     }
 
@@ -2482,26 +2504,21 @@ export class SongManager {
     return Settings.current.shuffle;
   }
 
-  /**
-   * @param {boolean} force
-   */
   static toggleRepeat(force?: boolean) {
-    /**
-     * @type {HTMLButtonElement}
-     */
-    const element = document.getElementById("toggleRepeat");
+    // const element: HTMLButtonElement = document.getElementById("toggleRepeat") as HTMLButtonElement;
+    const element: HTMLDivElement = document.getElementById("smallrepeatbutton") as HTMLDivElement;
     if (typeof force == "boolean") {
       Settings.current.repeat = !force;
     }
 
     Toxen.emit("togglerepeat", Settings.current.repeat);
-
     if (Settings.current.repeat == false) {
-      element.classList.replace("color-red", "color-green");
+      
+      (element.firstElementChild as HTMLImageElement).src = (element.firstElementChild).getAttribute("svgon");
       Settings.current.repeat = true;
     }
     else {
-      element.classList.replace("color-green", "color-red");
+      (element.firstElementChild as HTMLImageElement).src = (element.firstElementChild).getAttribute("svgoff");
       Settings.current.repeat = false;
     }
 
@@ -2509,14 +2526,8 @@ export class SongManager {
     return Settings.current.repeat;
   }
 
-  /**
-   * @param {boolean} force
-   */
   static toggleOnlyVisible(force?: boolean) {
-    /**
-     * @type {HTMLButtonElement}
-     */
-    const element = document.getElementById("toggleOnlyvisible");
+    const element: HTMLButtonElement = document.getElementById("toggleOnlyvisible") as HTMLButtonElement;
     if (typeof force == "boolean") {
       Settings.current.onlyVisible = !force;
     }
@@ -2554,7 +2565,7 @@ export class SongManager {
       main.style.height = "256px";
       
       // Text
-      text.innerHTML = "Drag <code>mp3/mp4/txs</code> files here or click to select";
+      text.innerHTML = "Drag <code>"+Toxen.mediaExtensions.join("/")+"</code> files here or click to select";
       text.style.textAlign = "center";
       text.style.boxSizing = "borderbox";
       text.style.paddingTop = "calc(128px - 1em)";
@@ -3064,27 +3075,26 @@ export class SongManager {
     }, 0);
   }
 
+  static importCurrentMetadata() {
+    let song = SongManager.getCurrentlyPlayingSong();
+    song.importMetadata().then(() => {
+      song.displayInfo();
+    });
+  }
+
   static selectBackground(song = SongManager.getCurrentlyPlayingSong()) {
     dialog.showOpenDialog(remote.getCurrentWindow(), {
       "buttonLabel": "Select Image",
       "filters": [
         {
-          "extensions": [
-            "jpg",
-            "jpeg",
-            "png",
-            "gif"
-          ],
+          "extensions": Toxen.imageExtensions,
           "name": ""
         }
       ]
     })
     .then(handler);
 
-    /**
-     * @param {string} pathObject 
-     */
-    function handler (pathObject) {
+    function handler (pathObject: (Electron.OpenDialogReturnValue)) {
       // TODO: Drag and Drop backgrounds directly
       if (pathObject.filePaths.length == 0) {
         return;
@@ -3132,10 +3142,7 @@ export class SongManager {
     
     p.addButtons([dlBg, "Close"], "fancybutton", true);
 
-    /**
-     * @type {string}
-     */
-    let imageUrl = await p.promise;
+    let imageUrl: string = await p.promise;
     if (imageUrl == null) {
       return;
     }
@@ -3279,9 +3286,8 @@ export class SongManager {
 interface HTMLSongGroupElement extends HTMLElementScroll {
   /**
    * Song Group object that belongs to this element.
-   * @type {SongGroup}
    */
-  songGroup?;
+  songGroup?: SongGroup;
 }
 
 export class SongGroup {
@@ -3341,13 +3347,7 @@ export class SongGroup {
     }
   }
 
-  /**
-   * @type {string}
-   */
-  name = null;
-  /**
-   * @type {HTMLSongGroupElement}
-   */
+  name: string = null;
   element: HTMLSongGroupElement = null;
   set collapsed(value) {
     let res = this.element.toggleAttribute("collapsed", value);
@@ -3376,19 +3376,16 @@ export class SongGroup {
   }
 
   /**
-   * return all of the song groups.
+   * Return all of the song groups.
    */
   static getAllGroups(): SongGroup[];
-  static getAllGroups(collapsedCondition: boolean): SongGroup[];
   /**
-   * return all of the song groups.
+   * Return all of the song groups.
    * @param collapsedCondition Whether it should return all with collapsed true, or collapsed false. Omit to ignore and return all.
    */
+  static getAllGroups(collapsedCondition: boolean): SongGroup[];
   static getAllGroups(collapsedCondition = null) {
     let _a = [...(document.querySelectorAll(".songgroup") as unknown as Array<Element>)].map((e: HTMLToxenSongGroup) => {
-      /**
-       * @type {HTMLSongGroupElement}
-       */
       const item = e;
       if (typeof collapsedCondition == "boolean") {
         if ((collapsedCondition && item.hasAttribute("collapsed")) || (!collapsedCondition && !item.hasAttribute("collapsed"))) {
@@ -3411,13 +3408,10 @@ export class SongGroup {
   }
 
   /**
-   * @param {boolean} collapsedCondition Omit to ignore and return all
+   * @param collapsedCondition Omit to ignore and return all
    */
-  static getAllGroupNames(collapsedCondition = null) {
+  static getAllGroupNames(collapsedCondition: boolean = null) {
     let _a = [...(document.querySelectorAll(".songgroup") as unknown as Array<Element>)].map((e: HTMLToxenSongGroup) => {
-      /**
-       * @type {HTMLSongGroupElement}
-       */
       const item = e;
       if (typeof collapsedCondition == "boolean") {
         if ((collapsedCondition && item.hasAttribute("collapsed")) || (!collapsedCondition && !item.hasAttribute("collapsed"))) {
@@ -3445,10 +3439,7 @@ const menus = {
       {
         label: "Display info",
         click: (menuItem: ToxenElectronMenuItemSong) => {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             song.displayInfo();
             document.getElementById("songinfo").scrollIntoView();
@@ -3458,10 +3449,7 @@ const menus = {
       {
         label: "Select/Deselect",
         click: (menuItem: ToxenElectronMenuItemSong) => {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             song.toggleSelect();
           }
@@ -3470,10 +3458,7 @@ const menus = {
       {
         label: "Add to playlist...",
         click: (menuItem: ToxenElectronMenuItemSong) => {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             song.addToPlaylist();
           }
@@ -3482,10 +3467,7 @@ const menus = {
       {
         label: "Open song folder",
         click: (menuItem: ToxenElectronMenuItemSong) => {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             let path = song.getFullPath("path");
             if (!shell.openItem(path)) {
@@ -3495,12 +3477,22 @@ const menus = {
         }
       },
       {
+        label: "Import metadata",
+        click(menuItem: ToxenElectronMenuItemSong) {
+          const song: Song = menuItem.songObject;
+          if (song instanceof Song) {
+            song.importMetadata().then(() => {
+              SongManager.revealSongPanel();
+              song.refreshElement();
+              song.displayInfo();
+            });
+          }
+        }
+      },
+      {
         label: "Set Background",
         click(menuItem: ToxenElectronMenuItemSong) {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             SongManager.selectBackground(song);
           }
@@ -3509,10 +3501,7 @@ const menus = {
       {
         label: "Set Background from URL",
         click(menuItem: ToxenElectronMenuItemSong) {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             SongManager.selectBackgroundFromURL(song);
           }
@@ -3521,10 +3510,7 @@ const menus = {
       {
         label: "Edit Storyboard Script",
         click: (menuItem: ToxenElectronMenuItemSong) => {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             // if (song.txnScript != null && fs.existsSync(song.getFullPath("txnScript"))) {
               
@@ -3540,10 +3526,7 @@ const menus = {
       {
         label: "Export song",
         click: (menuItem: ToxenElectronMenuItemSong) => {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             song.export();
           }
@@ -3552,10 +3535,7 @@ const menus = {
       {
         label: "Trim song",
         click: (menuItem: ToxenElectronMenuItemSong) => {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             song.trim();
           }
@@ -3564,10 +3544,7 @@ const menus = {
       {
         label: "Delete song",
         click: (menuItem: ToxenElectronMenuItemSong) => {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             let path = song.getFullPath("path");
             let ans = dialog.showMessageBoxSync(remote.getCurrentWindow(),
@@ -3603,21 +3580,22 @@ const menus = {
       {
         label: "Export songs",
         click: (menuItem) => {
-          /**
-           * @type {Song[]}
-           */
-          const songs = SongManager.getSelectedSongs();
+          const songs: Song[] = SongManager.getSelectedSongs();
 
           SongManager.exportAll(null, songs);
         }
       },
       {
+        label: "Import metadata from selected songs",
+        click: (menuItem) => {
+          const songs: Song[] = SongManager.getSelectedSongs();
+          songs.forEach(async s => {await s.importMetadata(); s.refreshElement();});
+        }
+      },
+      {
         label: "Delete songs",
         click: (menuItem) => {
-          /**
-           * @type {Song[]}
-           */
-          const songs = SongManager.getSelectedSongs();
+          const songs: Song[] = SongManager.getSelectedSongs();
           let ans = dialog.showMessageBoxSync(remote.getCurrentWindow(),
           {
             "buttons": [
@@ -3648,10 +3626,7 @@ const menus = {
       {
         label: "Select/Deselect",
         click: (menuItem: ToxenElectronMenuItemSong) => {
-          /**
-           * @type {Song}
-           */
-          const song = menuItem.songObject;
+          const song: Song = menuItem.songObject;
           if (song instanceof Song) {
             song.toggleSelect();
           }
@@ -3678,10 +3653,7 @@ const menus = {
       {
         label: "Toggle group",
         click: (menuItem: ToxenElectronMenuItemSongGroup) => {
-          /**
-           * @type {SongGroup}
-           */
-          const songGroup = menuItem.songGroup;
+          const songGroup: SongGroup = menuItem.songGroup;
           if (songGroup instanceof SongGroup) {
             songGroup.collapse();
           }
@@ -3690,10 +3662,7 @@ const menus = {
       {
         label: "Open only this group",
         click: (menuItem: ToxenElectronMenuItemSongGroup) => {
-          /**
-           * @type {SongGroup}
-           */
-          const songGroup = menuItem.songGroup;
+          const songGroup: SongGroup = menuItem.songGroup;
           if (songGroup instanceof SongGroup) {
             SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
             songGroup.collapsed = false;
@@ -3708,10 +3677,7 @@ const menus = {
       {
         label: "Open all groups",
         click: (menuItem: ToxenElectronMenuItemSongGroup) => {
-          /**
-           * @type {SongGroup}
-           */
-          const songGroup = menuItem.songGroup;
+          const songGroup: SongGroup = menuItem.songGroup;
           SongGroup.getAllGroups(true).forEach(sg => sg.collapsed = false);
           if (songGroup instanceof SongGroup) {
             songGroup.focus();
@@ -3723,10 +3689,7 @@ const menus = {
         label: "Close all groups",
         click: (menuItem: ToxenElectronMenuItemSongGroup) => {
           SongGroup.getAllGroups(false).forEach(sg => sg.collapsed = true);
-          /**
-           * @type {SongGroup}
-           */
-          const songGroup = menuItem.songGroup;
+          const songGroup: SongGroup = menuItem.songGroup;
           if (songGroup instanceof SongGroup) {
             songGroup.focus();
             Effect.flashElement(songGroup.element);
@@ -3782,8 +3745,7 @@ const menus = {
 }
 
 /**
- * Electron Menu
- * @type {Electron.Menu}
+ * Electron Menu.
  */
 var menu = reloadMenu();
 
@@ -3984,7 +3946,6 @@ export class Storyboard {
    * @readonly
    * The currently shown background dim value.  
    * **Note:** This is often different from the ``Settings.backgroundDim`` setting, as this is dynamic.
-   * @type {number}
    */
   static currentBackgroundDim = 0;
   /**
@@ -4117,9 +4078,8 @@ export class Storyboard {
   
   /**
    * Set the intensity of the visualizer.
-   * @param {number} value 
    */
-  static setIntensity(value) {
+  static setIntensity(value: number) {
     Storyboard.visualizerIntensity = value;
   }
   
@@ -4246,10 +4206,7 @@ class Subtitles {
  * ToxenScript: Background Pulse
  */
 class Pulse {
-  /**
-   * @type {Pulse[]}
-   */
-  allPulses = [];
+  allPulses: Pulse[] = [];
   constructor() {
     const leftDiv = document.createElement("div");
     leftDiv.style.position = "absolute";
@@ -4277,16 +4234,10 @@ class Pulse {
       SongManager.player.parentElement.insertBefore(rightDiv, SongManager.player);
     }, 0);
   }
-  /**
-   * @type {HTMLDivElement}
-   */
-  left = null;
-  /**
-   * @type {HTMLDivElement}
-   */
-  right = null;
+  left: HTMLDivElement = null;
+  right: HTMLDivElement = null;
 
-  _width = 0;
+  private _width = 0;
 
   lastPulse = 0;
 
@@ -4300,10 +4251,7 @@ class Pulse {
     return this._width;
   }
 
-  /**
-   * @param {Number} width 
-   */
-  pulse(width) {
+  pulse(width: number) {
     this.lastPulse = width;
     this.width = width;
   }
@@ -4312,8 +4260,8 @@ class Pulse {
     if (this.width > 0) {
       this.width -= Math.max(Math.min(this.width, 1), (this.width / Storyboard.visualizerIntensity) * 2);
       let opacity = (this.width / this.lastPulse);
-      this.left.style.opacity = opacity;
-      this.right.style.opacity = opacity;
+      this.left.style.opacity = opacity + "";
+      this.right.style.opacity = opacity + "";
     }
   }, 10);
 
@@ -4328,10 +4276,7 @@ class Pulse {
  * ToxenScript: Storyboard Object
  */
 class StoryboardObject {
-  /**
-   * @type {{[name: string]: StoryboardObject}}
-   */
-  static objects = {
+  static objects: {[name: string]: StoryboardObject} = {
 
   }
 
@@ -4368,10 +4313,9 @@ class StoryboardObject {
 }
 
 /**
- * This is temporary plz
- * @type {Pulse}
+ * This is temporary plz.
  */
-var testPulse;
+var testPulse: Pulse;
 
 window.addEventListener("load", () => testPulse = new Pulse());
 
@@ -4397,7 +4341,7 @@ export class ToxenScriptManager {
         if (typeof v == "function") {
           v = v();
         }
-        ToxenScriptManager.variables[key] = v;
+        ToxenScriptManager.variables[key] = v as string;
       }
     }
 
@@ -4421,17 +4365,15 @@ export class ToxenScriptManager {
   }
 
   /**
-   * @type {{[$name: string]: string}}
    */
-  static variables = {
+  static variables: {[$name: string]: string} = {
     
   }
 
   /**
    * Default variable set.
-   * @type {{[$name: string]: string}}
    */
-  static defaultVariables = {
+  static defaultVariables: {[$name: string]: string | Function} = {
     "$end": function() {
       try {
         let s = SongManager.getCurrentlyPlayingSong();
@@ -4447,9 +4389,8 @@ export class ToxenScriptManager {
 
   /**
    * Apply the variables to the text.
-   * @param {string} text 
    */
-  static applyVariables(text) {
+  static applyVariables(text: string) {
     for (const key in ToxenScriptManager.variables) {
       if (ToxenScriptManager.variables.hasOwnProperty(key)) {
         const v = ToxenScriptManager.variables[key];
@@ -4471,9 +4412,6 @@ export class ToxenScriptManager {
       let _gl = function() {
         if (Settings.current.storyboard && ToxenScriptManager.events.length > 0) {
           for (let i = 0; i < ToxenScriptManager.events.length; i++) {
-            /**
-             * @type {ToxenEvent}
-             */
             const e = ToxenScriptManager.events[i];
             if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
               e.fn();
@@ -4794,7 +4732,7 @@ export class ToxenScriptManager {
   }
 
   static getEventNames() {
-    let list = [];
+    let list: string[] = [];
     for (const key in ToxenScriptManager.eventFunctions) {
       if (ToxenScriptManager.eventFunctions.hasOwnProperty(key)) {
         list.push(key);
@@ -4809,7 +4747,6 @@ export class ToxenScriptManager {
   static eventFunctions: {[eventName: string]: (args: string[], event: ToxenEvent) => void} = {
     /**
      * Change the image of the background.
-     * @param {[string]} args Arguments.
      */
     background: function (args) {
       let song = SongManager.getCurrentlyPlayingSong();
@@ -4870,7 +4807,6 @@ export class ToxenScriptManager {
     },
     /**
      * Change the intensity of the visualizer
-     * @param {[string | number, string | number, string | number]} args Arguments
      */
     visualizerintensity: function (args) {
       if (args[1] && args[1].toLowerCase() == "smooth") {
@@ -4891,7 +4827,6 @@ export class ToxenScriptManager {
     },
     /**
      * Change the style of the visualizer
-     * @param {[string | number]} args Arguments
      */
     visualizerstyle: function ([style]) {
       style = style + "";
@@ -4926,9 +4861,8 @@ export class ToxenScriptManager {
     },
     /**
      * Change the direction of the visualizer. (Default is `right`)
-     * @param {["left" | "right"]} args Arguments
      */
-    visualizerdirection: function ([direction]) {
+    visualizerdirection: function ([direction]: ["left" | "right"]) {
       switch (direction) {
         case "right":
           Storyboard.visualizerDirection = 0;
@@ -4941,7 +4875,6 @@ export class ToxenScriptManager {
     },
     /**
      * Change the color of a Hue Light.
-     * @param {[string | number, string | number, string | number, string | number, string | number]} args Arguments
      */
     huecolor: function (args: any[]) {
       if (!isNaN(args[1])) {
@@ -5002,10 +4935,6 @@ export class ToxenScriptManager {
         for (let i = 0; i < lights.length; i++)
           hueApi.lights.setLightState(+lights[i], new hue.lightStates.LightState().on(true).rgb(+args[1], +args[2], +args[3]).brightness(brightness));
     },
-    /**
-     * 
-     * @param {[number]} args 
-     */
     pulse: function ([intensity]) {
       if (!SongManager.player.paused && !isNaN(intensity as unknown as number)) {
         testPulse.pulse(Storyboard.visualizerIntensity * 32 * +intensity);
@@ -5065,21 +4994,17 @@ export class ToxenScriptManager {
 
   /**
    * Function Types for ToxenScript
-   * @type {{[eventName: string]: string}}
    */
-  static eventDocs = {
+  static eventDocs: {[eventName: string]: string} = {
 
   }
 
   /**
    * Parse ToxenScript into HTML Highlighting
-   * @param {string} code
+   * @param code Raw code string to highlight with HTML.
    */
-  static syntaxHighlightToxenScript(code, validEventNames = ToxenScriptManager.getEventNames()) {
-    /**
-     * @type {{[key: string]: {"expression": RegExp, "function": ($0: string, ...$n: string[]) => string}}}
-     */
-    const regex = {
+  static syntaxHighlightToxenScript(code: string, validEventNames = ToxenScriptManager.getEventNames()) {
+    const regex: {[key: string]: {"expression": RegExp, "function": ($0: string, ...$n: string[]) => string}} = {
       "value": {
         "expression": /"(.*?[^\\])"/g,
         "function": function($0, $1) {
@@ -5201,9 +5126,8 @@ export class ToxenScriptManager {
 
   /**
    * Convert seconds to digital time format.
-   * @param {number} seconds 
    */
-  static convertSecondsToDigitalClock(seconds, trim = false) {
+  static convertSecondsToDigitalClock(seconds: number, trim = false) {
     var milliseconds = seconds * 1000;
     var time = "";
     var curNumber = 0;
@@ -5262,6 +5186,9 @@ export class ToxenScriptManager {
     while(trim == true && time.startsWith("00:")) {
       time = time.substring(3);
     }
+    if (trim == true && time.endsWith(".000")) {
+      time = time.substring(0, time.length - 4);
+    }
     return time;
   }
 
@@ -5274,11 +5201,11 @@ export class ToxenScriptManager {
 class ToxenEvent {
   /**
    * Create a new Event
-   * @param {number} startPoint Starting point in seconds.
-   * @param {number} endPoint Ending point in seconds.
+   * @param startPoint Starting point in seconds.
+   * @param endPoint Ending point in seconds.
    * @param fn Function to run at this interval.
    */
-  constructor(startPoint, endPoint, fn: (args: any[]) => void) {
+  constructor(startPoint: number, endPoint: number, fn: (args: any[]) => void) {
     this.startPoint = startPoint;
     this.endPoint = endPoint;
     this.fn = fn;
@@ -5307,11 +5234,7 @@ export class Debug {
     }
   }
 
-  /**
-   * 
-   * @param {string[]} exceptions 
-   */
-  static refreshOnChange(exceptions = []) {
+  static refreshOnChange(exceptions: string[] = []) {
     fs.watch("./", {
       recursive: true
     }, (event, file) => {
@@ -5332,20 +5255,13 @@ export class Debug {
     return string;
   }
 
-  /**
-   * @param {number} max 
-   * @param {number} min 
-   */
-  static randomInt(max, min = 0) {
+  static randomInt(max: number, min: number = 0) {
     return Math.floor(Math.random() * (max - min)) + min;
   }
 
   // Yeeted from StackOverflow
   // https://stackoverflow.com/a/5624139/8614415
-  /**
-   * @param {number} c 
-   */
-  static componentToHex(c) {
+  static componentToHex(c: number) {
     var hex = c.toString(16);
     return hex.length == 1 ? "0" + hex : hex;
   }
@@ -5356,9 +5272,6 @@ export class Debug {
 
   static hexToRgb(hex: string) {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    /**
-     * @type {RGB}
-     */
     let rgb: {"red": number, "green": number, "blue": number} = {
       red: 0,
       green: 0,
@@ -5533,10 +5446,9 @@ export class Prompt {
    * Removes everything inside the content field and appends `content`.
    * 
    * `Identical to Prompt.addContent, but it clears the content first.`
-   * @param {HTMLElement | string} content 
-   * @param {boolean} textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
+   * @param textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
    */
-  setContent(content, textAsHTML = true) {
+  setContent(content: HTMLElement | string, textAsHTML: boolean = true) {
     this.clearContent();
     this.addContent(content, textAsHTML);
   }
@@ -5551,14 +5463,10 @@ export class Prompt {
 
   /**
    * Append content to the content field.
-   * @param {HTMLElement | string} content 
-   * @param {boolean} textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
+   * @param textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
    */
-  addContent(content, textAsHTML = true) {
-    /**
-     * @type {HTMLElement}
-     */
-    let element;
+  addContent(content: HTMLElement | string, textAsHTML: boolean = true) {
+    let element: HTMLElement;
     if (typeof content == "string") {
       element = document.createElement("p");
       if (textAsHTML) {
@@ -5577,11 +5485,8 @@ export class Prompt {
   }
 
   /**
-   * 
-   * @param {string | HTMLButtonElement | (string | HTMLButtonElement)[]} button 
-   * @param {string} btnClass 
-   * @param {boolean} useDefault Attempts to use default buttons for certain strings
-   * @returns {HTMLButtonElement | HTMLButtonElement[]}
+   * Add buttons to this prompt.
+   * @param useDefault Attempts to use default buttons for certain strings
    */
   addButtons(button: string, btnClass?: string, useDefault?: boolean): HTMLButtonElement;
   addButtons(button: HTMLButtonElement, btnClass?: string, useDefault?: boolean): HTMLButtonElement;
@@ -5590,7 +5495,6 @@ export class Prompt {
     let self = this;
     /**
      * Checks for a default button type.
-     * @param {string} text 
      */
     function isDefault(text: string): HTMLButtonElement | string {
       var _t: HTMLButtonElement;
@@ -5657,9 +5561,6 @@ export class Prompt {
   get width() {
     return this.main.clientWidth;
   }
-  /**
-   * @param {number | string} value
-   */
   set width(value: string | number) {
     if (typeof value == "number") {
       value = `${value}px`;
@@ -5670,9 +5571,6 @@ export class Prompt {
   get height() {
     return this.main.clientHeight;
   }
-  /**
-   * @param {number | string} value
-   */
   set height(value: string | number) {
     if (typeof value == "number") {
       value = `${value}px`;
@@ -5686,9 +5584,9 @@ export class Prompt {
    * Close the prompt.
    * 
    * `Automatically resolves promise with null`
-   * @param {number} ms Optionally, close in `ms` milliseconds.
+   * @param ms Optionally, close in `ms` milliseconds.
    */
-  close(ms = 0): this {
+  close(ms: number = 0): this {
     if (typeof ms == "number" && ms > 0) {
       setTimeout(() => {
         if (typeof this.main == "object" && this.main.parentElement) {
@@ -5751,16 +5649,13 @@ export class Prompt {
 export class Update {
   /**
    * 
-   * @param {number} currentVersion Current version number.  
+   * @param currentVersion Current version number.  
    * It is formatted as a 12 digit timestamp, starting from the year and onwards to the minute.  
    * `M` is Month and `m` is minute  
    * `YYYYMMDDHHmm`
    */
-  static async check(currentVersion) {
+  static async check(currentVersion: number) {
     document.getElementById("currentversion").innerText = "vers. " + currentVersion + `${Toxen.updatePlatform != null ? ` (${Toxen.updatePlatform})` : ""}`;
-    /**
-     * @type {HTMLButtonElement}
-     */
     let btn = document.querySelector<HTMLButtonElement>("#updatetoxen");
     if (Toxen.updatePlatform == null) {
       btn.disabled = true;
@@ -5770,7 +5665,7 @@ export class Update {
     btn.innerText = "Checking for updates...";
     let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${Toxen.updatePlatform}&get=version`;
     fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
-      if (latest > currentVersion) {
+      if (+latest > currentVersion) {
         btn.innerText = "Download Latest Update";
         btn.onclick = function() {
           Update.downloadLatest();
@@ -5871,10 +5766,7 @@ ipcRenderer.on("editor.request.data", () => {
 });
 
 export class ScriptEditor {
-  /**
-   * @param {Song} song 
-   */
-  static open(song) {
+  static open(song: Song) {
     if (song.txnScript == null) {
       song.txnScript = song.path + "/storyboard.txn";
       SongManager.saveToFile();
@@ -5915,10 +5807,7 @@ export class ScriptEditor {
 
   static command = null;
 
-  /**
-   * @type {import("electron").BrowserWindow}
-   */
-  static window;
+  static window: import("electron").BrowserWindow;
 
   static makeWindow() {
     return new remote.BrowserWindow({
@@ -5936,10 +5825,7 @@ export class ScriptEditor {
     });
   }
 
-  /**
-   * @type {Song}
-   */
-  static currentSong = null;
+  static currentSong: Song = null;
 }
 
 export class Effect {
@@ -6163,10 +6049,7 @@ export var toxenModule = (Core: typeof import("../../declarations/toxenCore")) =
   static loadAllModules(activate: boolean = true) {
     ToxenModule.installedModules = [];
     let modules = ToxenModule.listModules().map(m => new ToxenModule(m));
-    /**
-     * @type {HTMLDivElement}
-     */
-    let panel = document.getElementById("moduleActivation");
+    let panel: HTMLDivElement = document.getElementById("moduleActivation") as HTMLDivElement;
     panel.innerHTML = "";
     modules.forEach(m => {
       let randName = `module_${m.moduleName}_` + Debug.generateRandomString(3);
@@ -6323,6 +6206,7 @@ export class Statistics {
     let p = new Prompt("Statistics", [
       `Songs: ${this.songCount}`,
       `Song length: ${this.collectiveSongLengthAsStamp}`,
+      `Time listened: ${ToxenScriptManager.convertSecondsToDigitalClock(this.secondsPlayed, true)}`,
       `Songs played: ${this.songsPlayed}`,
       `Modules installed: ${this.modulesInstalled}`,
       `Modules enabled: ${this.modulesEnabled}`
@@ -6472,9 +6356,6 @@ class Themeable {
   selector: string;
   element: HTMLElement;
   
-  /**
-   * @type {ThemeableConstructor}
-   */
   getStyle = () => {
     return this.element.style;
   }

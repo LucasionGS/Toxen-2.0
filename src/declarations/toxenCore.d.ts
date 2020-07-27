@@ -14,10 +14,16 @@ declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 40
  */
 export declare class Toxen {
     static initialize(): void;
+    static sendReport(reportMessage: string): Promise<boolean>;
+    static sendReport(reportMessage: string, logRequest: boolean): Promise<boolean>;
     /**
      * A list of valid media extension
      */
     static mediaExtensions: string[];
+    /**
+     * A list of valid media extension
+     */
+    static imageExtensions: string[];
     /**
      * Current stored version of Toxen.
      *
@@ -36,6 +42,10 @@ export declare class Toxen {
      * Reloads the Toxen window immediately.
      */
     static reload(): void;
+    /**
+     * Close the Toxen application immediately.
+     */
+    static close(): void;
     static ffmpegAvailable(): boolean;
     static ffmpegPath(): string;
     /**
@@ -84,34 +94,48 @@ export declare class Toxen {
     static generate: {
         /**
          * Generate an input.
-         * @param {object} opts
-         * @param {(obj: HTMLInputElement) => void} opts.modify Modify this object using a function. This will always happen before the other options get applied.
-         * @param {string} opts.id Id for this item.
-         *
-         * @param {string} opts.value Default value for the input.
-         * @param {string} opts.placeholder Default placeholder for the input.
          */
         input(opts?: {
-            modify?: Function;
+            /**
+             * Modify this object using a function. This will always happen before the other options get applied.
+             */
+            modify?: (input: HTMLInputElement) => void;
+            /**
+             * Id for this item.
+             */
             id?: string;
+            /**
+             * Default value for the input.
+             */
             value?: string;
+            /**
+             * Default placeholder for the input.
+             */
             placeholder?: string;
         }): HTMLInputElement;
         /**
          * Generate a button.
-         * @param {object} opts
-         * @param {(obj: HTMLButtonElement) => void} opts.modify Modify this object using a function. This will always happen before the other options get applied.
-         * @param {string} opts.id Id for this item.
-         *
-         * @param {string} opts.text Text to be displayed on the button. Supports HTML.
-         * @param {string} opts.backgroundColor Background color in CSS.
-         * @param {(ev: MouseEvent) => void} opts.click Function to execute on the click of this button.
          */
         button(opts?: {
-            modify?: Function;
+            /**
+             * Modify this object using a function. This will always happen before the other options get applied.
+             */
+            modify?: (button: HTMLButtonElement) => void;
+            /**
+             * Id for this item.
+             */
             id?: string;
+            /**
+             * Text to be displayed on the button. Supports HTML.
+             */
             text?: string;
+            /**
+             * Background color in CSS.
+             */
             backgroundColor?: string;
+            /**
+             * Function to execute on the click of this button.
+             */
             click?: (this: HTMLButtonElement, ev: MouseEvent) => any;
         }): HTMLButtonElement;
     };
@@ -428,15 +452,11 @@ export declare class Song {
         songLength: number;
     };
     element: HTMLSongElement;
-    /**
-     * @param {HTMLDivElement | HTMLSongElement} elm
-     */
-    setElement(elm: any): void;
+    setElement(elm: HTMLDivElement | HTMLSongElement): void;
     /**
      * Executes when a song is played.
-     * @param {Song} song
      */
-    onplay(song: any): void;
+    onplay(song: Song): void;
     /**
      * A randomly generated hash to cache files correctly.
      */
@@ -460,7 +480,7 @@ export declare class Song {
     /**
      * Get the parent group if it belongs to one. Returns `null` if not grouped.
      */
-    getGroup(): any;
+    getGroup(): SongGroup;
     /**
      * Scroll to the element and reveal it.
      */
@@ -487,10 +507,8 @@ export declare class SongManager {
     static onlyVisibleSongList(): Song[];
     /**
      * Export every song into a folder.
-     * @param {string} location
-     * @param {Song[]} songList
      */
-    static exportAll(location?: any, songList?: any): Promise<void>;
+    static exportAll(location?: string, songList?: Song[]): Promise<void>;
     /**
      * Return all the song object that has selected enabled
      */
@@ -502,7 +520,7 @@ export declare class SongManager {
     static refreshList(): void;
     static refreshList(sortBy: Settings["sortBy"]): void;
     /**
-     * @param {string} search Search for a string
+     * @param search Search for a string
      */
     static search(search?: string): void;
     /**
@@ -560,21 +578,13 @@ export declare class SongManager {
     static playRandom(): void;
     static playNext(): void;
     static playPrev(): void;
-    /**
-     * @param {boolean} force
-     */
     static toggleShuffle(force?: boolean): boolean;
-    /**
-     * @param {boolean} force
-     */
     static toggleRepeat(force?: boolean): boolean;
-    /**
-     * @param {boolean} force
-     */
     static toggleOnlyVisible(force?: boolean): boolean;
     static addSong(): void;
     static addSongLocal(): void;
     static addSongYouTube(): void;
+    static importCurrentMetadata(): void;
     static selectBackground(song?: Song): void;
     static selectBackgroundFromURL(song?: Song): Promise<void>;
     static selectSubtitles(song?: Song): void;
@@ -593,9 +603,8 @@ export declare class SongManager {
 interface HTMLSongGroupElement extends HTMLElementScroll {
     /**
      * Song Group object that belongs to this element.
-     * @type {SongGroup}
      */
-    songGroup?: any;
+    songGroup?: SongGroup;
 }
 export declare class SongGroup {
     static songGroups: SongGroup[];
@@ -608,13 +617,7 @@ export declare class SongGroup {
      */
     songList: Song[];
     refreshList(): void;
-    /**
-     * @type {string}
-     */
-    name: any;
-    /**
-     * @type {HTMLSongGroupElement}
-     */
+    name: string;
     element: HTMLSongGroupElement;
     set collapsed(value: boolean);
     get collapsed(): boolean;
@@ -624,14 +627,18 @@ export declare class SongGroup {
     collapse(): void;
     focus(): void;
     /**
-     * return all of the song groups.
+     * Return all of the song groups.
      */
     static getAllGroups(): SongGroup[];
+    /**
+     * Return all of the song groups.
+     * @param collapsedCondition Whether it should return all with collapsed true, or collapsed false. Omit to ignore and return all.
+     */
     static getAllGroups(collapsedCondition: boolean): SongGroup[];
     /**
-     * @param {boolean} collapsedCondition Omit to ignore and return all
+     * @param collapsedCondition Omit to ignore and return all
      */
-    static getAllGroupNames(collapsedCondition?: any): any[];
+    static getAllGroupNames(collapsedCondition?: boolean): string[];
 }
 export declare class Storyboard {
     static red: number;
@@ -647,7 +654,6 @@ export declare class Storyboard {
      * @readonly
      * The currently shown background dim value.
      * **Note:** This is often different from the ``Settings.backgroundDim`` setting, as this is dynamic.
-     * @type {number}
      */
     static currentBackgroundDim: number;
     /**
@@ -676,9 +682,8 @@ export declare class Storyboard {
     static setBackground(image: string, queryString?: string, reset?: boolean): void;
     /**
      * Set the intensity of the visualizer.
-     * @param {number} value
      */
-    static setIntensity(value: any): void;
+    static setIntensity(value: number): void;
     static analyser: AnalyserNode;
     static setAnalyserFftLevel(size: number): void;
     static setAnalyserFftSize(size: AnalyserFftSizeIndex): void;
@@ -700,27 +705,26 @@ export declare class ToxenScriptManager {
      */
     static loadCurrentScript(): Promise<void>;
     /**
-     * @type {{[$name: string]: string}}
      */
-    static variables: {};
+    static variables: {
+        [$name: string]: string;
+    };
     /**
      * Default variable set.
-     * @type {{[$name: string]: string}}
      */
     static defaultVariables: {
-        $end: () => string;
+        [$name: string]: string | Function;
     };
     /**
      * Apply the variables to the text.
-     * @param {string} text
      */
-    static applyVariables(text: any): any;
+    static applyVariables(text: string): string;
     /**
      * Parses ToxenScript files for storyboard effects and applies them to the current storyboard.
      * @param scriptFile Path to script file.
      */
     static scriptParser(scriptFile: string): Promise<void>;
-    static getEventNames(): any[];
+    static getEventNames(): string[];
     /**
      * Function Types for ToxenScript.
      */
@@ -729,14 +733,15 @@ export declare class ToxenScriptManager {
     };
     /**
      * Function Types for ToxenScript
-     * @type {{[eventName: string]: string}}
      */
-    static eventDocs: {};
+    static eventDocs: {
+        [eventName: string]: string;
+    };
     /**
      * Parse ToxenScript into HTML Highlighting
-     * @param {string} code
+     * @param code Raw code string to highlight with HTML.
      */
-    static syntaxHighlightToxenScript(code: any, validEventNames?: any[]): any;
+    static syntaxHighlightToxenScript(code: string, validEventNames?: string[]): string;
     /**
      * Convert a timestamp into seconds.
      * @param timestamp Time in format "hh:mm:ss".
@@ -744,9 +749,8 @@ export declare class ToxenScriptManager {
     static timeStampToSeconds(timestamp: string | number, throwError?: boolean): number;
     /**
      * Convert seconds to digital time format.
-     * @param {number} seconds
      */
-    static convertSecondsToDigitalClock(seconds: any, trim?: boolean): string;
+    static convertSecondsToDigitalClock(seconds: number, trim?: boolean): string;
     /**
      * List of events in order for the current song.
      */
@@ -755,11 +759,11 @@ export declare class ToxenScriptManager {
 declare class ToxenEvent {
     /**
      * Create a new Event
-     * @param {number} startPoint Starting point in seconds.
-     * @param {number} endPoint Ending point in seconds.
+     * @param startPoint Starting point in seconds.
+     * @param endPoint Ending point in seconds.
      * @param fn Function to run at this interval.
      */
-    constructor(startPoint: any, endPoint: any, fn: (args: any[]) => void);
+    constructor(startPoint: number, endPoint: number, fn: (args: any[]) => void);
     startPoint: number;
     endPoint: number;
     fn: Function;
@@ -768,21 +772,10 @@ declare class ToxenEvent {
 }
 export declare class Debug {
     static updateCSS(): void;
-    /**
-     *
-     * @param {string[]} exceptions
-     */
-    static refreshOnChange(exceptions?: any[]): void;
+    static refreshOnChange(exceptions?: string[]): void;
     static generateRandomString(length?: number): string;
-    /**
-     * @param {number} max
-     * @param {number} min
-     */
-    static randomInt(max: any, min?: number): number;
-    /**
-     * @param {number} c
-     */
-    static componentToHex(c: any): any;
+    static randomInt(max: number, min?: number): number;
+    static componentToHex(c: number): string;
     static rgbToHex(red: any, green: any, blue: any): string;
     static hexToRgb(hex: string): {
         red: number;
@@ -841,37 +834,26 @@ export declare class Prompt {
      * Removes everything inside the content field and appends `content`.
      *
      * `Identical to Prompt.addContent, but it clears the content first.`
-     * @param {HTMLElement | string} content
-     * @param {boolean} textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
+     * @param textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
      */
-    setContent(content: any, textAsHTML?: boolean): void;
+    setContent(content: HTMLElement | string, textAsHTML?: boolean): void;
     clearContent(): void;
     clearButtons(): void;
     /**
      * Append content to the content field.
-     * @param {HTMLElement | string} content
-     * @param {boolean} textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
+     * @param textAsHTML If `content` is a string, set to `false` to disable HTML parsing.
      */
-    addContent(content: any, textAsHTML?: boolean): this;
+    addContent(content: HTMLElement | string, textAsHTML?: boolean): this;
     /**
-     *
-     * @param {string | HTMLButtonElement | (string | HTMLButtonElement)[]} button
-     * @param {string} btnClass
-     * @param {boolean} useDefault Attempts to use default buttons for certain strings
-     * @returns {HTMLButtonElement | HTMLButtonElement[]}
+     * Add buttons to this prompt.
+     * @param useDefault Attempts to use default buttons for certain strings
      */
     addButtons(button: string, btnClass?: string, useDefault?: boolean): HTMLButtonElement;
     addButtons(button: HTMLButtonElement, btnClass?: string, useDefault?: boolean): HTMLButtonElement;
     addButtons(button: (string | HTMLButtonElement)[], btnClass?: string, useDefault?: boolean): HTMLButtonElement[];
     get width(): string | number;
-    /**
-     * @param {number | string} value
-     */
     set width(value: string | number);
     get height(): string | number;
-    /**
-     * @param {number | string} value
-     */
     set height(value: string | number);
     close(): this;
     close(ms: number): this;
@@ -897,31 +879,22 @@ export declare class Prompt {
 export declare class Update {
     /**
      *
-     * @param {number} currentVersion Current version number.
+     * @param currentVersion Current version number.
      * It is formatted as a 12 digit timestamp, starting from the year and onwards to the minute.
      * `M` is Month and `m` is minute
      * `YYYYMMDDHHmm`
      */
-    static check(currentVersion: any): Promise<void>;
+    static check(currentVersion: number): Promise<void>;
     static downloadLatest(): Promise<void>;
 }
 export declare class ScriptEditor {
-    /**
-     * @param {Song} song
-     */
-    static open(song: any): any;
+    static open(song: Song): Electron.BrowserWindow;
     static listening: boolean;
     static sendCommand(value: any): void;
     static command: any;
-    /**
-     * @type {import("electron").BrowserWindow}
-     */
-    static window: any;
+    static window: import("electron").BrowserWindow;
     static makeWindow(): Electron.BrowserWindow;
-    /**
-     * @type {Song}
-     */
-    static currentSong: any;
+    static currentSong: Song;
 }
 export declare class Effect {
     /**
@@ -1099,9 +1072,6 @@ declare class Themeable {
     constructor(element: HTMLElement, selector: string);
     selector: string;
     element: HTMLElement;
-    /**
-     * @type {ThemeableConstructor}
-     */
     getStyle: () => CSSStyleDeclaration;
     /**
      * Return the styling as a CSS string.
