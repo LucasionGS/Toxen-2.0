@@ -352,6 +352,70 @@ function initialize() {
                 this.scrollTo(0, 0);
             }
         });
+        document.getElementById("storyboard").addEventListener('dragenter', function () { }, false);
+        document.getElementById("storyboard").addEventListener('dragleave', function () { }, false);
+        document.getElementById("storyboard").addEventListener('dragover', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }, false);
+        document.getElementById("storyboard").addEventListener("drop", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            let files = e.dataTransfer.files;
+            let hasImages = false;
+            let hasMedia = false;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (Toxen.imageExtensions.find(f => file.path.endsWith("." + f))) {
+                    hasImages = true;
+                    break;
+                }
+            }
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (Toxen.mediaExtensions.find(f => file.path.endsWith("." + f))) {
+                    hasMedia = true;
+                    break;
+                }
+            }
+            if (hasMedia && hasImages && files.length > 2) {
+                new Prompt(`Mixed formats`, `Please only import audio files at once, then pictures. Pictures imported will become the background of the currently playing song.`)
+                    .addButtons("Close", "fancybutton", true);
+                return;
+            }
+            else if (hasMedia && hasImages && files.length == 2) {
+                // Import 2 files, media and image
+                if (Toxen.mediaExtensions.find(f => files[0].path.endsWith("." + f))) {
+                    SongManager.importMediaFile(files[0]).then(song => {
+                        setTimeout(() => {
+                            song.setBackground(files[1].path);
+                        }, 100);
+                    });
+                }
+                else {
+                    SongManager.importMediaFile(files[1]).then(song => {
+                        setTimeout(() => {
+                            song.setBackground(files[0].path);
+                        }, 100);
+                    });
+                }
+                return;
+            }
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (Toxen.mediaExtensions.find(f => file.path.endsWith("." + f))) {
+                    SongManager.importMediaFile(file);
+                }
+                else if (Toxen.imageExtensions.find(f => file.path.endsWith("." + f))) {
+                    SongManager.getCurrentlyPlayingSong().setBackground(file.path);
+                }
+                else {
+                    new Prompt(`Invalid file`, `${file.name} is not a valid file. Please only drop in one of the following:<br>${Toxen.imageExtensions.map(v => v).concat(Toxen.mediaExtensions).join(", ")}`)
+                        .addButtons("Close", "fancybutton", true);
+                    break;
+                }
+            }
+        }, false);
         // Enable debug mode
         if (debugMode) {
             // _debugModeLoop();

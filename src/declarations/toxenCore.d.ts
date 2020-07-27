@@ -476,7 +476,7 @@ export declare class Song {
      */
     displayInfo(): void;
     saveDetails(): boolean;
-    setBackground(): void;
+    setBackground(filePath: string): void;
     /**
      * Get the parent group if it belongs to one. Returns `null` if not grouped.
      */
@@ -509,6 +509,7 @@ export declare class SongManager {
      * Export every song into a folder.
      */
     static exportAll(location?: string, songList?: Song[]): Promise<void>;
+    static importMediaFile(file: File, playOnDone?: boolean): Promise<Song>;
     /**
      * Return all the song object that has selected enabled
      */

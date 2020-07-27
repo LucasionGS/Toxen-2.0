@@ -45,8 +45,12 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+
+## 202007272153
 - New stuff
   - Added imported songs now attempting to import metadata if it's already available on the media file. It will also import any pictures the media file has stored.
+  - Added drag & drop for for all media types! Simply drag an audio/video/image into Toxen and it'll import it as either a new song or the background to the currently playing song.
+    - If you drag in 2 files, a media file and an image file, it'll be added together.
   - Added `(Paused)` to Discord Rich Presence when the song is paused.
   - Added toggling colors for Shuffle and Repeat buttons in the center.
   - Added more sorting methods: `By Genre` and `By Year`

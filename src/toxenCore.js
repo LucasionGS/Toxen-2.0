@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -1416,9 +1415,19 @@ class Song {
             return false;
         }
     }
-    setBackground() {
-        // Not yet implemented
-        throw "Not yet implemented";
+    setBackground(filePath) {
+        if (!fs.existsSync(filePath)) {
+            console.error("File path doesn't exist:", filePath);
+            return;
+        }
+        if (this.background) {
+            fs.unlinkSync(this.getFullPath("background"));
+        }
+        let newPath = this.getFullPath("path") + "/" + filePath.replace(/\\+/g, "/").split("/").pop();
+        fs.copyFileSync(filePath, newPath);
+        this.background = this.path + "/" + path.relative(this.getFullPath("path"), newPath);
+        Storyboard.setBackground(this.getFullPath("background"));
+        SongManager.saveToFile();
     }
     /**
      * Get the parent group if it belongs to one. Returns `null` if not grouped.
@@ -1627,6 +1636,83 @@ class SongManager {
                     shell.showItemInFolder(ans);
                 }, 10);
             }
+        });
+    }
+    static importMediaFile(file, playOnDone = true) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const song = new Song();
+            let ext;
+            let fileNoExt = (function () {
+                let a = file.name.split(".");
+                ext = a.pop();
+                return a.join(".");
+            })();
+            if (!Toxen.mediaExtensions.includes(ext)) {
+                new Prompt("Invalid File", [
+                    "You can only select files with the following extension:",
+                    Toxen.mediaExtensions.join(", ")
+                ]);
+                return;
+            }
+            let songPath = Settings.current.songFolder + "/" + fileNoExt;
+            let surfix = 0;
+            while (fs.existsSync(songPath)) {
+                let len = surfix.toString().length + 3;
+                if (surfix == 0) {
+                    songPath += ` (${surfix.toString()})`;
+                }
+                else {
+                    songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
+                }
+                surfix++;
+            }
+            fs.mkdirSync(songPath, { recursive: true });
+            // let ws = fs.createWriteStream(songPath + "/" + file.name);
+            fs.copyFileSync(file.path, songPath + "/" + file.name);
+            song.songId = SongManager.songList.length;
+            while (SongManager.songList.find(s => s.songId == song.songId)) {
+                song.songId++;
+            }
+            song.path = fileNoExt;
+            song.songPath = song.getFullPath("path") + "/" + file.name;
+            if (ext.toLowerCase() == "txs") {
+                let zip = new Zip(file.path);
+                zip.extractAllTo(songPath + "/", true);
+                fs.unlinkSync(file.path);
+                fs.unlinkSync(songPath + "/" + file.name);
+            }
+            else {
+                yield song.importMetadata();
+            }
+            let resolve;
+            let promise = new Promise(res => {
+                resolve = res;
+            });
+            SongManager.songList.push(song);
+            // song.saveDetails();
+            if (playOnDone) {
+                SongManager.revealSongPanel();
+            }
+            else {
+                resolve(song);
+            }
+            setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                // song.focus();
+                // song.play();
+                SongManager.scanDirectory();
+                if (playOnDone) {
+                    let _song = SongManager.getSongWithPath(song.path);
+                    if (_song) {
+                        _song.focus();
+                        _song.play();
+                        resolve(_song);
+                    }
+                    else {
+                        resolve(song);
+                    }
+                }
+            }), 10);
+            return promise;
         });
     }
     /**
@@ -2246,6 +2332,7 @@ class SongManager {
             top.addEventListener('dragleave', function () { }, false);
             top.addEventListener('dragover', function (event) {
                 event.stopPropagation();
+                1;
                 event.preventDefault();
             }, false);
             let validExtensions = Toxen.mediaExtensions;
@@ -2255,7 +2342,7 @@ class SongManager {
                 let files = e.dataTransfer.files;
                 for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
                     const file = files[fileIndex];
-                    importFile(file, fileIndex == files.length - 1);
+                    SongManager.importMediaFile(file, fileIndex == files.length - 1);
                 }
                 setTimeout(() => {
                     SongManager.scanDirectory();
@@ -2281,79 +2368,13 @@ class SongManager {
                             name: files[fileIndex].split(/\\|\//g).pop(),
                             path: files[fileIndex]
                         };
-                        importFile(file, fileIndex == files.length - 1);
+                        SongManager.importMediaFile(file, fileIndex == files.length - 1);
                     }
                     setTimeout(() => {
                         SongManager.scanDirectory();
                     }, 100);
                 });
             });
-            function importFile(file, playOnDone = true) {
-                return __awaiter(this, void 0, void 0, function* () {
-                    const song = new Song();
-                    let ext;
-                    let fileNoExt = (function () {
-                        let a = file.name.split(".");
-                        ext = a.pop();
-                        return a.join(".");
-                    })();
-                    if (!validExtensions.includes(ext)) {
-                        new Prompt("Invalid File", [
-                            "You can only select files with the following extension:",
-                            validExtensions.join(", ")
-                        ]);
-                        return;
-                    }
-                    let songPath = Settings.current.songFolder + "/" + fileNoExt;
-                    let surfix = 0;
-                    while (fs.existsSync(songPath)) {
-                        let len = surfix.toString().length + 3;
-                        if (surfix == 0) {
-                            songPath += ` (${surfix.toString()})`;
-                        }
-                        else {
-                            songPath = songPath.substring(0, songPath.length - len) + ` (${surfix.toString()})`;
-                        }
-                        surfix++;
-                    }
-                    fs.mkdirSync(songPath, { recursive: true });
-                    // let ws = fs.createWriteStream(songPath + "/" + file.name);
-                    fs.copyFileSync(file.path, songPath + "/" + file.name);
-                    song.songId = SongManager.songList.length;
-                    while (SongManager.songList.find(s => s.songId == song.songId)) {
-                        song.songId++;
-                    }
-                    song.path = fileNoExt;
-                    song.songPath = song.getFullPath("path") + "/" + file.name;
-                    if (ext.toLowerCase() == "txs") {
-                        let zip = new Zip(file.path);
-                        zip.extractAllTo(songPath + "/", true);
-                        fs.unlinkSync(file.path);
-                        fs.unlinkSync(songPath + "/" + file.name);
-                    }
-                    else {
-                        yield song.importMetadata();
-                    }
-                    SongManager.songList.push(song);
-                    // song.saveDetails();
-                    if (playOnDone) {
-                        p.close();
-                        SongManager.revealSongPanel();
-                    }
-                    setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                        // song.focus();
-                        // song.play();
-                        SongManager.scanDirectory();
-                        if (playOnDone) {
-                            let _song = SongManager.getSongWithPath(song.path);
-                            if (_song) {
-                                _song.focus();
-                                _song.play();
-                            }
-                        }
-                    }), 10);
-                });
-            }
             return main;
         })());
         p.addContent("or other options:");
@@ -2707,6 +2728,7 @@ class SongManager {
     static importCurrentMetadata() {
         let song = SongManager.getCurrentlyPlayingSong();
         song.importMetadata().then(() => {
+            song.refreshElement();
             song.displayInfo();
         });
     }
@@ -2722,7 +2744,6 @@ class SongManager {
         })
             .then(handler);
         function handler(pathObject) {
-            // TODO: Drag and Drop backgrounds directly
             if (pathObject.filePaths.length == 0) {
                 return;
             }
