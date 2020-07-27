@@ -97,6 +97,28 @@ export class Toxen {
   }
 
   /**
+   * A list of valid media extension
+   */
+  static mediaExtensions = [
+    /**
+     * Standard Music File
+     */
+    "mp3",
+    /**
+     * Standard Video File
+     */
+    "mp4",
+    /**
+     * Convertable music file
+     */
+    "wma",
+    /**
+     * Packaged Toxen media format.
+     */
+    "txn"
+  ];
+
+  /**
    * Current stored version of Toxen.
    * 
    * `Note: This should be set by the Client`
@@ -1685,6 +1707,89 @@ export class Song {
       }, 1000);
     }
   }
+
+  async importMetadata() {
+    // Apply metadata
+    let meta = await mm.parseFile(this.getFullPath("songPath"));
+    console.log(meta, {showHidden: false, depth: null });
+    let _tags: string[] = [];
+    if (meta.common.artist) {
+      this.details.artist = meta.common.artist;
+    }
+    if (meta.common.title) {
+      this.details.title = meta.common.title;
+    }
+
+    if (!this.details.artist && !this.details.title) {
+      let fileNoExt = (() => {
+        let a = path.basename(this.getFullPath("songPath")).split(".");
+        a.pop();
+        return a.join(".");
+      })();
+      let parts = fileNoExt.split(" - ");
+      if (parts.length == 1) {
+        this.details.artist = "Unknown";
+        this.details.title = parts[0];
+      }
+      else if (parts.length >= 2) {
+        this.details.artist = parts.shift();
+        this.details.title = parts.join(" - ");
+      }
+    }
+    else if (!this.details.artist) {
+      this.details.artist = "Unknown";
+    }
+
+    if (!this.details.album && meta.common.album) {
+      this.details.album = meta.common.album;
+    }
+    if (!this.details.language && meta.common.language) {
+      this.details.language = meta.common.language;
+    }
+    if (!this.details.genre && meta.common.genre) {
+      this.details.genre = meta.common.genre.join(", ");
+    }
+    if (!this.details.year && meta.common.year) {
+      this.details.year = meta.common.year.toString();
+    }
+    if (!this.details.source && meta.common.tvShow) {
+      this.details.source = meta.common.tvShow;
+    }
+    if (meta.common.artists) {
+      if (!meta.common.artist && meta.common.artists.length == 1) {
+        this.details.artist = meta.common.artists[0];
+      }
+      if (meta.common.artists.length > 1 || meta.common.artists[0] != meta.common.artist) {
+        _tags.concat(meta.common.artists);
+      }
+    }
+    if (meta.common.albumartist) {
+      if (!meta.common.artist) {
+        this.details.artist = meta.common.albumartist;
+      }
+      else {
+        _tags.push(meta.common.albumartist);
+      }
+    }
+    if (meta.common.composer) {
+      if (meta.common.composer.length > 1) {
+        _tags.concat(meta.common.composer);
+      }
+    }
+    if (meta.common.picture) {
+      meta.common.picture.forEach((p, i) => {
+        fs.writeFile(this.getFullPath("path") + `/picture_${i}.` + (typeof p.format ? p.format.split("/").pop() : "jpg"), p.data, err => {
+          if (err) console.error(err);
+          else {
+            console.log("Picture added.");
+          }
+        });
+      });
+    }
+
+    this.details.tags = [...new Set(_tags)];
+    this.saveDetails();
+  }
 }
 
 export class SongManager {
@@ -2226,10 +2331,38 @@ export class SongManager {
   }
 
   /**
+   * Get a song based on it's ID
    * @param id Song ID
    */
   static getSong(id: number) {
     return SongManager.songList.find(s => s.songId == id);
+  }
+
+  /**
+   * Get a song based on it's relative folder path from the music folder.  
+   * Should like use a song instance's `path` property.
+   * ```js
+   * let mySong = new Song();
+   * getSongWithPath(mySong.path);
+   * ```
+   * @param songFolderName Song folder name. Something like `Song.path`
+   */
+  static getSongWithPath(songFolderName: string): Song;
+  /**
+   * Get a song based on another song instance's relative folder path from the music folder.  
+   * Should like use a song instance's `path` property.
+   * ```js
+   * let mySong = new Song();
+   * getSongWithPath(mySong.path);
+   * ```
+   * @param song Song to use the path from.
+   */
+  static getSongWithPath(song: Song): Song;
+  static getSongWithPath(songFolderName: string | Song) {
+    if (songFolderName instanceof Song) {
+      songFolderName = songFolderName.path;
+    }
+    return SongManager.songList.find(s => s.path === songFolderName);
   }
 
   static getCurrentlyPlayingSong() {
@@ -2439,11 +2572,7 @@ export class SongManager {
         event.stopPropagation();
         event.preventDefault();
       }, false);
-      let validExtensions = [
-        "mp3",
-        "mp4",
-        "txs"
-      ];
+      let validExtensions = Toxen.mediaExtensions;
       top.addEventListener("drop", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -2530,82 +2659,9 @@ export class SongManager {
           fs.unlinkSync(file.path);
           fs.unlinkSync(songPath + "/" + file.name);
         }
-        
-        // Apply metadata
-        let meta = await mm.parseFile(song.getFullPath("songPath"));
-        console.log(meta, {showHidden: false, depth: null });
-        let _tags: string[] = [];
-        if (meta.common.artist) {
-          song.details.artist = meta.common.artist;
+        else {
+          await song.importMetadata();
         }
-        if (meta.common.title) {
-          song.details.title = meta.common.title;
-        }
-
-        if (!song.details.artist && !song.details.title) {
-          let parts = fileNoExt.split(" - ");
-          if (parts.length == 1) {
-            song.details.artist = "Unknown";
-            song.details.title = parts[0];
-          }
-          else if (parts.length >= 2) {
-            song.details.artist = parts.shift();
-            song.details.title = parts.join(" - ");
-          }
-        }
-        else if (!song.details.artist) {
-          song.details.artist = "Unknown";
-        }
-
-        if (!song.details.album && meta.common.album) {
-          song.details.album = meta.common.album;
-        }
-        if (!song.details.language && meta.common.language) {
-          song.details.language = meta.common.language;
-        }
-        if (!song.details.genre && meta.common.genre) {
-          song.details.genre = meta.common.genre.join(", ");
-        }
-        if (!song.details.year && meta.common.year) {
-          song.details.year = meta.common.year.toString();
-        }
-        if (!song.details.source && meta.common.tvShow) {
-          song.details.source = meta.common.tvShow;
-        }
-        if (meta.common.artists) {
-          if (!meta.common.artist && meta.common.artists.length == 1) {
-            song.details.artist = meta.common.artists[0];
-          }
-          if (meta.common.artists.length > 1 || meta.common.artists[0] != meta.common.artist) {
-            _tags.concat(meta.common.artists);
-          }
-        }
-        if (meta.common.albumartist) {
-          if (!meta.common.artist) {
-            song.details.artist = meta.common.albumartist;
-          }
-          else {
-            _tags.push(meta.common.albumartist);
-          }
-        }
-        if (meta.common.composer) {
-          if (meta.common.composer.length > 1) {
-            _tags.concat(meta.common.composer);
-          }
-        }
-        if (meta.common.picture) {
-          meta.common.picture.forEach((p, i) => {
-            fs.writeFile(song.getFullPath("path") + `/picture_${i}.` + (typeof p.format ? p.format.split("/").pop() : "jpg"), p.data, err => {
-              if (err) console.error(err);
-              else {
-                console.log("Picture added.");
-              }
-            });
-          });
-        }
-
-        song.details.tags = [...new Set(_tags)];
-        song.saveDetails();
 
         SongManager.songList.push(song);
         // song.saveDetails();
@@ -2618,7 +2674,7 @@ export class SongManager {
           // song.play();
           SongManager.scanDirectory();
           if (playOnDone) {
-            let _song = SongManager.songList.find(s => s.path === song.path);
+            let _song = SongManager.getSongWithPath(song.path);
             if (_song) {
               _song.focus();
               _song.play();
@@ -2651,11 +2707,7 @@ export class SongManager {
       "filters": [
         {
           "name": "Valid Toxen Media Files",
-          "extensions": [
-            "mp3",
-            "mp4",
-            "txn"
-          ]
+          "extensions": Toxen.mediaExtensions
         }
       ]
     })

@@ -276,8 +276,6 @@ async function initialize() {
     }
   });
 
-  
-
   interface HTMLProgressElement extends Element {
     clicking: boolean;
     value: number;

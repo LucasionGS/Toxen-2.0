@@ -15,6 +15,10 @@ declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 40
 export declare class Toxen {
     static initialize(): void;
     /**
+     * A list of valid media extension
+     */
+    static mediaExtensions: string[];
+    /**
      * Current stored version of Toxen.
      *
      * `Note: This should be set by the Client`
@@ -464,6 +468,7 @@ export declare class Song {
     addToPlaylist(): void;
     removeFromPlaylist(): void;
     delete(): void;
+    importMetadata(): Promise<void>;
 }
 export declare class SongManager {
     /**
@@ -524,9 +529,30 @@ export declare class SongManager {
     static loadFromFile(fileLocation?: string): Promise<void>;
     static saveToFile(fileLocation?: string): void;
     /**
+     * Get a song based on it's ID
      * @param id Song ID
      */
     static getSong(id: number): Song;
+    /**
+     * Get a song based on it's relative folder path from the music folder.
+     * Should like use a song instance's `path` property.
+     * ```js
+     * let mySong = new Song();
+     * getSongWithPath(mySong.path);
+     * ```
+     * @param songFolderName Song folder name. Something like `Song.path`
+     */
+    static getSongWithPath(songFolderName: string): Song;
+    /**
+     * Get a song based on another song instance's relative folder path from the music folder.
+     * Should like use a song instance's `path` property.
+     * ```js
+     * let mySong = new Song();
+     * getSongWithPath(mySong.path);
+     * ```
+     * @param song Song to use the path from.
+     */
+    static getSongWithPath(song: Song): Song;
     static getCurrentlyPlayingSong(): Song;
     static moveToTime(timeInSeconds: number): boolean;
     static playSongById(id: number): void;
