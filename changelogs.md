@@ -20,6 +20,7 @@ Features I want to implement (This will be updated as I get more ideas and remem
 - Better song info editing
   - Multi-song info editing
 - Remove playlist feature
+- Multi-add to playlist
 - Visualizer Quanity Customizer (Interface buttons for `Storyboard`.`setAnalyserFftLevel` and `Storyboard`.`setAnalyserFftSize`)
 - Music Playback Rate Changer (Like the first version of Toxen used to have)
 
@@ -39,12 +40,13 @@ Features I want to implement (This will be updated as I get more ideas and remem
   - Draggable buttons(?)
     - The ability to move the buttons on the main interface around to whichever corner you prefer.
   - Better sorting in settings. Possibly a top menu for categories.
-  - An info  page with all shortcuts (God damn it then I need to remember them all >_>)
+  - An info page with all shortcuts (God damn it then I need to remember them all >_>)
 
 # Toxen Change Logs
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+- Added support for OGG files to be imported and converted in Toxen.
 
 ## 202007272153
 - New stuff

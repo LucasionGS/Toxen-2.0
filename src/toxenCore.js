@@ -250,13 +250,17 @@ Toxen.mediaExtensions = [
      */
     "mp4",
     /**
+     * Packaged Toxen media format.
+     */
+    "txn",
+    /**
      * Convertable music file
      */
     "wma",
     /**
-     * Packaged Toxen media format.
+     * Convertable music file
      */
-    "txn"
+    "ogg"
 ];
 /**
  * A list of valid media extension
@@ -3820,7 +3824,7 @@ class Pulse {
         setTimeout(() => {
             SongManager.player.parentElement.insertBefore(leftDiv, SongManager.player);
             SongManager.player.parentElement.insertBefore(rightDiv, SongManager.player);
-        }, 0);
+        }, 1000);
     }
     set width(value) {
         this._width = value;
@@ -3863,7 +3867,11 @@ StoryboardObject.objects = {};
  * This is temporary plz.
  */
 var testPulse;
-window.addEventListener("load", () => testPulse = new Pulse());
+window.addEventListener("load", () => {
+    testPulse = new Pulse();
+    // setTimeout(() => {
+    // }, 1000);
+});
 /**
  * Toxen Script Manager
  *
