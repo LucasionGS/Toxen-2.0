@@ -29,11 +29,17 @@ body {
   height: 100vh;
 }
 
+#mainbody {
+  /* margin-top: 32px; */
+  width: 100vw;
+  height: calc(100vh);
+}
+
 #storyboard {
   z-index: 0;
   position: absolute;
   right: 0;
-  /* top: 0; */
+  top: 32px;
   height: 100%;
   transition: all 0.2s ease-out;
 }
@@ -45,6 +51,128 @@ body {
   width: 100vw;
   height: 100vh;
   z-index: -1;
+}
+
+#titlebar {
+  display: block;
+  position: fixed;
+  /* top: 1px;
+  left: 2px; */
+  padding: 2px;
+  height: 30px;
+  width: calc(100% - 4px); /*Compensate for body 1px border*/
+  background: var(--bgcolor);
+  color: var(--bgcolor);
+  color: var(--txtcolor);
+}
+
+.maximized #titlebar {
+  width: 100%;
+  /* padding: 0; */
+}
+
+.maximized #window-title {
+  margin-left: 12px;
+}
+
+.maximized #restore-button {
+  display: flex !important;
+}
+
+.maximized #max-button {
+  display: none;
+}
+
+#titlebar #drag-region {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-columns: auto 138px;
+  -webkit-app-region: drag;
+}
+
+#window-title {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  overflow: hidden;
+  /* font-family: "Segoe UI", sans-serif; */
+  font-size: 16px;
+}
+
+#window-title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+#titlebar #window-title > img {
+  height: 24px;
+}
+
+#titlebar #window-title #system-menu {
+  margin-left: 16px;
+  background-color: var(--panelcolor);
+}
+
+#window-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 46px);
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+#window-controls .button {
+  grid-row: 1 / span 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+#min-button {
+  grid-column: 1;
+}
+#max-button, #restore-button {
+  grid-column: 2;
+}
+#close-button {
+  grid-column: 3;
+}
+#window-controls .button:hover, #system-menu .button:hover {
+  background: rgba(255,255,255,0.1);
+}
+#window-controls .button:active, #system-menu .button:active {
+  background: rgba(255,255,255,0.2);
+}
+
+#close-button:hover {
+  background: #E81123 !important;
+}
+#close-button:active {
+  background: #F1707A !important;
+}
+#close-button:active .icon {
+  filter: invert(1);
+}
+
+#restore-button {
+  display: none !important;
+}
+
+@media (-webkit-device-pixel-ratio: 1.5), (device-pixel-ratio: 1.5),
+(-webkit-device-pixel-ratio: 2), (device-pixel-ratio: 2),
+(-webkit-device-pixel-ratio: 3), (device-pixel-ratio: 3) {
+  #window-controls .icon {
+    width: 10px;
+    height: 10px;
+  }
 }
 
 div.sidebar.left {
@@ -59,8 +187,9 @@ div.sidebar {
   position: absolute;
   bottom: 0;
   background-color: var(--panelcolor);
-  height: 100vh;
-  max-height: 100vh;
+  height: calc(100vh - 32px);
+  max-height: calc(100vh - 32px);
+  margin-top: 32px;
   min-width: 0%;
   width: 0%;
   opacity: 0;
@@ -305,7 +434,7 @@ div.sidebar:hover, div.sidebar[open] {
 p#subtitles {
   position: absolute;
   display: inline-block;
-  top: 16px;
+  top: 40px;
   font-size: 24px;
   text-align: center;
   width: 100%;

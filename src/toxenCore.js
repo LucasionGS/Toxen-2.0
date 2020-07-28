@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -114,9 +115,39 @@ class Toxen {
             });
         });
     }
+    /**
+     * A list of all valid media extension (Including audio and video)
+     */
+    static get mediaExtensions() {
+        return this.audioExtensions.map(a => a).concat(this.videoExtensions).concat("txn");
+    }
+    ;
+    /**
+     * Set the title of the document.
+     */
+    static set title(value) {
+        document.getElementById("toxen-title-text").innerHTML = value;
+        const _d = document.createElement("div");
+        document.title = Debug.stripHTML(value);
+    }
     static toggleFullScreen(mode = !browserWindow.isFullScreen()) {
         browserWindow.setFullScreen(mode);
         browserWindow.setMenuBarVisibility(!mode);
+        Settings.current.reloadProgressBarSpot();
+        document.getElementById("titlebar").style.opacity = mode ? "0" : "1";
+        // document.getElementById("mainbody").style.marginTop = mode ? "0px" : "32px";
+        // document.getElementById("mainbody").style.height = mode ? "calc(100vh - 32px)" : "100vh";
+        let c = document.querySelector("#storyboard");
+        c.style.top = (mode ? "0" : "32px");
+        c.style.height = (mode ? "100vh" : "calc(100vh - 32px)");
+        c.height = mode ? window.innerHeight : window.innerHeight - 32;
+        // if (Settings.current.progressBarSpot != 2) {
+        //   let panels = document.querySelectorAll<HTMLDivElement>(".sidebar");
+        //   panels.forEach(p => {
+        //     p.style.height = "100vh";
+        //     p.style.height = "calc(100vh - 38px)";
+        //   });
+        // }
     }
     /**
      * Restarts Toxen immediately.
@@ -238,21 +269,13 @@ class Toxen {
 }
 exports.Toxen = Toxen;
 /**
- * A list of valid media extension
+ * A list of valid audio extension
  */
-Toxen.mediaExtensions = [
+Toxen.audioExtensions = [
     /**
      * Standard Music File
      */
     "mp3",
-    /**
-     * Standard Video File
-     */
-    "mp4",
-    /**
-     * Packaged Toxen media format.
-     */
-    "txn",
     /**
      * Convertable music file
      */
@@ -261,6 +284,15 @@ Toxen.mediaExtensions = [
      * Convertable music file
      */
     "ogg"
+];
+/**
+ * A list of valid video extension
+ */
+Toxen.videoExtensions = [
+    /**
+     * Standard Video File
+     */
+    "mp4",
 ];
 /**
  * A list of valid media extension
@@ -344,6 +376,87 @@ switch (process.platform) {
         Toxen.updatePlatform = null;
         break;
 }
+(function (Toxen) {
+    class TArray extends Array {
+        constructor(array = []) {
+            super();
+            if (Array.isArray(array))
+                this.push(...array);
+        }
+        /**
+         * Cleans up an array with your chosen options.
+         *
+         * Doesn't directly effect the array, but maps a copy.
+         */
+        cleanArray(itemsToClean) {
+            let a = new TArray(this);
+            let itc = new TArray(itemsToClean);
+            if (itc.includes("duplicates")) {
+                a = new TArray([...new Set(a)]);
+                itc.removeAll("duplicates");
+            }
+            a = a.filter(v => {
+                for (let i = 0; i < itc.length; i++) {
+                    const it = itc[i];
+                    switch (it) {
+                        case "emptyStrings": {
+                            if (typeof v == "string" && v === "")
+                                return false;
+                            break;
+                        }
+                        case "null": {
+                            if (v === undefined || v === null)
+                                return false;
+                            break;
+                        }
+                        case "number": {
+                            if (typeof v == "number")
+                                return false;
+                            break;
+                        }
+                        case "string": {
+                            if (typeof v == "string")
+                                return false;
+                            break;
+                        }
+                        case "boolean": {
+                            if (typeof v == "boolean")
+                                return false;
+                            break;
+                        }
+                    }
+                }
+                return true;
+            });
+            return a;
+        }
+        removeFirst(item) {
+            for (let i = 0; i < this.length; i++) {
+                const value = this[i];
+                if (value === item)
+                    return this.splice(i, 1)[0];
+            }
+        }
+        removeAll(item) {
+            let values = new TArray();
+            for (let i = 0; i < this.length; i++) {
+                const value = this[i];
+                if (value === item)
+                    this.splice(i, 1);
+            }
+        }
+        filter(callbackfn, thisArg) {
+            return this.toArray().filter(callbackfn);
+        }
+        /**
+         * Return a regular array.
+         */
+        toArray() {
+            return [...this];
+        }
+    }
+    Toxen.TArray = TArray;
+})(Toxen = exports.Toxen || (exports.Toxen = {}));
 class Settings {
     constructor(doNotReplaceCurrent = false) {
         // 
@@ -834,6 +947,9 @@ class Settings {
             Toxen.setStyleSource("");
         }
     }
+    reloadProgressBarSpot() {
+        this.setProgressBarSpot(this.progressBarSpot);
+    }
     /**
      * Set the progress bar spot.
      */
@@ -843,21 +959,37 @@ class Settings {
         switch (this.progressBarSpot) {
             case 0:
                 document.getElementById("progressbarspot1").appendChild(bar);
-                document.querySelector("#songmenusidebar").style.height = "";
-                document.querySelector("#settingsmenusidebar").style.height = "";
+                if (browserWindow.isFullScreen()) {
+                    document.querySelector("#songmenusidebar").style.height = "100vh";
+                    document.querySelector("#settingsmenusidebar").style.height = "100vh";
+                }
+                else {
+                    document.querySelector("#songmenusidebar").style.height = "";
+                    document.querySelector("#settingsmenusidebar").style.height = "";
+                }
                 document.querySelector("p#subtitles").style.top = "";
                 document.querySelector("#songmenusidebar").style.top = "";
                 document.querySelector("#settingsmenusidebar").style.top = "";
                 break;
             case 1:
                 document.getElementById("progressbarspot2").appendChild(bar);
-                document.getElementById("progressbarspot2").style.top = "0";
+                if (browserWindow.isFullScreen()) {
+                    document.getElementById("progressbarspot2").style.top = "0";
+                    document.querySelector("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
+                    document.querySelector("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
+                    document.querySelector("p#subtitles").style.top = "64px";
+                    document.querySelector("#songmenusidebar").style.top = "";
+                    document.querySelector("#settingsmenusidebar").style.top = "";
+                }
+                else {
+                    document.getElementById("progressbarspot2").style.top = "32px";
+                    document.querySelector("#songmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
+                    document.querySelector("#settingsmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
+                    document.querySelector("p#subtitles").style.top = "96px";
+                    document.querySelector("#songmenusidebar").style.top = "38px";
+                    document.querySelector("#settingsmenusidebar").style.top = "38px";
+                }
                 document.getElementById("progressbarspot2").style.bottom = "";
-                document.querySelector("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-                document.querySelector("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-                document.querySelector("p#subtitles").style.top = "64px";
-                document.querySelector("#songmenusidebar").style.top = "";
-                document.querySelector("#settingsmenusidebar").style.top = "";
                 break;
             case 2:
                 document.getElementById("progressbarspot2").appendChild(bar);
@@ -1233,6 +1365,7 @@ class Song {
                 }
                 if (fp.toLowerCase().endsWith(".mp3")) {
                     SongManager.player.src = fp + hash;
+                    // GOHERE
                 }
                 else if ([
                     "wma",
@@ -1295,9 +1428,7 @@ class Song {
             }
             SongManager.player.play().catch(err => console.error(err));
             Storyboard.setBackground(this.getFullPath("background"));
-            const _d = document.createElement("div");
-            _d.innerHTML = ionMarkDown_1.Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
-            document.title = _d.innerText;
+            Toxen.title = ionMarkDown_1.Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
             ToxenScriptManager.loadCurrentScript();
             if (this.subtitlePath) {
                 Subtitles.renderSubtitles(this.getFullPath("subtitlePath"));
@@ -3619,7 +3750,7 @@ class Storyboard {
             body.style.background = ""; //Resets
         }
         else {
-            var body = document.body;
+            var body = document.getElementById("mainbody");
             var curBG = image;
             if (curBG != null)
                 curBG = curBG.replace(/\\/g, "/");

@@ -17,13 +17,25 @@ export declare class Toxen {
     static sendReport(reportMessage: string): Promise<boolean>;
     static sendReport(reportMessage: string, logRequest: boolean): Promise<boolean>;
     /**
-     * A list of valid media extension
+     * A list of all valid media extension (Including audio and video)
      */
-    static mediaExtensions: string[];
+    static get mediaExtensions(): string[];
+    /**
+     * Set the title of the document.
+     */
+    static set title(value: string);
+    /**
+     * A list of valid audio extension
+     */
+    static readonly audioExtensions: string[];
+    /**
+     * A list of valid video extension
+     */
+    static readonly videoExtensions: string[];
     /**
      * A list of valid media extension
      */
-    static imageExtensions: string[];
+    static readonly imageExtensions: string[];
     /**
      * Current stored version of Toxen.
      *
@@ -140,6 +152,36 @@ export declare class Toxen {
         }): HTMLButtonElement;
     };
 }
+export declare namespace Toxen {
+    class TArray<ArrayType> extends Array<ArrayType> {
+        constructor();
+        constructor(array: ArrayType[]);
+        /**
+         * Cleans up an array with your chosen options.
+         *
+         * Doesn't directly effect the array, but maps a copy.
+         */
+        cleanArray(itemsToClean: ("emptyStrings" | "null" | "duplicates" | "number" | "string" | "boolean")[]): TArray<ArrayType>;
+        removeFirst(item: ArrayType): ArrayType;
+        removeAll(item: ArrayType): void;
+        /**
+         * Returns the elements of an array that meet the condition specified in a callback function.
+         * @param callbackfn A function that accepts up to three arguments. The filter method calls the callbackfn function one time for each element in the array.
+         * @param thisArg An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+         */
+        filter<S extends ArrayType>(callbackfn: (value: ArrayType, index: number, array: ArrayType[]) => value is S, thisArg?: any): S[];
+        /**
+         * Returns the elements of an array that meet the condition specified in a callback function.
+         * @param callbackfn A function that accepts up to three arguments. The filter method calls the callbackfn function one time for each element in the array.
+         * @param thisArg An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+         */
+        filter(callbackfn: (value: ArrayType, index: number, array: TArray<ArrayType>) => unknown, thisArg?: any): TArray<ArrayType>;
+        /**
+         * Return a regular array.
+         */
+        toArray(): ArrayType[];
+    }
+}
 export declare class Settings {
     static current: Settings;
     constructor(doNotReplaceCurrent?: boolean);
@@ -175,6 +217,7 @@ export declare class Settings {
      * @param base
      */
     setThemeBase(base: boolean): void;
+    reloadProgressBarSpot(): void;
     /**
      * Set the progress bar spot.
      */

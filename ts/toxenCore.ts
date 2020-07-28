@@ -19,7 +19,7 @@ import * as Zip from "adm-zip";
 import { EventEmitter } from "events";
 import * as mm from "music-metadata";
 import * as util from "util";
-import axios, { AxiosResponse } from "axios";
+import axios from "axios";
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 
@@ -125,21 +125,29 @@ export class Toxen {
   }
 
   /**
-   * A list of valid media extension
+   * A list of all valid media extension (Including audio and video)
    */
-  static mediaExtensions = [
+  static get mediaExtensions() {
+    return this.audioExtensions.map(a => a).concat(this.videoExtensions).concat("txn");
+  };
+
+  /**
+   * Set the title of the document.
+   */
+  static set title(value: string) {
+    document.getElementById("toxen-title-text").innerHTML = value;
+    const _d = document.createElement("div");
+    document.title = Debug.stripHTML(value);
+  }
+  
+  /**
+   * A list of valid audio extension
+   */
+  static readonly audioExtensions = [
     /**
      * Standard Music File
      */
     "mp3",
-    /**
-     * Standard Video File
-     */
-    "mp4",
-    /**
-     * Packaged Toxen media format.
-     */
-    "txn",
     /**
      * Convertable music file
      */
@@ -149,10 +157,20 @@ export class Toxen {
      */
     "ogg"
   ];
+
+  /**
+   * A list of valid video extension
+   */
+  static readonly videoExtensions = [
+    /**
+     * Standard Video File
+     */
+    "mp4",
+  ]
   /**
    * A list of valid media extension
    */
-  static imageExtensions = [
+  static readonly imageExtensions = [
     "jpg",
     "jpeg",
     "png",
@@ -171,6 +189,22 @@ export class Toxen {
   static toggleFullScreen(mode = !browserWindow.isFullScreen()) {
     browserWindow.setFullScreen(mode);
     browserWindow.setMenuBarVisibility(!mode);
+    Settings.current.reloadProgressBarSpot();
+    document.getElementById("titlebar").style.opacity = mode ? "0" : "1";
+    // document.getElementById("mainbody").style.marginTop = mode ? "0px" : "32px";
+    // document.getElementById("mainbody").style.height = mode ? "calc(100vh - 32px)" : "100vh";
+    let c: HTMLCanvasElement = document.querySelector("#storyboard");
+    c.style.top = (mode ? "0" : "32px");
+    c.style.height = (mode ? "100vh" : "calc(100vh - 32px)");
+    c.height = mode ? window.innerHeight : window.innerHeight - 32;
+    
+    // if (Settings.current.progressBarSpot != 2) {
+    //   let panels = document.querySelectorAll<HTMLDivElement>(".sidebar");
+    //   panels.forEach(p => {
+    //     p.style.height = "100vh";
+    //     p.style.height = "calc(100vh - 38px)";
+    //   });
+    // }
   }
 
   static updatePlatform: "win" | "linux" | "mac";
@@ -443,6 +477,103 @@ switch (process.platform) {
   default:
     Toxen.updatePlatform = null;
     break;
+}
+
+export namespace Toxen {
+  export class TArray<ArrayType> extends Array<ArrayType> {
+    constructor();
+    constructor(array: ArrayType[]);
+    constructor(array: ArrayType[] = []) {
+      super();
+      if (Array.isArray(array)) this.push(...array);
+    }
+
+    /**
+     * Cleans up an array with your chosen options.
+     * 
+     * Doesn't directly effect the array, but maps a copy.
+     */
+    cleanArray(itemsToClean: ("emptyStrings" | "null" | "duplicates" | "number" | "string" | "boolean")[]
+    ): TArray<ArrayType> {
+      let a = new TArray(this);
+      let itc = new TArray(itemsToClean);
+      if (itc.includes("duplicates")) {
+        a = new TArray([...new Set(a)]);
+        itc.removeAll("duplicates");
+      }
+
+      a = a.filter(v => {
+        for (let i = 0; i < itc.length; i++) {
+          const it = itc[i];
+          switch(it) {
+            case "emptyStrings": {
+              if (typeof v == "string" && v === "") return false;
+              break;
+            }
+            case "null": {
+              if (v === undefined || v === null) return false;
+              break;
+            }
+            case "number": {
+              if (typeof v == "number") return false;
+              break;
+            }
+            case "string": {
+              if (typeof v == "string") return false;
+              break;
+            }
+            case "boolean": {
+              if (typeof v == "boolean") return false;
+              break;
+            }
+          }
+        }
+        return true;
+      });
+
+      return a;
+    }
+
+
+    removeFirst(item: ArrayType) {
+      for (let i = 0; i < this.length; i++) {
+        const value = this[i];
+        if (value === item) return this.splice(i, 1)[0];
+      }
+    }
+
+    removeAll(item: ArrayType) {
+      let values = new TArray<ArrayType>();
+      for (let i = 0; i < this.length; i++) {
+        const value = this[i];
+        if (value === item) this.splice(i, 1);
+      }
+    }
+
+    /**
+     * Returns the elements of an array that meet the condition specified in a callback function.
+     * @param callbackfn A function that accepts up to three arguments. The filter method calls the callbackfn function one time for each element in the array.
+     * @param thisArg An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+     */
+    filter<S extends ArrayType>(callbackfn: (value: ArrayType, index: number, array: ArrayType[]) => value is S, thisArg?: any): S[];
+    /**
+     * Returns the elements of an array that meet the condition specified in a callback function.
+     * @param callbackfn A function that accepts up to three arguments. The filter method calls the callbackfn function one time for each element in the array.
+     * @param thisArg An object to which the this keyword can refer in the callbackfn function. If thisArg is omitted, undefined is used as the this value.
+     */
+    filter(callbackfn: (value: ArrayType, index: number, array: TArray<ArrayType>) => unknown, thisArg?: any): TArray<ArrayType>;
+
+    filter<S extends ArrayType>(callbackfn: (value: ArrayType, index: number, array: TArray<ArrayType>) => value is S, thisArg?: any): S[] {
+      return this.toArray().filter(callbackfn);
+    }
+
+    /**
+     * Return a regular array.
+     */
+    toArray() {
+      return [...this];
+    }
+  }
 }
 
 export class Settings {
@@ -805,6 +936,9 @@ export class Settings {
     }
   }
 
+  reloadProgressBarSpot() {
+    this.setProgressBarSpot(this.progressBarSpot);
+  }
   /**
    * Set the progress bar spot.
    */
@@ -814,21 +948,38 @@ export class Settings {
     switch (this.progressBarSpot) {
       case 0:
         document.getElementById("progressbarspot1").appendChild(bar);
-        document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "";
-        document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "";
+        if (browserWindow.isFullScreen()) {
+          document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
+          document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
+        }
+        else {
+          document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "";
+          document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "";
+        }
+        
         document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "";
         document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
         document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
         break;
       case 1:
         document.getElementById("progressbarspot2").appendChild(bar);
-        document.getElementById("progressbarspot2").style.top = "0";
+        if (browserWindow.isFullScreen()) {
+          document.getElementById("progressbarspot2").style.top = "0";
+          document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
+          document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
+          document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "64px";
+          document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
+          document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
+        }
+        else {
+          document.getElementById("progressbarspot2").style.top = "32px";
+          document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
+          document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
+          document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "96px";
+          document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "38px";
+          document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "38px";
+        }
         document.getElementById("progressbarspot2").style.bottom = "";
-        document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-        document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-        document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "64px";
-        document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
-        document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
       break;
       case 2:
         document.getElementById("progressbarspot2").appendChild(bar);
@@ -1460,6 +1611,7 @@ export class Song {
         }
         if (fp.toLowerCase().endsWith(".mp3")) {
           SongManager.player.src = fp + hash;
+          // GOHERE
         }
         else if ([
           "wma",
@@ -1530,9 +1682,7 @@ export class Song {
       }
       SongManager.player.play().catch(err => console.error(err));
       Storyboard.setBackground(this.getFullPath("background"));
-      const _d = document.createElement("div");
-      _d.innerHTML = Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
-      document.title = _d.innerText;
+      Toxen.title = Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
       ToxenScriptManager.loadCurrentScript();
       if (this.subtitlePath) {
         Subtitles.renderSubtitles(this.getFullPath("subtitlePath"));
@@ -4059,7 +4209,7 @@ export class Storyboard {
       body.style.background = ""; //Resets
     }
     else {
-      var body = document.body;
+      var body = document.getElementById("mainbody");
       var curBG = image;
       if (curBG != null) curBG = curBG.replace(/\\/g, "/");
       if (Settings.current.remote && curBG != "" && curBG != null) {

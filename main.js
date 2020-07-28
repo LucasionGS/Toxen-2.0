@@ -9,7 +9,7 @@ const cp = require('child_process');
 // const process = require('process');
 // const fs = require('fs');
 const winWidth = 1280;
-const winHeight = 768;
+const winHeight = 800;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 /**
@@ -26,6 +26,8 @@ function createWindow () {
     minHeight: 600,
     width: winWidth,
     height: winHeight,
+    frame: false,
+    backgroundColor: "#fff",
     webPreferences: {
       nodeIntegration: true
     },

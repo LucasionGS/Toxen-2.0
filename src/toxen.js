@@ -20,6 +20,7 @@ const util = require("util");
 Toxen.version = __toxenVersion;
 const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;
+let browserWindow = remote.getCurrentWindow();
 // Discord RPC
 const discord = new rpc.Client({ "transport": "ipc" });
 const clientId = '647178364511191061';
@@ -85,7 +86,7 @@ window.addEventListener("load", () => {
                 Toxen.generate.button({
                     text: "Open Dev. Tools",
                     click() {
-                        remote.getCurrentWindow().webContents.openDevTools();
+                        browserWindow.webContents.openDevTools();
                     }
                 }),
                 Toxen.generate.button({
@@ -308,7 +309,7 @@ function initialize() {
         window.addEventListener("resize", (e) => {
             let c = document.querySelector("#storyboard");
             c.width = window.innerWidth;
-            c.height = window.innerHeight;
+            c.height = browserWindow.isFullScreen() ? window.innerHeight : window.innerHeight - 32;
         });
         window.addEventListener("mouseup", function (e) {
             if (e.button == 0 && document.querySelector("#progressbar").clicking == true) {
@@ -512,7 +513,7 @@ function initializeVisualizer() {
     dim = settings.backgroundDim;
     var canvas = document.querySelector("#storyboard");
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.height = window.innerHeight - 32;
     var ctx = canvas.getContext("2d");
     Storyboard.setAnalyserFftSize(512);
     function renderFrame() {
@@ -605,4 +606,43 @@ function initializeVisualizer() {
         avgSec = 0;
     }, 1000);
     renderFrame();
+}
+// When document has loaded, initialise
+document.onreadystatechange = (event) => {
+    if (document.readyState == "complete") {
+        handleWindowControls();
+    }
+};
+window.onbeforeunload = (event) => {
+    /* If window is reloaded, remove win event listeners
+    (DOM element listeners get auto garbage collected but not
+    Electron win listeners as the win is not dereferenced unless closed) */
+    browserWindow.removeAllListeners();
+};
+function handleWindowControls() {
+    // Make minimise/maximise/restore/close buttons work when they are clicked
+    document.getElementById('min-button').addEventListener("click", event => {
+        browserWindow.minimize();
+    });
+    document.getElementById('max-button').addEventListener("click", event => {
+        browserWindow.maximize();
+    });
+    document.getElementById('restore-button').addEventListener("click", event => {
+        browserWindow.unmaximize();
+    });
+    document.getElementById('close-button').addEventListener("click", event => {
+        browserWindow.close();
+    });
+    // Toggle maximise/restore buttons when maximisation/unmaximisation occurs
+    toggleMaxRestoreButtons();
+    browserWindow.on('maximize', toggleMaxRestoreButtons);
+    browserWindow.on('unmaximize', toggleMaxRestoreButtons);
+    function toggleMaxRestoreButtons() {
+        if (browserWindow.isMaximized()) {
+            document.body.classList.add('maximized');
+        }
+        else {
+            document.body.classList.remove('maximized');
+        }
+    }
 }
