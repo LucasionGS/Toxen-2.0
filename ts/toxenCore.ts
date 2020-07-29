@@ -1,5 +1,7 @@
 // FS takes files relative to the root "Resources" directory.
 
+console.log(eval("(function(){ return 0; })()"));
+
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 import * as fs from "fs";
@@ -123,8 +125,11 @@ export class Toxen {
       return false;
     })
   }
-
+  /**
+   * Sets the menu in the top bar and global shortcuts.
+   */
   static setMenu(menu: Electron.Menu) {
+    Menu.setApplicationMenu(menu);
     let sm = document.getElementById("system-menu");
     sm.innerHTML = "";
     `<div class="button" id="smb-file">File</div>`
@@ -592,7 +597,7 @@ export namespace Toxen {
     filter(callbackfn: (value: ArrayType, index: number, array: TArray<ArrayType>) => unknown, thisArg?: any): TArray<ArrayType>;
 
     filter<S extends ArrayType>(callbackfn: (value: ArrayType, index: number, array: TArray<ArrayType>) => value is S, thisArg?: any): S[] {
-      return this.toArray().filter(callbackfn);
+      return new TArray(this.toArray().filter(callbackfn));
     }
 
     /**
@@ -772,9 +777,7 @@ export class Settings {
     }
 
     if (newInstance == false) {
-      toxenHeaderMenu = reloadMenu()
-      Menu.setApplicationMenu(toxenHeaderMenu);
-      Toxen.setMenu(toxenHeaderMenu);
+      Toxen.setMenu(toxenHeaderMenu = reloadMenu());
     }
 
     if (this.playlist) {
@@ -2123,7 +2126,7 @@ export class SongManager {
     while(SongManager.songList.find(s => s.songId == song.songId)) {
       song.songId++;
     } 
-    song.path = fileNoExt;
+    song.path = path.basename(songPath);
     song.songPath = song.getFullPath("path") + "/" + file.name;
 
     if (ext.toLowerCase() == "txs") {

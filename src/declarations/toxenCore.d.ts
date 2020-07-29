@@ -16,6 +16,9 @@ export declare class Toxen {
     static initialize(): void;
     static sendReport(reportMessage: string): Promise<boolean>;
     static sendReport(reportMessage: string, logRequest: boolean): Promise<boolean>;
+    /**
+     * Sets the menu in the top bar and global shortcuts.
+     */
     static setMenu(menu: Electron.Menu): void;
     /**
      * A list of all valid media extension (Including audio and video)

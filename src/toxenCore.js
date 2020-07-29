@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
+console.log(eval("(function(){ return 0; })()"));
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -115,7 +116,11 @@ class Toxen {
             });
         });
     }
+    /**
+     * Sets the menu in the top bar and global shortcuts.
+     */
     static setMenu(menu) {
+        Menu.setApplicationMenu(menu);
         let sm = document.getElementById("system-menu");
         sm.innerHTML = "";
         `<div class="button" id="smb-file">File</div>`;
@@ -473,7 +478,7 @@ switch (process.platform) {
             }
         }
         filter(callbackfn, thisArg) {
-            return this.toArray().filter(callbackfn);
+            return new TArray(this.toArray().filter(callbackfn));
         }
         /**
          * Return a regular array.
@@ -804,9 +809,7 @@ class Settings {
             selection.appendChild(opt);
         }
         if (newInstance == false) {
-            exports.toxenHeaderMenu = reloadMenu();
-            Menu.setApplicationMenu(exports.toxenHeaderMenu);
-            Toxen.setMenu(exports.toxenHeaderMenu);
+            Toxen.setMenu(exports.toxenHeaderMenu = reloadMenu());
         }
         if (this.playlist) {
             selection.value = this.playlist;
@@ -1842,7 +1845,7 @@ class SongManager {
             while (SongManager.songList.find(s => s.songId == song.songId)) {
                 song.songId++;
             }
-            song.path = fileNoExt;
+            song.path = path.basename(songPath);
             song.songPath = song.getFullPath("path") + "/" + file.name;
             if (ext.toLowerCase() == "txs") {
                 let zip = new Zip(file.path);
