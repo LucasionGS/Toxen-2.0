@@ -342,7 +342,7 @@
       <label for="progressbarspot=2">Bottom of screen</label><br> -->
       <hr>
       <label for="backgrounddimValue">Background Dimming</label>
-      <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = this.value" onmouseup="settings.saveToFile();">
+      <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = Storyboard.backgroundDim = this.value" onmouseup="settings.saveToFile();">
       <hr>
       <input type="checkbox" name="sptrtoggle" id="songmenutorightToggle" onclick="settings.toggleSongPanelToRight(this.checked); settings.saveToFile();">
       <label for="songmenutorightToggle">Right-hand Song Menu</label>

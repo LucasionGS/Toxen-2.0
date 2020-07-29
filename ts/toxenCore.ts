@@ -1032,6 +1032,10 @@ export class Settings {
    */
   visualizerDirection: number = 0;
   /**
+   * Quantity of the audio visualizer. (The higher the number, the more and thinner bars)
+   */
+  visualizerQuantity: number = 5;
+  /**
    * Whether or not the visualizer is enabled.
    */
   visualizer: boolean = true;
@@ -4118,6 +4122,13 @@ export class Storyboard {
   static visualizerStyle = 0;
   static visualizerDirection = 0;
 
+  static visualizerQuantity = 5;
+
+  /**
+   * Background dim value.
+   */
+  static backgroundDim = 0;
+
   /**
    * @readonly
    * The currently shown background dim value.  
@@ -4209,7 +4220,8 @@ export class Storyboard {
       body.style.background = ""; //Resets
     }
     else {
-      var body = document.getElementById("mainbody");
+      // var body = document.getElementById("mainbody");
+      var body = document.body;
       var curBG = image;
       if (curBG != null) curBG = curBG.replace(/\\/g, "/");
       if (Settings.current.remote && curBG != "" && curBG != null) {
@@ -4263,7 +4275,8 @@ export class Storyboard {
   
   static setAnalyserFftLevel(size: number) {
     if (size < 1) size = 1;
-    Storyboard.setAnalyserFftSize(Math.pow(size + 4, 2) as AnalyserFftSizeIndex)
+    Storyboard.visualizerQuantity = Math.pow(2, size + 4);
+    Storyboard.setAnalyserFftSize(Storyboard.visualizerQuantity as AnalyserFftSizeIndex);
   }
   
   static setAnalyserFftSize(size: AnalyserFftSizeIndex) {
@@ -4526,6 +4539,8 @@ export class ToxenScriptManager {
     }
 
     // Resetting to the default values on reset.
+    Storyboard.setAnalyserFftLevel(Settings.current.visualizerQuantity);
+    Storyboard.backgroundDim = Settings.current.backgroundDim;
     Storyboard.visualizerDirection = 0;
     Storyboard.visualizerStyle = Settings.current.visualizerStyle;
     Storyboard.setIntensity(Settings.current.visualizerIntensity);
@@ -5003,6 +5018,16 @@ export class ToxenScriptManager {
       }
       else {
         Storyboard.setIntensity(+args[0]);
+      }
+    },
+    backgrounddim: function ([dim]) {
+      if (!isNaN(+dim) && Storyboard.backgroundDim != +dim) {
+        Storyboard.backgroundDim = +dim;
+      }
+    },
+    visualizerquantity: function ([count]) {
+      if (!isNaN(+count) && Storyboard.analyser.fftSize != Math.pow(2, +count + 4)) {
+        Storyboard.setAnalyserFftLevel(+count);
       }
     },
     /**

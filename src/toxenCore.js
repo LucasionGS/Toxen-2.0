@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -487,6 +486,10 @@ class Settings {
          * Direction of the audio visualizer.
          */
         this.visualizerDirection = 0;
+        /**
+         * Quantity of the audio visualizer. (The higher the number, the more and thinner bars)
+         */
+        this.visualizerQuantity = 5;
         /**
          * Whether or not the visualizer is enabled.
          */
@@ -3750,7 +3753,8 @@ class Storyboard {
             body.style.background = ""; //Resets
         }
         else {
-            var body = document.getElementById("mainbody");
+            // var body = document.getElementById("mainbody");
+            var body = document.body;
             var curBG = image;
             if (curBG != null)
                 curBG = curBG.replace(/\\/g, "/");
@@ -3802,7 +3806,8 @@ class Storyboard {
     static setAnalyserFftLevel(size) {
         if (size < 1)
             size = 1;
-        Storyboard.setAnalyserFftSize(Math.pow(size + 4, 2));
+        Storyboard.visualizerQuantity = Math.pow(2, size + 4);
+        Storyboard.setAnalyserFftSize(Storyboard.visualizerQuantity);
     }
     static setAnalyserFftSize(size) {
         Storyboard.analyser.fftSize = Debug.clamp(size, 32, 32768);
@@ -3820,6 +3825,11 @@ Storyboard.toBlue = 250;
 Storyboard.visualizerIntensity = 15;
 Storyboard.visualizerStyle = 0;
 Storyboard.visualizerDirection = 0;
+Storyboard.visualizerQuantity = 5;
+/**
+ * Background dim value.
+ */
+Storyboard.backgroundDim = 0;
 /**
  * @readonly
  * The currently shown background dim value.
@@ -4027,6 +4037,8 @@ class ToxenScriptManager {
                 }
             }
             // Resetting to the default values on reset.
+            Storyboard.setAnalyserFftLevel(Settings.current.visualizerQuantity);
+            Storyboard.backgroundDim = Settings.current.backgroundDim;
             Storyboard.visualizerDirection = 0;
             Storyboard.visualizerStyle = Settings.current.visualizerStyle;
             Storyboard.setIntensity(Settings.current.visualizerIntensity);
@@ -4662,6 +4674,16 @@ ToxenScriptManager.eventFunctions = {
         }
         else {
             Storyboard.setIntensity(+args[0]);
+        }
+    },
+    backgrounddim: function ([dim]) {
+        if (!isNaN(+dim) && Storyboard.backgroundDim != +dim) {
+            Storyboard.backgroundDim = +dim;
+        }
+    },
+    visualizerquantity: function ([count]) {
+        if (!isNaN(+count) && Storyboard.analyser.fftSize != Math.pow(2, +count + 4)) {
+            Storyboard.setAnalyserFftLevel(+count);
         }
     },
     /**

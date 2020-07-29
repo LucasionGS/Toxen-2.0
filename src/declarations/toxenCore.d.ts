@@ -251,6 +251,10 @@ export declare class Settings {
      */
     visualizerDirection: number;
     /**
+     * Quantity of the audio visualizer. (The higher the number, the more and thinner bars)
+     */
+    visualizerQuantity: number;
+    /**
      * Whether or not the visualizer is enabled.
      */
     visualizer: boolean;
@@ -694,6 +698,11 @@ export declare class Storyboard {
     static visualizerIntensity: number;
     static visualizerStyle: number;
     static visualizerDirection: number;
+    static visualizerQuantity: number;
+    /**
+     * Background dim value.
+     */
+    static backgroundDim: number;
     /**
      * @readonly
      * The currently shown background dim value.

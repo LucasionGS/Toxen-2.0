@@ -47,6 +47,17 @@ Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
 - Added support for OGG files to be imported and converted in Toxen.
+- Added a custom header to better fit the theme.
+- Added `BackgroundDim` function for ToxenScript.
+  - `BackgroundDim` takes `1` parameter. A number between `0` and `100`. `0` is no background dim, and `100` is maximum dim, i.e completely black.
+  ```js
+  [0 - $end] BackgroundDim("75") // This would be 75 percent
+  ```
+- Added `VisualizerQuantity` function for ToxenScript and `visualizerQuantity` to the settings file.
+  - `VisualizerQuantity` takes `1` parameter. A number between `1` and `11`. `1` is the least amount of, and thickest visualizer bars, and `11` is maximum dim. (The higher this is, the harder it'll hit the performance)
+  ```js
+  [0 - $end] VisualizerQuantity("6") // This would set the VisualizerQuantity to level 6 (The default is 5)
+  ```
 
 ## 202007272153
 - New stuff

@@ -568,7 +568,7 @@ var dim = 0;
  * Run once to activate the visualizer.
  */
 function initializeVisualizer() {
-  dim = settings.backgroundDim;
+  dim = Storyboard.backgroundDim;
   var canvas: HTMLCanvasElement = document.querySelector("#storyboard");
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight - 32;
@@ -590,24 +590,24 @@ function initializeVisualizer() {
       dim = +dim;
       
       if (avg > 65) {
-        if (dim > +settings.backgroundDim - (+avg - (settings.backgroundDim / 2))) {
+        if (dim > Storyboard.backgroundDim - (+avg - (Storyboard.backgroundDim / 2))) {
           dim -= 1;
         }
-        if (dim < +settings.backgroundDim - (+avg - (settings.backgroundDim / 2))) {
+        if (dim < Storyboard.backgroundDim - (+avg - (Storyboard.backgroundDim / 2))) {
           dim += 1;
         }
       }
       else {
-        if (dim < +settings.backgroundDim) {
+        if (dim < Storyboard.backgroundDim) {
           dim += 2;
         }
-        if (dim > +settings.backgroundDim) {
+        if (dim > Storyboard.backgroundDim) {
           dim -= 1;
         }
       } 
     }
     else {
-      dim = settings.backgroundDim;
+      dim =Storyboard.backgroundDim;
     }
 
     Storyboard.analyser.getByteFrequencyData(Storyboard.dataArray);
