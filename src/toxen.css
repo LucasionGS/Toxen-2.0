@@ -72,9 +72,9 @@ body {
   /* padding: 0; */
 }
 
-.maximized #window-title {
+/* .maximized #window-title {
   margin-left: 12px;
-}
+} */
 
 .maximized #restore-button {
   display: flex !important;
@@ -96,26 +96,43 @@ body {
   grid-column: 1;
   display: flex;
   align-items: center;
-  margin-left: 8px;
   overflow: hidden;
-  /* font-family: "Segoe UI", sans-serif; */
-  font-size: 16px;
+  /* width: 100px; */
+  font-size: 20px;
+  -webkit-app-region: drag;
 }
 
 #window-title span {
-  overflow: hidden;
+  /* translate: ; */
+  /* display: block; */
+  /* overflow: hidden; */
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.5;
+  user-select: none;
+  /* width: 100%; */
+  text-align: center;
+  margin-left: 50vw;
+  transform: translateX(-50%);
+  /* vertical-align: middle; */
 }
 
-#titlebar #window-title > img {
-  height: 24px;
+#window-title #title-container {
+  display: grid;
+  overflow: hidden;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+#titlebar > img {
+  position: absolute;
+  height: 28px;
+  -webkit-app-region: drag;
+  user-select: none;
 }
 
 #titlebar #window-title #system-menu {
-  margin-left: 16px;
-  background-color: var(--panelcolor);
+  margin-left: 36px;
 }
 
 #window-controls {
@@ -126,6 +143,28 @@ body {
   right: 0;
   height: 100%;
   -webkit-app-region: no-drag;
+}
+
+#system-menu {
+  display: grid;
+  /* grid-template-columns: repeat(3, 48px); */
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+#system-menu .button {
+  grid-row: 1 / span 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  /* margin-left: 6px;
+  margin-right: 6px; */
+  user-select: none;
 }
 
 #window-controls .button {

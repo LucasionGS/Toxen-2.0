@@ -16,6 +16,7 @@ export declare class Toxen {
     static initialize(): void;
     static sendReport(reportMessage: string): Promise<boolean>;
     static sendReport(reportMessage: string, logRequest: boolean): Promise<boolean>;
+    static setMenu(menu: Electron.Menu): void;
     /**
      * A list of all valid media extension (Including audio and video)
      */
@@ -688,6 +689,16 @@ export declare class SongGroup {
      */
     static getAllGroupNames(collapsedCondition?: boolean): string[];
 }
+export declare const toxenMenus: {
+    songMenu: Electron.Menu;
+    selectedSongMenu: Electron.Menu;
+    songGroupMenu: Electron.Menu;
+    selectBackgroundMenu: Electron.Menu;
+};
+/**
+ * Electron Menu.
+ */
+export declare var toxenHeaderMenu: Electron.Menu;
 export declare class Storyboard {
     static red: number;
     static green: number;

@@ -17,6 +17,8 @@ const {
   SelectList,
   PanelManager,
   SongGroup,
+  toxenMenus,
+  toxenHeaderMenu,
   showTutorial,
 } = ToxenCore;
 import * as rpc from "discord-rpc";

@@ -124,6 +124,34 @@ export class Toxen {
     })
   }
 
+  static setMenu(menu: Electron.Menu) {
+    let sm = document.getElementById("system-menu");
+    sm.innerHTML = "";
+    `<div class="button" id="smb-file">File</div>`
+    let div = document.createElement("div");
+    div.classList.add("button");
+    div.innerText = "Toxen";
+    div.addEventListener("click", () => {
+      menu.popup({
+        x: div.getBoundingClientRect().x,
+        y: div.getBoundingClientRect().bottom
+      })
+    });
+    sm.appendChild(div);
+    // menu.items.forEach(mi => {
+    //   let div = document.createElement("div");
+    //   div.classList.add("button");
+    //   div.innerText = mi.label;
+    //   div.addEventListener("click", () => {
+    //     mi.submenu.popup({
+    //       x: div.getBoundingClientRect().x,
+    //       y: div.getBoundingClientRect().bottom
+    //     });
+    //   sm.appendChild(div);
+    //   });
+    // });
+  }
+
   /**
    * A list of all valid media extension (Including audio and video)
    */
@@ -546,7 +574,7 @@ export namespace Toxen {
       let values = new TArray<ArrayType>();
       for (let i = 0; i < this.length; i++) {
         const value = this[i];
-        if (value === item) this.splice(i, 1);
+        if (value === item) values.push(...this.splice(i, 1));
       }
     }
 
@@ -743,7 +771,11 @@ export class Settings {
       selection.appendChild(opt);
     }
 
-    if (newInstance == false) Menu.setApplicationMenu((menu = reloadMenu()));
+    if (newInstance == false) {
+      toxenHeaderMenu = reloadMenu()
+      Menu.setApplicationMenu(toxenHeaderMenu);
+      Toxen.setMenu(toxenHeaderMenu);
+    }
 
     if (this.playlist) {
       selection.value = this.playlist;
@@ -1205,19 +1237,19 @@ export class Song {
       e.stopPropagation();
       let selectedSongs = SongManager.getSelectedSongs();
       if (selectedSongs.length == 0) {
-        menus.songMenu.items.forEach((i: ToxenElectronMenuItemSong) => {
+        toxenMenus.songMenu.items.forEach((i: ToxenElectronMenuItemSong) => {
           i.songObject = self;
         });
-        menus.songMenu.popup({
+        toxenMenus.songMenu.popup({
           "x": e.clientX,
           "y": e.clientY
         });
       }
       else {
-        menus.selectedSongMenu.items.forEach((i: ToxenElectronMenuItemSong) => {
+        toxenMenus.selectedSongMenu.items.forEach((i: ToxenElectronMenuItemSong) => {
           i.songObject = self;
         });
-        menus.selectedSongMenu.popup({
+        toxenMenus.selectedSongMenu.popup({
           "x": e.clientX,
           "y": e.clientY
         });
@@ -3493,10 +3525,10 @@ export class SongGroup {
     this.element.addEventListener("contextmenu", function(e) {
       e.stopPropagation();
       e.preventDefault();
-      menus.songGroupMenu.items.forEach((i: ToxenElectronMenuItemSongGroup) => {
+      toxenMenus.songGroupMenu.items.forEach((i: ToxenElectronMenuItemSongGroup) => {
         i.songGroup = self;
       });
-      menus.songGroupMenu.popup({
+      toxenMenus.songGroupMenu.popup({
         "x": e.clientX,
         "y": e.clientY
       });
@@ -3613,7 +3645,7 @@ export class SongGroup {
   }
 }
 
-const menus = {
+export const toxenMenus = {
   "songMenu": Menu.buildFromTemplate(
     [
       {
@@ -3927,7 +3959,7 @@ const menus = {
 /**
  * Electron Menu.
  */
-var menu = reloadMenu();
+export var toxenHeaderMenu = reloadMenu();
 
 function reloadMenu() {
   let menu = Menu.buildFromTemplate([

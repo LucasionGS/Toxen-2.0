@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -113,6 +114,33 @@ class Toxen {
                 return false;
             });
         });
+    }
+    static setMenu(menu) {
+        let sm = document.getElementById("system-menu");
+        sm.innerHTML = "";
+        `<div class="button" id="smb-file">File</div>`;
+        let div = document.createElement("div");
+        div.classList.add("button");
+        div.innerText = "Toxen";
+        div.addEventListener("click", () => {
+            menu.popup({
+                x: div.getBoundingClientRect().x,
+                y: div.getBoundingClientRect().bottom
+            });
+        });
+        sm.appendChild(div);
+        // menu.items.forEach(mi => {
+        //   let div = document.createElement("div");
+        //   div.classList.add("button");
+        //   div.innerText = mi.label;
+        //   div.addEventListener("click", () => {
+        //     mi.submenu.popup({
+        //       x: div.getBoundingClientRect().x,
+        //       y: div.getBoundingClientRect().bottom
+        //     });
+        //   sm.appendChild(div);
+        //   });
+        // });
     }
     /**
      * A list of all valid media extension (Including audio and video)
@@ -441,7 +469,7 @@ switch (process.platform) {
             for (let i = 0; i < this.length; i++) {
                 const value = this[i];
                 if (value === item)
-                    this.splice(i, 1);
+                    values.push(...this.splice(i, 1));
             }
         }
         filter(callbackfn, thisArg) {
@@ -775,8 +803,11 @@ class Settings {
             opt.value = playlist;
             selection.appendChild(opt);
         }
-        if (newInstance == false)
-            Menu.setApplicationMenu((menu = reloadMenu()));
+        if (newInstance == false) {
+            exports.toxenHeaderMenu = reloadMenu();
+            Menu.setApplicationMenu(exports.toxenHeaderMenu);
+            Toxen.setMenu(exports.toxenHeaderMenu);
+        }
         if (this.playlist) {
             selection.value = this.playlist;
         }
@@ -1085,19 +1116,19 @@ class Song {
             e.stopPropagation();
             let selectedSongs = SongManager.getSelectedSongs();
             if (selectedSongs.length == 0) {
-                menus.songMenu.items.forEach((i) => {
+                exports.toxenMenus.songMenu.items.forEach((i) => {
                     i.songObject = self;
                 });
-                menus.songMenu.popup({
+                exports.toxenMenus.songMenu.popup({
                     "x": e.clientX,
                     "y": e.clientY
                 });
             }
             else {
-                menus.selectedSongMenu.items.forEach((i) => {
+                exports.toxenMenus.selectedSongMenu.items.forEach((i) => {
                     i.songObject = self;
                 });
-                menus.selectedSongMenu.popup({
+                exports.toxenMenus.selectedSongMenu.popup({
                     "x": e.clientX,
                     "y": e.clientY
                 });
@@ -3094,10 +3125,10 @@ class SongGroup {
         this.element.addEventListener("contextmenu", function (e) {
             e.stopPropagation();
             e.preventDefault();
-            menus.songGroupMenu.items.forEach((i) => {
+            exports.toxenMenus.songGroupMenu.items.forEach((i) => {
                 i.songGroup = self;
             });
-            menus.songGroupMenu.popup({
+            exports.toxenMenus.songGroupMenu.popup({
                 "x": e.clientX,
                 "y": e.clientY
             });
@@ -3195,7 +3226,7 @@ class SongGroup {
 }
 exports.SongGroup = SongGroup;
 SongGroup.songGroups = [];
-const menus = {
+exports.toxenMenus = {
     "songMenu": Menu.buildFromTemplate([
         {
             label: "Display info",
@@ -3494,7 +3525,7 @@ const menus = {
 /**
  * Electron Menu.
  */
-var menu = reloadMenu();
+exports.toxenHeaderMenu = reloadMenu();
 function reloadMenu() {
     let menu = Menu.buildFromTemplate([
         {
