@@ -74,9 +74,10 @@ let settings = new Settings();
 let stats = new Statistics();
 
 window.addEventListener("load", () => {
-  new Prompt("Loading Toxen...").close(100)
+  Toxen.title = "Loading Toxen...";
   setTimeout(() => {
-    initialize().then(() => new Prompt("Toxen is ready.").close(1000)).catch(err => {
+    initialize().then(() => true).catch(err => {
+      Toxen.title = "Toxen ran into an error";
       console.clear();
       const errReport = util.inspect(err, true);
       console.log("⬇⬇⬇ This error caused Toxen to not load ⬇⬇⬇ -----------------------------\n⬇⬇⬇ Send this error message to the developer ⬇⬇⬇ ------------------------");

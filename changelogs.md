@@ -19,8 +19,9 @@ Features I want to implement (This will be updated as I get more ideas and remem
 - Better and more media conversions to supported files.
 - Better song info editing
   - Multi-song info editing
-- Remove playlist feature
 - Multi-add to playlist
+- Remove a song from a playlist
+- Remove a playlist
 - Visualizer Quanity Customizer (Interface buttons for `Storyboard`.`setAnalyserFftLevel` and `Storyboard`.`setAnalyserFftSize`)
 - Music Playback Rate Changer (Like the first version of Toxen used to have)
 
@@ -57,6 +58,11 @@ Features and changes that has already been made to Toxen.
   - `VisualizerQuantity` takes `1` parameter. A number between `1` and `11`. `1` is the least amount of, and thickest visualizer bars, and `11` is maximum dim. (The higher this is, the harder it'll hit the performance)
   ```js
   [0 - $end] VisualizerQuantity("6") // This would set the VisualizerQuantity to level 6 (The default is 5)
+  ```
+- Added [`always`] as a valid timestamp in ToxenScript.
+  - Using `always` is identical to using `0 - $end` as a timing point.
+  ```js
+  [always] VisualizerColor("lightblue") // This will always set the visualizer's color to light blue
   ```
 
 ## 202007272153

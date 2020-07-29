@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 console.log(eval("(function(){ return 0; })()"));
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -159,7 +158,6 @@ class Toxen {
      */
     static set title(value) {
         document.getElementById("toxen-title-text").innerHTML = value;
-        const _d = document.createElement("div");
         document.title = Debug.stripHTML(value);
     }
     static toggleFullScreen(mode = !browserWindow.isFullScreen()) {
@@ -1580,6 +1578,9 @@ class Song {
             this.details.tags = this.details.tags.filter(t => t.trim() !== "");
             fs.writeFileSync(this.getFullPath("path") + "/details.json", JSON.stringify(this.details, null, 2));
             SongManager.saveToFile();
+            if (SongManager.getCurrentlyPlayingSong() == this) {
+                Toxen.title = this.parseName();
+            }
             return true;
         }
         catch (error) {
@@ -1599,6 +1600,7 @@ class Song {
         fs.copyFileSync(filePath, newPath);
         this.background = this.path + "/" + path.relative(this.getFullPath("path"), newPath);
         Storyboard.setBackground(this.getFullPath("background"));
+        this.refreshElement();
         SongManager.saveToFile();
     }
     /**
@@ -4246,17 +4248,23 @@ class ToxenScriptManager {
                     // Parsing...
                     var timeRegResult = line.match(timeReg)[0];
                     timeRegResult = timeRegResult.replace(/\s/g, "");
-                    var tP = timeRegResult.split("-");
-                    startPoint = tP[0];
-                    endPoint = tP[1];
-                    if (startPoint != "$") { // Maybe add this as a features just like endPoint...
-                        startPoint = ToxenScriptManager.timeStampToSeconds(tP[0]);
+                    if (timeRegResult.toLowerCase() == "always-$") {
+                        startPoint = 0;
+                        endPoint = ToxenScriptManager.defaultVariables["$end"]();
+                    }
+                    else {
+                        const tP = timeRegResult.split("-");
+                        startPoint = tP[0];
+                        endPoint = tP[1];
+                    }
+                    if (startPoint != "$") {
+                        startPoint = ToxenScriptManager.timeStampToSeconds(startPoint);
                     }
                     else {
                         startPoint = ToxenScriptManager.events[ToxenScriptManager.events.length - 1] ? ToxenScriptManager.events[ToxenScriptManager.events.length - 1].startPoint : 0;
                     }
                     if (endPoint != "$") {
-                        endPoint = ToxenScriptManager.timeStampToSeconds(tP[1]);
+                        endPoint = ToxenScriptManager.timeStampToSeconds(endPoint);
                     }
                     // else {
                     //   endPoint = "$";
@@ -4430,6 +4438,20 @@ class ToxenScriptManager {
                     return `<span class=toxenscript_string>${$0}</span>`;
                 }
             },
+            "timing": {
+                // This expression is long asf...
+                // Use https://regexr.com for it to make any kind of sense.
+                // Here's an explanation... [] brackets around it means it is optional in the current context. N means any number or timestamp.
+                // Matches
+                // N[ - N | $var], N[ - $var]
+                "expression": /(?<=\[\s*)(?:((?:\d+:)*(?:\d+)(?:\.\d+)*|\$\w*|always)\s*(?:-\s*((?:\d+:)*(?:\d+)(?:\.\d+)*|\$\w*))*)(?=\s*\])/g,
+                "function": function ($0, $1, $2) {
+                    if ($2 && ToxenScriptManager.timeStampToSeconds($1) > ToxenScriptManager.timeStampToSeconds($2)) {
+                        return `<span class=toxenscript_timinginvalid>${$0}</span>`;
+                    }
+                    return `<span class=toxenscript_timing>${$0}</span>`;
+                }
+            },
             "$var": {
                 "expression": /\$\w+/g,
                 "function": function ($0, $1) {
@@ -4458,15 +4480,6 @@ class ToxenScriptManager {
                         }
                     }
                     return `<span class=toxenscript_eventinvalid>${$0}</span>`;
-                }
-            },
-            "timing": {
-                "expression": /(?<=\[\s*)((?:\d+:)*(?:\d+)(?:\.\d+)*)\s*(?:-\s*((?:\d+:)*(?:\d+)(?:\.\d+)*))*(?=\s*\])/g,
-                "function": function ($0, $1, $2) {
-                    if ($2 && ToxenScriptManager.timeStampToSeconds($1) > ToxenScriptManager.timeStampToSeconds($2)) {
-                        return `<span class=toxenscript_timinginvalid>${$0}</span>`;
-                    }
-                    return `<span class=toxenscript_timing>${$0}</span>`;
                 }
             },
             "comment": {
@@ -4745,6 +4758,7 @@ ToxenScriptManager.eventFunctions = {
                 break;
             case "4":
             case "top and bottom alternating":
+            case "alter":
             case "alternating":
                 Storyboard.visualizerStyle = 4;
                 break;

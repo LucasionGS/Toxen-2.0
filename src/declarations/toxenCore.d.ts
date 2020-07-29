@@ -780,7 +780,7 @@ export declare class ToxenScriptManager {
      * Default variable set.
      */
     static defaultVariables: {
-        [$name: string]: string | Function;
+        [$name: string]: string | (() => string);
     };
     /**
      * Apply the variables to the text.
