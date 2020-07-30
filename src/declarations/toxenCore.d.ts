@@ -9,8 +9,6 @@ interface HTMLElementScroll extends HTMLElement {
 declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 4096 | 8192 | 16384;
 /**
  * General Toxen functionality.
- *
- * Primarily used for events.
  */
 export declare class Toxen {
     static initialize(): void;
@@ -157,15 +155,14 @@ export declare class Toxen {
     };
 }
 export declare namespace Toxen {
-    class TArray<ArrayType> extends Array<ArrayType> {
+    type CleanOptions = "emptyStrings" | "null" | "duplicates" | "number" | "string" | "boolean";
+    export class TArray<ArrayType> extends Array<ArrayType> {
         constructor();
         constructor(array: ArrayType[]);
         /**
-         * Cleans up an array with your chosen options.
-         *
-         * Doesn't directly effect the array, but maps a copy.
+         * Craetes a copy of the TArray and cleans it up with your chosen options.
          */
-        cleanArray(itemsToClean: ("emptyStrings" | "null" | "duplicates" | "number" | "string" | "boolean")[]): TArray<ArrayType>;
+        cleanArray(itemsToClean: (CleanOptions[])): TArray<ArrayType>;
         removeFirst(item: ArrayType): ArrayType;
         removeAll(item: ArrayType): void;
         /**
@@ -185,6 +182,7 @@ export declare namespace Toxen {
          */
         toArray(): ArrayType[];
     }
+    export {};
 }
 export declare class Settings {
     static current: Settings;

@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Imd = void 0;
 class Imd {
     /**
      * @param {string} text
      */
     static MarkDownToHTML(text) {
-        // The other which things are written in is very important.
-        // It's order to prevent errors or overlaps.
+        // The order which things are written in is very important.
+        // It's ordered to prevent errors or overlaps.
         // Bold Text
         // **text**
         text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");

@@ -47,8 +47,6 @@ declare function local_playNext(): void;
 
 /**
  * General Toxen functionality.
- * 
- * Primarily used for events.
  */
 export class Toxen {
   static initialize() {
@@ -512,6 +510,7 @@ switch (process.platform) {
 }
 
 export namespace Toxen {
+  type CleanOptions = "emptyStrings" | "null" | "duplicates" | "number" | "string" | "boolean";
   export class TArray<ArrayType> extends Array<ArrayType> {
     constructor();
     constructor(array: ArrayType[]);
@@ -521,11 +520,9 @@ export namespace Toxen {
     }
 
     /**
-     * Cleans up an array with your chosen options.
-     * 
-     * Doesn't directly effect the array, but maps a copy.
+     * Craetes a copy of the TArray and cleans it up with your chosen options.
      */
-    cleanArray(itemsToClean: ("emptyStrings" | "null" | "duplicates" | "number" | "string" | "boolean")[]
+    cleanArray(itemsToClean: (CleanOptions[])
     ): TArray<ArrayType> {
       let a = new TArray(this);
       let itc = new TArray(itemsToClean);
@@ -2041,7 +2038,8 @@ export class Song {
       });
     }
 
-    this.details.tags = [...new Set(_tags)];
+    // this.details.tags = [...new Set(_tags)];
+    this.details.tags = new Toxen.TArray(_tags);
     this.saveDetails();
   }
 }
@@ -4783,7 +4781,7 @@ export class ToxenScriptManager {
         // Variables
         var startPoint: any = 0;
         var endPoint: any = 0;
-        var args = [];
+        var args: any[] = [];
         var fn: (args: string[]) => void;
 
         // Parsing...
@@ -4856,44 +4854,50 @@ export class ToxenScriptManager {
           return `Arguments are not in a valid format.`;
         }
 
+        // TODO: Replace with regex
+        // Regex: /"(.*?)(?<!\\)"/g
         function parseArgumentsFromString(as: string) {
-          var argList = [];
-          var curArg = "";
-          var waitForQuote = true;
-          for (let i = 0; i < as.length; i++) {
-            const l = as[i];
-            if (l == "\"" && i == 0) {
-              waitForQuote = false;
-              continue;
-            }
-            else if (l == "\"" && curArg == "" && waitForQuote == true) {
-              waitForQuote = false;
-              continue;
-            }
-            else if (l == "\\\\" && curArg != "" && as[i + 1] == "\"") {
-              i++;
-              curArg += "\"";
-              continue;
-            }
-            else if (l == "\"" && curArg != "") {
-              argList.push(curArg);
-              curArg = "";
-              waitForQuote = true;
-              continue;
-            }
-            else {
-              if (!waitForQuote) {
-                curArg += l;
-              }
-              continue;
-            }
-          }
-
-          return argList;
+          var argList: string[] = [];
+          // var curArg = "";
+          // var waitForQuote = true;
+          // for (let i = 0; i < as.length; i++) {
+          //   const l = as[i];
+          //   if (l == "\"" && i == 0) {
+          //     waitForQuote = false;
+          //     continue;
+          //   }
+          //   else if (l == "\"" && curArg == "" && waitForQuote == true) {
+          //     waitForQuote = false;
+          //     continue;
+          //   }
+          //   else if (l == "\\\\" && curArg != "" && as[i + 1] == "\"") {
+          //     i++;
+          //     curArg += "\"";
+          //     continue;
+          //   }
+          //   else if (l == "\"" && curArg != "") {
+          //     argList.push(curArg);
+          //     curArg = "";
+          //     waitForQuote = true;
+          //     continue;
+          //   }
+          //   else {
+          //     if (!waitForQuote) {
+          //       curArg += l;
+          //     }
+          //     continue;
+          //   }
+          // }
+          argList = as.match(/(?:"(.*?)(?<!\\)"|\d+)/g);
+          // argList.shift();
+          return argList.map(v => v.replace("\\\"", "\"").replace(/^"(.*)"$/g, function($0, $1) {
+            return $1;
+          }));
         }
 
         if (typeof argString == "string") args = parseArgumentsFromString(argString.trim());
         else args = [];
+        
 
         // Special treatments
         if (type == "bpmpulse") {
@@ -5256,9 +5260,10 @@ export class ToxenScriptManager {
   static syntaxHighlightToxenScript(code: string, validEventNames = ToxenScriptManager.getEventNames()) {
     const regex: {[key: string]: {"expression": RegExp, "function": ($0: string, ...$n: string[]) => string}} = {
       "value": {
-        "expression": /"(.*?[^\\])"/g,
+        "expression": /(?<!\[[^\]]*)(?:"(.*?)(?<!\\)"|\d+)(?!\])/g,
         "function": function($0, $1) {
-          if (!/[^\s\d]/g.test($1)) {
+          // if (/^\d+$/g.test($1)) {
+          if (!isNaN(+$0)) {
             return `<span class=toxenscript_number>${$0}</span>`;
           }
           return `<span class=toxenscript_string>${$0}</span>`;
@@ -5280,7 +5285,7 @@ export class ToxenScriptManager {
       },
       "$var": {
         "expression": /\$\w+/g,
-        "function": function($0, $1) {
+        "function": function($0) {
           return `<span class=toxenscript_var>${$0}</span>`;
         }
       },

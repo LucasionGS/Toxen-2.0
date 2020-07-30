@@ -31,6 +31,9 @@ Features I want to implement (This will be updated as I get more ideas and remem
   - A Toxen forum where you can ask questions or suggest ideas for future updates.
 
 - Smoother Redesign (Check ref)
+  - Single side panel visible while not idle.
+    - Side panel will have the buttons for Music Panel, Settings, and other panels.
+    - VSCode has something very similar to this concept, use it for inspiration.
   - More panels
     - Song Panel
     - Setting Panel
@@ -42,6 +45,9 @@ Features I want to implement (This will be updated as I get more ideas and remem
     - The ability to move the buttons on the main interface around to whichever corner you prefer.
   - Better sorting in settings. Possibly a top menu for categories.
   - An info page with all shortcuts (God damn it then I need to remember them all >_>)
+
+- Known bugs to fix
+  - Fix the close button being blocked off when the `Pulse` effect is activated. This only effects songs that use `Pulse` or `BPMPulse` and only during the specific time they are in use.
 
 # Toxen Change Logs
 Features and changes that has already been made to Toxen.
@@ -64,6 +70,8 @@ Features and changes that has already been made to Toxen.
   ```js
   [always] VisualizerColor("lightblue") // This will always set the visualizer's color to light blue
   ```
+- Added support for whole integers in ToxenScript to be used without needing quotes.
+  - Now you can write for example: `5` instead of `"5"`, but if you want to use a float you still need to use quotes like this `"5.2"`
 
 ## 202007272153
 - New stuff

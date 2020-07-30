@@ -3,8 +3,8 @@ export class Imd {
    * @param {string} text 
    */
   static MarkDownToHTML(text: string) {
-    // The other which things are written in is very important.
-    // It's order to prevent errors or overlaps.
+    // The order which things are written in is very important.
+    // It's ordered to prevent errors or overlaps.
 
     // Bold Text
     // **text**

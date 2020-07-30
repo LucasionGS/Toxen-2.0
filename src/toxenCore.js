@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 console.log(eval("(function(){ return 0; })()"));
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -33,8 +34,6 @@ const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 /**
  * General Toxen functionality.
- *
- * Primarily used for events.
  */
 class Toxen {
     static initialize() {
@@ -414,9 +413,7 @@ switch (process.platform) {
                 this.push(...array);
         }
         /**
-         * Cleans up an array with your chosen options.
-         *
-         * Doesn't directly effect the array, but maps a copy.
+         * Craetes a copy of the TArray and cleans it up with your chosen options.
          */
         cleanArray(itemsToClean) {
             let a = new TArray(this);
@@ -1769,7 +1766,8 @@ class Song {
                     });
                 });
             }
-            this.details.tags = [...new Set(_tags)];
+            // this.details.tags = [...new Set(_tags)];
+            this.details.tags = new Toxen.TArray(_tags);
             this.saveDetails();
         });
     }
@@ -4304,39 +4302,45 @@ class ToxenScriptManager {
                     if (typeof argString != "string") {
                         return `Arguments are not in a valid format.`;
                     }
+                    // TODO: Replace with regex
+                    // Regex: /"(.*?)(?<!\\)"/g
                     function parseArgumentsFromString(as) {
                         var argList = [];
-                        var curArg = "";
-                        var waitForQuote = true;
-                        for (let i = 0; i < as.length; i++) {
-                            const l = as[i];
-                            if (l == "\"" && i == 0) {
-                                waitForQuote = false;
-                                continue;
-                            }
-                            else if (l == "\"" && curArg == "" && waitForQuote == true) {
-                                waitForQuote = false;
-                                continue;
-                            }
-                            else if (l == "\\\\" && curArg != "" && as[i + 1] == "\"") {
-                                i++;
-                                curArg += "\"";
-                                continue;
-                            }
-                            else if (l == "\"" && curArg != "") {
-                                argList.push(curArg);
-                                curArg = "";
-                                waitForQuote = true;
-                                continue;
-                            }
-                            else {
-                                if (!waitForQuote) {
-                                    curArg += l;
-                                }
-                                continue;
-                            }
-                        }
-                        return argList;
+                        // var curArg = "";
+                        // var waitForQuote = true;
+                        // for (let i = 0; i < as.length; i++) {
+                        //   const l = as[i];
+                        //   if (l == "\"" && i == 0) {
+                        //     waitForQuote = false;
+                        //     continue;
+                        //   }
+                        //   else if (l == "\"" && curArg == "" && waitForQuote == true) {
+                        //     waitForQuote = false;
+                        //     continue;
+                        //   }
+                        //   else if (l == "\\\\" && curArg != "" && as[i + 1] == "\"") {
+                        //     i++;
+                        //     curArg += "\"";
+                        //     continue;
+                        //   }
+                        //   else if (l == "\"" && curArg != "") {
+                        //     argList.push(curArg);
+                        //     curArg = "";
+                        //     waitForQuote = true;
+                        //     continue;
+                        //   }
+                        //   else {
+                        //     if (!waitForQuote) {
+                        //       curArg += l;
+                        //     }
+                        //     continue;
+                        //   }
+                        // }
+                        argList = as.match(/(?:"(.*?)(?<!\\)"|\d+)/g);
+                        // argList.shift();
+                        return argList.map(v => v.replace("\\\"", "\"").replace(/^"(.*)"$/g, function ($0, $1) {
+                            return $1;
+                        }));
                     }
                     if (typeof argString == "string")
                         args = parseArgumentsFromString(argString.trim());
@@ -4430,9 +4434,10 @@ class ToxenScriptManager {
     static syntaxHighlightToxenScript(code, validEventNames = ToxenScriptManager.getEventNames()) {
         const regex = {
             "value": {
-                "expression": /"(.*?[^\\])"/g,
+                "expression": /(?<!\[[^\]]*)(?:"(.*?)(?<!\\)"|\d+)(?!\])/g,
                 "function": function ($0, $1) {
-                    if (!/[^\s\d]/g.test($1)) {
+                    // if (/^\d+$/g.test($1)) {
+                    if (!isNaN(+$0)) {
                         return `<span class=toxenscript_number>${$0}</span>`;
                     }
                     return `<span class=toxenscript_string>${$0}</span>`;
@@ -4454,7 +4459,7 @@ class ToxenScriptManager {
             },
             "$var": {
                 "expression": /\$\w+/g,
-                "function": function ($0, $1) {
+                "function": function ($0) {
                     return `<span class=toxenscript_var>${$0}</span>`;
                 }
             },
