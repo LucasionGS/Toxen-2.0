@@ -528,7 +528,7 @@ export namespace Toxen {
       let itc = new TArray(itemsToClean);
       if (itc.includes("duplicates")) {
         a = new TArray([...new Set(a)]);
-        itc.removeAll("duplicates");
+        itc.remove("duplicates");
       }
 
       a = a.filter(v => {
@@ -564,20 +564,36 @@ export namespace Toxen {
     }
 
 
-    removeFirst(item: ArrayType) {
-      for (let i = 0; i < this.length; i++) {
-        const value = this[i];
-        if (value === item) return this.splice(i, 1)[0];
+    /**
+     * Remove the first instance of an item from the array and returns the removed elements.
+     * @param items Items to find and remove
+     */
+    remove(item: ArrayType, ...items: ArrayType[]): TArray<ArrayType>;
+    remove(...items: ArrayType[]) {
+      let values = new TArray<ArrayType>();
+      for (let i2 = 0; i2 < items.length; i2++) {
+        const item = items[i2];
+        for (let i = 0; i < this.length; i++) {
+          const value = this[i];
+          if (item === value) values.push(...this.splice(--i, 1));
+        }
       }
+      return values;
     }
 
-    removeAll(item: ArrayType) {
-      let values = new TArray<ArrayType>();
-      for (let i = 0; i < this.length; i++) {
-        const value = this[i];
-        if (value === item) values.push(...this.splice(i, 1));
-      }
-    }
+    /**
+     * Remove all instances of an item from the array and returns them.
+     * @param items Items to find and remove
+     */
+    // removeAll(item: ArrayType, ...items: ArrayType[]): TArray<ArrayType>;
+    // removeAll(...items: ArrayType[]) {
+    //   let values = new TArray<ArrayType>();
+    //   for (let i = 0; i < items.length; i++) {
+    //     const value = items[i];
+    //     if (this.find(item => item === value)) values.push(...this.remove(value));
+    //   }
+    //   return values;
+    // }
 
     /**
      * Returns the elements of an array that meet the condition specified in a callback function.
@@ -1521,7 +1537,9 @@ export class Song {
   background: string = null;
 
   /**
-   * Detailed information about this song (if applied)
+   * Detailed information about this song.
+   * 
+   * This is stored on the user's disk in each song folder as `details.json`
    */
   details:
   {
@@ -1886,7 +1904,37 @@ export class Song {
     }, 0);
   }
 
-  addToPlaylist() {
+  /**
+   * Return all playlists as a keyvalue pair object.
+   */
+  getPlaylistsStatus(): {[playlist: string]: boolean} {
+    if (!Array.isArray(this.details.playlists)) {
+      this.details.playlists = [];
+    }
+    let obj: {[playlist: string]: boolean} = {};
+    let list = Settings.current.playlists;
+    for (let i = 0; i < list.length; i++) {
+      const pl = list[i];
+      if (this.details.playlists.includes(pl)) {
+        obj[pl] = true;
+      }
+      else {
+        obj[pl] = false;
+      }
+    }
+    return obj;
+  }
+
+  addToPlaylist(): void;
+  addToPlaylist(playlist: string): void;
+  addToPlaylist(playlist?: string) {
+    if(playlist != undefined) {
+      this.details.playlists.push(playlist);
+      this.saveDetails();
+      SongManager.saveToFile();
+      return;
+    }
+
     let list = Settings.current.reloadPlaylists(true);
     list.style.display = "block";
     list.style.width = "95%";
@@ -1925,9 +1973,91 @@ export class Song {
     });
   }
 
-  removeFromPlaylist() {
-    // TODO: Implement removeFromPlaylist
-    // see addToPlaylist above for reference.
+  managePlaylists() {
+    let list = document.createElement("div");
+    list.style.display = "block";
+    list.style.width = "95%";
+    list.style.margin = "auto";
+    let playlists = this.getPlaylistsStatus();
+    let count = 0;
+    for (const playlist in playlists) {
+      if (Object.prototype.hasOwnProperty.call(playlists, playlist)) {
+        count++;
+        const checked = playlists[playlist];
+        const div = document.createElement("div");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = checked;
+        const label = document.createElement("label");
+        label.innerText = playlist;
+        let rndId = "checkbox_" + Debug.generateRandomString();
+        checkbox.id = rndId;
+
+        checkbox.addEventListener("click", () => {
+          let pls = new Toxen.TArray([playlist, ...this.details.playlists]);
+          // console.log(checkbox.checked);
+          // if (checkbox.checked) {
+          //   this.details.playlists = pls.cleanArray([
+          //     "duplicates",
+          //     "emptyStrings"
+          //   ]).toArray();
+          // }
+          // else {
+          //   for (let i = 0; i < pls.length; i++) {
+          //     const pl = pls[i];
+          //     if (pl === playlist)
+          //     {
+          //       pls.slice(i, 1);
+          //       break;
+          //     }
+          //   }
+          //   this.details.playlists = pls.toArray();
+          // }
+          playlists[playlist] = checkbox.checked;
+          let newPlaylist = [];
+          for (const _playlist in playlists) {
+            if (Object.prototype.hasOwnProperty.call(playlists, _playlist)) {
+              const _value = playlists[_playlist];
+              if (_value) {
+                newPlaylist.push(_playlist);
+              }
+            }
+          }
+          this.details.playlists = newPlaylist;
+          this.saveDetails();
+        });
+
+        div.appendChild(checkbox);
+        label.setAttribute("for", rndId);
+        div.appendChild(label);
+        div.appendChild(document.createElement("br"));
+        list.appendChild(div);
+      }
+    }
+
+    if (count == 0) {
+      new Prompt("No playlists", "Create a playlist in the settings panel and then you can add the songs to them!").addButtons("Close", "fancybutton", true);
+      return;
+    }
+
+    let p = new Prompt("Manage Playlists",
+    [
+      `Manage "${this.parseName()}"`,
+      list
+    ]);
+    
+    p.addButtons(["Close"], "fancybutton", true);
+  }
+
+  removeFromPlaylist(playlist: string) {
+    let a = new Toxen.TArray(this.details.playlists);
+    a.remove(playlist);
+    this.details.playlists = a.toArray();
+    Settings.current.reloadPlaylists(true);
+  }
+  
+  removeFromCurrentPlaylist() {
+    this.removeFromPlaylist(Settings.current.playlist);
   }
 
   delete() {
@@ -3672,11 +3802,28 @@ export const toxenMenus = {
         }
       },
       {
-        label: "Add to playlist...",
+        label: "Manage playlists...",
         click: (menuItem: ToxenElectronMenuItemSong) => {
           const song: Song = menuItem.songObject;
           if (song instanceof Song) {
-            song.addToPlaylist();
+            // song.addToPlaylist();
+            song.managePlaylists();
+          }
+        }
+      },
+      {
+        label: "Remove from current playlist",
+        click: (menuItem: ToxenElectronMenuItemSong) => {
+          const song: Song = menuItem.songObject;
+          if (song instanceof Song) {
+            if (Settings.current.playlist !== null) {
+              song.removeFromCurrentPlaylist();
+              SongManager.refreshList();
+              new Prompt("Removed from playlist", `Removed "${song.parseName()}" from "${Settings.current.playlist}"`).close(2000);
+            }
+            else {
+              new Prompt("No playlist selected", `You need to have a playlist selected before you can remove it from one.`).close(3000);
+            }
           }
         }
       },
@@ -3706,7 +3853,7 @@ export const toxenMenus = {
         }
       },
       {
-        label: "Set Background",
+        label: "Set Background...",
         click(menuItem: ToxenElectronMenuItemSong) {
           const song: Song = menuItem.songObject;
           if (song instanceof Song) {
@@ -3715,7 +3862,7 @@ export const toxenMenus = {
         }
       },
       {
-        label: "Set Background from URL",
+        label: "Set Background from URL...",
         click(menuItem: ToxenElectronMenuItemSong) {
           const song: Song = menuItem.songObject;
           if (song instanceof Song) {
@@ -3740,7 +3887,7 @@ export const toxenMenus = {
         type: "separator"
       },
       {
-        label: "Export song",
+        label: "Export song...",
         click: (menuItem: ToxenElectronMenuItemSong) => {
           const song: Song = menuItem.songObject;
           if (song instanceof Song) {
@@ -3749,7 +3896,7 @@ export const toxenMenus = {
         }
       },
       {
-        label: "Trim song",
+        label: "Trim song...",
         click: (menuItem: ToxenElectronMenuItemSong) => {
           const song: Song = menuItem.songObject;
           if (song instanceof Song) {
@@ -3762,7 +3909,7 @@ export const toxenMenus = {
         click: (menuItem: ToxenElectronMenuItemSong) => {
           const song: Song = menuItem.songObject;
           if (song instanceof Song) {
-            let path = song.getFullPath("path");
+            // let path = song.getFullPath("path");
             let ans = dialog.showMessageBoxSync(remote.getCurrentWindow(),
             {
               "buttons": [
@@ -3793,6 +3940,22 @@ export const toxenMenus = {
   ),
   "selectedSongMenu": Menu.buildFromTemplate(
     [
+      {
+        label: "Remove songs from current playlist",
+        click: (menuItem) => {
+          const songs: Song[] = SongManager.getSelectedSongs();
+          if (Settings.current.playlist !== null) {
+            songs.forEach(song => {
+              song.removeFromCurrentPlaylist();
+            });
+            SongManager.refreshList();
+            new Prompt("Removed from playlist", `Removed "${songs.length}" songs from "${Settings.current.playlist}"`).close(2000);
+          }
+          else {
+            new Prompt("No playlist selected", `You need to have a playlist selected before you can remove songs from one.`).close(3000);
+          }
+        }
+      },
       {
         label: "Export songs",
         click: (menuItem) => {
@@ -5272,9 +5435,8 @@ export class ToxenScriptManager {
       "timing": {
         // This expression is long asf...
         // Use https://regexr.com for it to make any kind of sense.
-        // Here's an explanation... [] brackets around it means it is optional in the current context. N means any number or timestamp.
-        // Matches
-        // N[ - N | $var], N[ - $var]
+        // Here's an explanation... It matches either:
+        // 1 Timestamp or variable, 2 Timestamps or variables or mixed TS and vars, the word "always"
         "expression": /(?<=\[\s*)(?:((?:\d+:)*(?:\d+)(?:\.\d+)*|\$\w*|always)\s*(?:-\s*((?:\d+:)*(?:\d+)(?:\.\d+)*|\$\w*))*)(?=\s*\])/g,
         "function": function($0, $1, $2) {
           if ($2 && ToxenScriptManager.timeStampToSeconds($1) > ToxenScriptManager.timeStampToSeconds($2)) {

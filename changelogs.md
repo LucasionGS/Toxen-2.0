@@ -73,6 +73,8 @@ Features and changes that has already been made to Toxen.
 - Added support for whole integers in ToxenScript to be used without needing quotes.
   - Now you can write for example: `5` instead of `"5"`, but if you want to use a float you still need to use quotes like this `"5.2"`
 
+  - Changed how playlist management works. You can now select and deselect playlists easily!
+
 ## 202007272153
 - New stuff
   - Added imported songs now attempting to import metadata if it's already available on the media file. It will also import any pictures the media file has stored.

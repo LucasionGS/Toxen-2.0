@@ -163,8 +163,15 @@ export declare namespace Toxen {
          * Craetes a copy of the TArray and cleans it up with your chosen options.
          */
         cleanArray(itemsToClean: (CleanOptions[])): TArray<ArrayType>;
-        removeFirst(item: ArrayType): ArrayType;
-        removeAll(item: ArrayType): void;
+        /**
+         * Remove the first instance of an item from the array and returns the removed elements.
+         * @param items Items to find and remove
+         */
+        remove(item: ArrayType, ...items: ArrayType[]): TArray<ArrayType>;
+        /**
+         * Remove all instances of an item from the array and returns them.
+         * @param items Items to find and remove
+         */
         /**
          * Returns the elements of an array that meet the condition specified in a callback function.
          * @param callbackfn A function that accepts up to three arguments. The filter method calls the callbackfn function one time for each element in the array.
@@ -450,7 +457,9 @@ export declare class Song {
      */
     background: string;
     /**
-     * Detailed information about this song (if applied)
+     * Detailed information about this song.
+     *
+     * This is stored on the user's disk in each song folder as `details.json`
      */
     details: {
         /**
@@ -534,8 +543,17 @@ export declare class Song {
      * Scroll to the element and reveal it.
      */
     focus(): void;
+    /**
+     * Return all playlists as a keyvalue pair object.
+     */
+    getPlaylistsStatus(): {
+        [playlist: string]: boolean;
+    };
     addToPlaylist(): void;
-    removeFromPlaylist(): void;
+    addToPlaylist(playlist: string): void;
+    managePlaylists(): void;
+    removeFromPlaylist(playlist: string): void;
+    removeFromCurrentPlaylist(): void;
     delete(): void;
     importMetadata(): Promise<void>;
 }
