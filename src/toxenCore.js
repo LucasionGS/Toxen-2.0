@@ -27,6 +27,7 @@ const ion = require("ionodelib");
 const Zip = require("adm-zip");
 const events_1 = require("events");
 const mm = require("music-metadata");
+const util = require("util");
 const axios_1 = require("axios");
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
@@ -90,6 +91,52 @@ class Toxen {
                 btn.style.opacity = "0";
             }
         });
+    }
+    static errorPrompt(err, explanation, cause = "Unknown") {
+        console.clear();
+        const errReport = util.inspect(err, true);
+        console.warn("⬇⬇⬇ This error caused Toxen to be unable to complete the task ⬇⬇⬇ -----------------------------\n⬇⬇⬇ Send this error message to the developer ⬇⬇⬇ ------------------------");
+        console.error(err);
+        console.warn("⬆⬆⬆ This error caused Toxen to be unable to complete the task ⬆⬆⬆ -----------------------------\n⬆⬆⬆ Send this error message to the developer ⬆⬆⬆ ------------------------");
+        let p = new Prompt("Toxen ran into an error.", explanation ? explanation : "Please check the <span style='color: red'>Console</span> log for error messages");
+        p.addButtons([
+            Toxen.generate.button({
+                text: "Send anonymous error report",
+                click() {
+                    Toxen.sendReport(`Cause: ${cause}\n\n` + errReport, true).then(b => {
+                        if (b) {
+                            this.innerText = "Report sent!";
+                            this.disabled = true;
+                        }
+                        else {
+                            this.innerText = "Report failed to send";
+                        }
+                    }).catch(reason => {
+                        console.error(reason);
+                        this.innerText = "Report failed to send";
+                    });
+                }
+            }),
+            Toxen.generate.button({
+                text: "Open Dev. Tools",
+                click() {
+                    browserWindow.webContents.openDevTools();
+                },
+                modify(b) {
+                    b.title = "You can get further details on the error by clicking here. It's not necessary to look here, it's just for those who care.";
+                }
+            }),
+            Toxen.generate.button({
+                text: "Restart Toxen",
+                click() {
+                    Toxen.restart();
+                },
+                modify(b) {
+                    b.classList.add("svg_reload_white");
+                }
+            }),
+            "Close"
+        ], "fancybutton", true);
     }
     static sendReport(reportMessage, logRequest = false) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -160,7 +207,8 @@ class Toxen {
      */
     static set title(value) {
         document.getElementById("toxen-title-text").innerHTML = value;
-        document.title = Debug.stripHTML(value);
+        let plain = Debug.stripHTML(value);
+        document.title = plain;
     }
     static toggleFullScreen(mode = !browserWindow.isFullScreen()) {
         browserWindow.setFullScreen(mode);
@@ -238,7 +286,8 @@ class Toxen {
                 else {
                     let options = {
                         "details": `${ScriptEditor.window != null ? "Editing a storyboard" : song.isVideo ? "Watching a video" : "Listening to a song"}`,
-                        "largeImageKey": Settings.current.lightThemeBase ? "toxenlight" : "toxen"
+                        "largeImageKey": Settings.current.lightThemeBase ? "toxenlight" : "toxen",
+                        "largeImageText": "Toxen Vers. " + Toxen.version
                     };
                     if (Settings.current.discordPresenceShowDetails) {
                         // options["startTimestamp"] = Date.now(); // For Time left
@@ -891,6 +940,8 @@ class Settings {
         inpName.classList.add("fancyinput");
         let p = new Prompt("New Playlist", [inpName]);
         let [create, close] = p.addButtons(["Create", "Close"], "fancybutton", true);
+        create.disabled = true;
+        create.title = "Please write in a playlist name";
         inpName.addEventListener("keydown", (e) => {
             if (e.key == "Enter") {
                 create.click();
@@ -904,9 +955,17 @@ class Settings {
             if (!Array.isArray(this.playlists)) {
                 this.playlists = [];
             }
-            if (inpName.value.trim() == "%null%" || inpName.value.trim() == "" || this.playlists.includes(inpName.value.trim())) {
+            if (inpName.value.trim() == "%null%") {
                 create.disabled = true;
-                create.title = "Playlist already exists or is a reserved string.";
+                create.title = "Playlist can't be named %null% for interal reasons.";
+            }
+            else if (inpName.value.trim() == "") {
+                create.disabled = true;
+                create.title = "Playlist can't be named nothing.";
+            }
+            else if (this.playlists.includes(inpName.value.trim())) {
+                create.disabled = true;
+                create.title = "Playlist already exists.";
             }
             else {
                 create.title = "Create playlist!";

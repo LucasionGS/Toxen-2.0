@@ -19,7 +19,6 @@ const winHeight = 800;
  */
 let win;
 app.allowRendererProcessReuse = true; // Electron mad if i don't :(
-process.chdir("C:/Windows/System32");
 
 try {
   let cwd = process.cwd();
@@ -29,7 +28,16 @@ try {
   }
 } catch (err) {
   console.error(err + "\n\n", process.cwd(), "is inaccessible, changing cwd to launch file directory.");
-  process.chdir(dirname(process.argv[0]));
+  let dir = process.argv.find(a => a.startsWith("--app-path="));
+  if (typeof dir == "string") {
+    dir = dir.substring("--app-path=".length);
+    if (!app.isPackaged && dir.endsWith("resources\\app")) dir = dir.substring(0, dir.length - "resources\\app".length),
+    process.chdir(dir);
+  }
+  else {
+    console.error("Unable to find --app-path in parameters... Using executable path instead.");
+    process.chdir(dirname(process.argv[0]));
+  }
 }
 
 console.log("cwd: ", process.cwd());

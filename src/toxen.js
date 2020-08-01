@@ -15,7 +15,6 @@ const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Debu
 const path = require("path");
 const rimraf = require("rimraf");
 const __toxenVersion = require("./version.json");
-const util = require("util");
 Toxen.version = __toxenVersion;
 const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;
@@ -33,50 +32,14 @@ let stats = new Statistics();
 window.addEventListener("load", () => {
     Toxen.title = "Loading Toxen...";
     setTimeout(() => {
-        initialize().then(() => true).catch(err => {
-            Toxen.title = "Toxen ran into an error";
-            console.clear();
-            const errReport = util.inspect(err, true);
-            console.log("⬇⬇⬇ This error caused Toxen to not load ⬇⬇⬇ -----------------------------\n⬇⬇⬇ Send this error message to the developer ⬇⬇⬇ ------------------------");
-            console.error(err);
-            console.log("⬆⬆⬆ This error caused Toxen to not load ⬆⬆⬆ -----------------------------\n⬆⬆⬆ Send this error message to the developer ⬆⬆⬆ ------------------------");
-            let p = new Prompt("Error loading Toxen.", "Please check the <span style='color: red'>Console</span> log for error messages");
-            p.addButtons([
-                Toxen.generate.button({
-                    text: "Send anonymous error report",
-                    click() {
-                        Toxen.sendReport(errReport, true).then(b => {
-                            if (b) {
-                                this.innerText = "Report sent!";
-                                this.disabled = true;
-                            }
-                            else {
-                                this.innerText = "Report failed to send";
-                            }
-                        }).catch(reason => {
-                            console.error(reason);
-                            this.innerText = "Report failed to send";
-                        });
-                    }
-                }),
-                Toxen.generate.button({
-                    text: "Open Dev. Tools",
-                    click() {
-                        browserWindow.webContents.openDevTools();
-                    }
-                }),
-                Toxen.generate.button({
-                    text: "Restart Toxen",
-                    click() {
-                        Toxen.restart();
-                    },
-                    modify(b) {
-                        b.classList.add("svg_reload_white");
-                    }
-                }),
-            ]);
+        initialize().then(() => {
+            if (Toxen.title == "Loading Toxen...")
+                Toxen.title = "";
+        }).catch(err => {
+            Toxen.title = "Unable to load Toxen";
+            Toxen.errorPrompt(err);
         });
-    }, 100);
+    }, 10);
 });
 function initialize() {
     return __awaiter(this, void 0, void 0, function* () {

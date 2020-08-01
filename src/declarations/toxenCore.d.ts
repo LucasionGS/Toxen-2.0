@@ -13,6 +13,24 @@ declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 40
  */
 export declare class Toxen {
     static initialize(): void;
+    /**
+     * Show an error prompt and a button to send it to the developer for troubleshooting.
+     * @param err Error message
+     */
+    static errorPrompt(err: any): void;
+    /**
+     * Show an error prompt and a button to send it to the developer for troubleshooting.
+     * @param err Error message
+     * @param explanation An explanation of what went wrong to show to the user.
+     */
+    static errorPrompt(err: any, explanation: string): void;
+    /**
+     * Show an error prompt and a button to send it to the developer for troubleshooting.
+     * @param err Error message
+     * @param explanation An explanation of what went wrong to show to the user.
+     * @param cause The cause of the problem. What was happening when the user hit this error.
+     */
+    static errorPrompt(err: any, explanation: string, cause: string): void;
     static sendReport(reportMessage: string): Promise<boolean>;
     static sendReport(reportMessage: string, logRequest: boolean): Promise<boolean>;
     /**
