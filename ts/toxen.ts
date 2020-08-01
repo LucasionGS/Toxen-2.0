@@ -20,8 +20,7 @@ const {
   toxenMenus,
   toxenHeaderMenu,
   showTutorial,
-} = ToxenCore;
-import * as rpc from "discord-rpc";
+} = ToxenCore
 import * as path from "path";
 import rimraf = require("rimraf");
 import * as __toxenVersion from "./version.json"
@@ -30,36 +29,6 @@ Toxen.version = __toxenVersion;
 const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;
 let browserWindow = remote.getCurrentWindow();
-
-// Discord RPC
-const discord = new rpc.Client({"transport": "ipc"});
-const clientId = '647178364511191061';
-let discordReady = false;
-discord.on("ready", () => {
-  console.log('Discord RPC Connected');
-  discordReady = true;
-});
-
-interface HTMLElementScroll {
-  scrollIntoViewIfNeeded(): void
-}
-
-discordApplicationLogin();
-function discordApplicationLogin(attempts = 3) {
-  let tries = 0;
-  _login();
-  function _login() {
-    discord.login({ clientId }).catch(reason => {
-      console.error(reason);
-      tries++;
-      // Re-enble if I figure out the issue.
-      // if (tries < attempts) {
-      //   console.error(`Login attempt ${tries + 1}...`);
-      //   _login();
-      // }
-    });
-  }
-}
 
 /**
  * Global Settings Object
@@ -136,6 +105,11 @@ async function initialize() {
         break;
     }
   }
+
+  if (settings.discordPresence === true) {
+    Toxen.discordConnect();
+  }
+  
   if (settings.showTutorialOnStart) { showTutorial(); }
   stats.load();
   stats.startSaveTimer();
@@ -176,7 +150,7 @@ async function initialize() {
     song.displayInfo();
 
     // Discord Rich Presence
-    updateDiscordPresence(song);
+    Toxen.updateDiscordPresence(song);
 
     while(isNaN(SongManager.player.duration)) {
       await Debug.wait(1); 
@@ -363,7 +337,7 @@ async function initialize() {
   window.addEventListener("mouseup", function(e) {
     if (e.button == 0 && document.querySelector<HTMLProgressElement>("#progressbar").clicking == true) {
       document.querySelector<HTMLProgressElement>("#progressbar").clicking = false;
-      updateDiscordPresence();
+      Toxen.updateDiscordPresence();
     }
   });
   document.getElementById("progressbar").addEventListener("click", function(e) {
@@ -371,7 +345,7 @@ async function initialize() {
     let percent = (e.clientX - p.clientLeft) / p.clientWidth;
     percent = Math.min(Math.max(0, percent), 1);
     SongManager.moveToTime(SongManager.player.duration * percent);
-    updateDiscordPresence();
+    Toxen.updateDiscordPresence();
   });
   window.addEventListener("mousemove", function(e) {
     const p: HTMLProgressElement = document.querySelector("#progressbar");
@@ -526,43 +500,8 @@ async function initialize() {
 
 
 ipcRenderer.on("updatediscordpresence", () => {
-  updateDiscordPresence();
+  Toxen.updateDiscordPresence();
 })
-
-/**
- * Update Discord presence
- */
-async function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
-  let attemptCount = 0;
-  while(true) {
-    if (attemptCount > 30) {
-      break;
-    }
-    if (isNaN(SongManager.player.duration) || !discordReady) {
-      attemptCount++;
-      await Debug.wait(100);
-    }
-    else {
-      let options: import("discord-rpc").Presence = {
-        "details": `${ScriptEditor.window != null ? "Editing a storyboard" : song.isVideo ? "Watching a video" : "Listening to a song"}`,
-        "largeImageKey": Settings.current.lightThemeBase ? "toxenlight" : "toxen"
-      };
-      if (settings.discordPresenceShowDetails) {
-        // options["startTimestamp"] = Date.now(); // For Time left
-        // options["endTimestamp"] = Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000; // For Time left
-        if (!SongManager.player.paused) options["startTimestamp"] = Date.now() - (SongManager.player.currentTime * 1000); // For Time Elapsed
-        options["details"] = (SongManager.player.paused ? "(Paused) " : "")
-        + (`${ScriptEditor.window != null ? "Editing "
-        : song.isVideo ? "Watching "
-        : "Listening to "}`)
-        + `${song.details.artist} - ${song.details.title}`;
-        if (song.details.source) options["state"] = `\nFrom ${song.details.source}`;
-      }
-      discord.setActivity(options);
-      break;
-    }
-  }
-}
 
 var avg = 0;
 var avgSec = 0;

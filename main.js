@@ -1,5 +1,7 @@
 const { app, BrowserWindow, Menu, Tray, shell } = require('electron');
-const cp = require('child_process');
+const { accessSync } = require('fs');
+const { dirname } = require('path');
+
 
 // Auto updating (Reenable when it works :/)
 // require("update-electron-app")({
@@ -17,6 +19,20 @@ const winHeight = 800;
  */
 let win;
 app.allowRendererProcessReuse = true; // Electron mad if i don't :(
+process.chdir("C:/Windows/System32");
+
+try {
+  let cwd = process.cwd();
+  accessSync(cwd);
+  if (/^\w:\\windows\\system32/gi.test(cwd.toLowerCase())) {
+    throw "CWD cannot be System32";
+  }
+} catch (err) {
+  console.error(err + "\n\n", process.cwd(), "is inaccessible, changing cwd to launch file directory.");
+  process.chdir(dirname(process.argv[0]));
+}
+
+console.log("cwd: ", process.cwd());
 
 function createWindow () {
   // Create the browser window.
@@ -102,7 +118,7 @@ app.on('ready', createWindow);
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  if (cp.platform !== 'darwin') {
+  if (process.platform !== 'darwin') {
     app.quit();
   }
 });

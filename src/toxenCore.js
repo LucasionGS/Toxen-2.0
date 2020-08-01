@@ -1,5 +1,4 @@
 "use strict";
-// FS takes files relative to the root "Resources" directory.
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -10,8 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
-console.log(eval("(function(){ return 0; })()"));
+// FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
@@ -32,6 +30,11 @@ const mm = require("music-metadata");
 const axios_1 = require("axios");
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
+const rpc = require("discord-rpc");
+// Discord RPC
+var discordClient;
+const clientId = '647178364511191061';
+let discordReady = false;
 /**
  * General Toxen functionality.
  */
@@ -149,7 +152,7 @@ class Toxen {
      * A list of all valid media extension (Including audio and video)
      */
     static get mediaExtensions() {
-        return this.audioExtensions.map(a => a).concat(this.videoExtensions).concat("txn");
+        return this.audioExtensions.map(a => a).concat(this.videoExtensions).concat("txs");
     }
     ;
     /**
@@ -196,6 +199,65 @@ class Toxen {
      */
     static close() {
         app.exit();
+    }
+    static discordConnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            discordReady = false;
+            console.log("Connecting to Discord...");
+            if (discordClient instanceof rpc.Client) {
+                discordClient.destroy();
+            }
+            discordClient = new rpc.Client({ "transport": "ipc" });
+            discordClient.once("ready", () => {
+                console.log('Discord RPC Connected');
+                discordReady = true;
+                Toxen.updateDiscordPresence();
+            });
+            return discordClient.login({ clientId }).then(a => a).catch(reason => {
+                console.error(reason);
+            });
+        });
+    }
+    static discordDisconnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log("Disconnected from Discord");
+            discordClient.destroy();
+        });
+    }
+    static updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let attemptCount = 0;
+            while (true) {
+                if (attemptCount > 30) {
+                    break;
+                }
+                if (isNaN(SongManager.player.duration) || !discordReady) {
+                    attemptCount++;
+                    yield Debug.wait(100);
+                }
+                else {
+                    let options = {
+                        "details": `${ScriptEditor.window != null ? "Editing a storyboard" : song.isVideo ? "Watching a video" : "Listening to a song"}`,
+                        "largeImageKey": Settings.current.lightThemeBase ? "toxenlight" : "toxen"
+                    };
+                    if (Settings.current.discordPresenceShowDetails) {
+                        // options["startTimestamp"] = Date.now(); // For Time left
+                        // options["endTimestamp"] = Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000; // For Time left
+                        if (!SongManager.player.paused)
+                            options["startTimestamp"] = Date.now() - (SongManager.player.currentTime * 1000); // For Time Elapsed
+                        options["details"] = (SongManager.player.paused ? "(Paused) " : "")
+                            + (`${ScriptEditor.window != null ? "Editing "
+                                : song.isVideo ? "Watching "
+                                    : "Listening to "}`)
+                            + `${song.details.artist} - ${song.details.title}`;
+                        if (song.details.source)
+                            options["state"] = `\nFrom ${song.details.source}`;
+                    }
+                    discordClient.setActivity(options);
+                    break;
+                }
+            }
+        });
     }
     static ffmpegAvailable() {
         return Settings.current.ffmpegPath != null || commandExists.sync("ffmpeg");
@@ -587,6 +649,10 @@ class Settings {
          */
         this.thumbnails = 2;
         /**
+         * Discord presence
+         */
+        this.discordPresence = true;
+        /**
          * Display the details of the current song playing in Discord Presence.
          * Details include Artist, Title, and current time.
          */
@@ -838,7 +904,7 @@ class Settings {
             if (!Array.isArray(this.playlists)) {
                 this.playlists = [];
             }
-            if (inpName.value == "%null%" || inpName.value == "" || this.playlists.includes(inpName.value)) {
+            if (inpName.value.trim() == "%null%" || inpName.value.trim() == "" || this.playlists.includes(inpName.value.trim())) {
                 create.disabled = true;
                 create.title = "Playlist already exists or is a reserved string.";
             }
@@ -849,7 +915,7 @@ class Settings {
         });
         create.classList.add("color-green");
         create.addEventListener("click", () => {
-            this.playlists.push(inpName.value);
+            this.playlists.push(inpName.value.trim());
             this.reloadPlaylists();
             this.saveToFile();
             p.close();
@@ -1033,6 +1099,12 @@ class Settings {
             default:
                 break;
         }
+    }
+    toggleDiscordPresence(force = !Settings.current.discordPresence) {
+        if (Settings.current.discordPresence = force)
+            Toxen.discordConnect();
+        else
+            Toxen.discordDisconnect();
     }
     /**
      * Returns whether or not the `songFolder` is a remote URL or not.
@@ -1700,25 +1772,6 @@ class Song {
                 let rndId = "checkbox_" + Debug.generateRandomString();
                 checkbox.id = rndId;
                 checkbox.addEventListener("click", () => {
-                    let pls = new Toxen.TArray([playlist, ...this.details.playlists]);
-                    // console.log(checkbox.checked);
-                    // if (checkbox.checked) {
-                    //   this.details.playlists = pls.cleanArray([
-                    //     "duplicates",
-                    //     "emptyStrings"
-                    //   ]).toArray();
-                    // }
-                    // else {
-                    //   for (let i = 0; i < pls.length; i++) {
-                    //     const pl = pls[i];
-                    //     if (pl === playlist)
-                    //     {
-                    //       pls.slice(i, 1);
-                    //       break;
-                    //     }
-                    //   }
-                    //   this.details.playlists = pls.toArray();
-                    // }
                     playlists[playlist] = checkbox.checked;
                     let newPlaylist = [];
                     for (const _playlist in playlists) {
@@ -1731,6 +1784,7 @@ class Song {
                     }
                     this.details.playlists = newPlaylist;
                     this.saveDetails();
+                    SongManager.refreshList();
                 });
                 div.appendChild(checkbox);
                 label.setAttribute("for", rndId);
@@ -2275,7 +2329,7 @@ class SongManager {
                     for (let i2 = 0; i2 < items.length; i2++) {
                         const item = items[i2];
                         // Media file
-                        if (Toxen.mediaExtensions.filter(f => f != "txn").find(f => item.endsWith("." + f))) {
+                        if (Toxen.mediaExtensions.filter(f => f != "txs").find(f => item.endsWith("." + f))) {
                             song.songPath = file.name + "/" + item;
                         }
                         // Subtitle file
@@ -3359,22 +3413,22 @@ exports.toxenMenus = {
                 }
             }
         },
-        {
-            label: "Remove from current playlist",
-            click: (menuItem) => {
-                const song = menuItem.songObject;
-                if (song instanceof Song) {
-                    if (Settings.current.playlist !== null) {
-                        song.removeFromCurrentPlaylist();
-                        SongManager.refreshList();
-                        new Prompt("Removed from playlist", `Removed "${song.parseName()}" from "${Settings.current.playlist}"`).close(2000);
-                    }
-                    else {
-                        new Prompt("No playlist selected", `You need to have a playlist selected before you can remove it from one.`).close(3000);
-                    }
-                }
-            }
-        },
+        // {
+        //   label: "Remove from current playlist",
+        //   click: (menuItem: ToxenElectronMenuItemSong) => {
+        //     const song: Song = menuItem.songObject;
+        //     if (song instanceof Song) {
+        //       if (Settings.current.playlist !== null) {
+        //         song.removeFromCurrentPlaylist();
+        //         SongManager.refreshList();
+        //         new Prompt("Removed from playlist", `Removed "${song.parseName()}" from "${Settings.current.playlist}"`).close(2000);
+        //       }
+        //       else {
+        //         new Prompt("No playlist selected", `You need to have a playlist selected before you can remove it from one.`).close(3000);
+        //       }
+        //     }
+        //   }
+        // },
         {
             label: "Open song folder",
             click: (menuItem) => {
@@ -3483,22 +3537,22 @@ exports.toxenMenus = {
         },
     ]),
     "selectedSongMenu": Menu.buildFromTemplate([
-        {
-            label: "Remove songs from current playlist",
-            click: (menuItem) => {
-                const songs = SongManager.getSelectedSongs();
-                if (Settings.current.playlist !== null) {
-                    songs.forEach(song => {
-                        song.removeFromCurrentPlaylist();
-                    });
-                    SongManager.refreshList();
-                    new Prompt("Removed from playlist", `Removed "${songs.length}" songs from "${Settings.current.playlist}"`).close(2000);
-                }
-                else {
-                    new Prompt("No playlist selected", `You need to have a playlist selected before you can remove songs from one.`).close(3000);
-                }
-            }
-        },
+        // {
+        //   label: "Remove songs from current playlist",
+        //   click: (menuItem) => {
+        //     const songs: Song[] = SongManager.getSelectedSongs();
+        //     if (Settings.current.playlist !== null) {
+        //       songs.forEach(song => {
+        //         song.removeFromCurrentPlaylist();
+        //       });
+        //       SongManager.refreshList();
+        //       new Prompt("Removed from playlist", `Removed "${songs.length}" songs from "${Settings.current.playlist}"`).close(2000);
+        //     }
+        //     else {
+        //       new Prompt("No playlist selected", `You need to have a playlist selected before you can remove songs from one.`).close(3000);
+        //     }
+        //   }
+        // },
         {
             label: "Export songs",
             click: (menuItem) => {
@@ -5472,9 +5526,14 @@ class Update {
                 dialog.showErrorBox("Unidentified release", "No release found for your current operating system (" + process.platform + ")");
                 return;
             }
+            if (!remote.app.isPackaged) {
+                dialog.showErrorBox("Cannot update in Developer mode", "Switch to a production release to update.");
+                return;
+            }
             let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${Toxen.updatePlatform}&get=url`;
             let toxenLatestURL = yield fetch(toxenGetLatestURL).then(res => res.text());
-            let dl = new ion.Download("https://" + toxenLatestURL, "./latest.zip");
+            let latestPath = "./latest.zip";
+            let dl = new ion.Download("https://" + toxenLatestURL, latestPath);
             let dlText = document.createElement("p");
             dlText.innerText = "If it doesn't show any progress here for more than a minute, please restart the program and try again.";
             let p = new Prompt("Started downloading...", dlText);
@@ -5492,7 +5551,7 @@ class Update {
                 p.contentElement.innerText = "Toxen will be frozen for a bit and restart automatically when finished.";
                 p.clearButtons();
                 setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                    let file = new Zip(path.resolve("./latest.zip"));
+                    let file = new Zip(path.resolve(latestPath));
                     try {
                         file.getEntries().forEach((e) => {
                             try {
@@ -5510,7 +5569,7 @@ class Update {
                     }
                     p.close();
                     new Prompt("Update finished!", ["The program will restart in 5 seconds..."]);
-                    fs.unlinkSync("./latest.zip");
+                    fs.unlinkSync(latestPath);
                     setTimeout(() => {
                         remote.app.relaunch();
                         remote.app.quit();

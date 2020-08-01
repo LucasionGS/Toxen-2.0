@@ -1,7 +1,4 @@
 // FS takes files relative to the root "Resources" directory.
-
-console.log(eval("(function(){ return 0; })()"));
-
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 import * as fs from "fs";
@@ -24,6 +21,11 @@ import * as util from "util";
 import axios from "axios";
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
+import * as rpc from "discord-rpc";
+// Discord RPC
+var discordClient: rpc.Client;
+const clientId = '647178364511191061';
+let discordReady = false;
 
 interface ToxenElectronMenuItemSong extends Electron.MenuItem {
   songObject?: Song;
@@ -159,7 +161,7 @@ export class Toxen {
    * A list of all valid media extension (Including audio and video)
    */
   static get mediaExtensions() {
-    return this.audioExtensions.map(a => a).concat(this.videoExtensions).concat("txn");
+    return this.audioExtensions.map(a => a).concat(this.videoExtensions).concat("txs");
   };
 
   /**
@@ -261,6 +263,63 @@ export class Toxen {
    */
   static close() {
     app.exit();
+  }
+
+  static async discordConnect() {
+    discordReady = false;
+    console.log("Connecting to Discord...");
+    if (discordClient instanceof rpc.Client) {discordClient.destroy()}
+    discordClient = new rpc.Client({"transport": "ipc"});
+    discordClient.once("ready", () => {
+      console.log('Discord RPC Connected');
+      discordReady = true;
+      Toxen.updateDiscordPresence();
+    });
+    return discordClient.login({ clientId }).then(a => a).catch(reason => {
+      console.error(reason);
+    });
+  }
+
+  static async discordDisconnect() {
+    console.log("Disconnected from Discord");
+    discordClient.destroy();
+  }
+
+  /**
+   * Update Discord presence
+   */
+  static async updateDiscordPresence(): Promise<void>;
+  static async updateDiscordPresence(song: Song): Promise<void>;
+  static async updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
+    let attemptCount = 0;
+    while(true) {
+      if (attemptCount > 30) {
+        break;
+      }
+      if (isNaN(SongManager.player.duration) || !discordReady) {
+        attemptCount++;
+        await Debug.wait(100);
+      }
+      else {
+        let options: import("discord-rpc").Presence = {
+          "details": `${ScriptEditor.window != null ? "Editing a storyboard" : song.isVideo ? "Watching a video" : "Listening to a song"}`,
+          "largeImageKey": Settings.current.lightThemeBase ? "toxenlight" : "toxen"
+        };
+        if (Settings.current.discordPresenceShowDetails) {
+          // options["startTimestamp"] = Date.now(); // For Time left
+          // options["endTimestamp"] = Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000; // For Time left
+          if (!SongManager.player.paused) options["startTimestamp"] = Date.now() - (SongManager.player.currentTime * 1000); // For Time Elapsed
+          options["details"] = (SongManager.player.paused ? "(Paused) " : "")
+          + (`${ScriptEditor.window != null ? "Editing "
+          : song.isVideo ? "Watching "
+          : "Listening to "}`)
+          + `${song.details.artist} - ${song.details.title}`;
+          if (song.details.source) options["state"] = `\nFrom ${song.details.source}`;
+        }
+        discordClient.setActivity(options);
+        break;
+      }
+    }
   }
 
   static ffmpegAvailable(): boolean {
@@ -831,7 +890,7 @@ export class Settings {
       if (!Array.isArray(this.playlists)) {
         this.playlists = [];
       }
-      if (inpName.value == "%null%" || inpName.value == "" || this.playlists.includes(inpName.value)) {
+      if (inpName.value.trim() == "%null%" || inpName.value.trim() == "" || this.playlists.includes(inpName.value.trim())) {
         create.disabled = true;
         create.title = "Playlist already exists or is a reserved string.";
       }
@@ -842,7 +901,7 @@ export class Settings {
     });
     create.classList.add("color-green");
     create.addEventListener("click", () => {
-      this.playlists.push(inpName.value);
+      this.playlists.push(inpName.value.trim());
       this.reloadPlaylists();
       this.saveToFile();
       p.close();
@@ -1044,6 +1103,11 @@ export class Settings {
     }
   }
 
+  toggleDiscordPresence(force: boolean = !Settings.current.discordPresence) {
+    if (Settings.current.discordPresence = force) Toxen.discordConnect();
+    else Toxen.discordDisconnect();
+  }
+
   // 
   // All Settings
   // @settings
@@ -1153,6 +1217,10 @@ export class Settings {
    * `2` Shows backgrounds as a background on the music panel for the songs with a custom background.  
    */
   thumbnails = 2;
+  /**
+   * Discord presence
+   */
+  discordPresence: boolean = true;
   /**
    * Display the details of the current song playing in Discord Presence.
    * Details include Artist, Title, and current time.
@@ -1994,25 +2062,6 @@ export class Song {
         checkbox.id = rndId;
 
         checkbox.addEventListener("click", () => {
-          let pls = new Toxen.TArray([playlist, ...this.details.playlists]);
-          // console.log(checkbox.checked);
-          // if (checkbox.checked) {
-          //   this.details.playlists = pls.cleanArray([
-          //     "duplicates",
-          //     "emptyStrings"
-          //   ]).toArray();
-          // }
-          // else {
-          //   for (let i = 0; i < pls.length; i++) {
-          //     const pl = pls[i];
-          //     if (pl === playlist)
-          //     {
-          //       pls.slice(i, 1);
-          //       break;
-          //     }
-          //   }
-          //   this.details.playlists = pls.toArray();
-          // }
           playlists[playlist] = checkbox.checked;
           let newPlaylist = [];
           for (const _playlist in playlists) {
@@ -2025,6 +2074,7 @@ export class Song {
           }
           this.details.playlists = newPlaylist;
           this.saveDetails();
+          SongManager.refreshList();
         });
 
         div.appendChild(checkbox);
@@ -2629,7 +2679,7 @@ export class SongManager {
           for (let i2 = 0; i2 < items.length; i2++) {
             const item = items[i2];
             // Media file
-            if (Toxen.mediaExtensions.filter(f => f != "txn").find(f => item.endsWith("."+f))) {
+            if (Toxen.mediaExtensions.filter(f => f != "txs").find(f => item.endsWith("."+f))) {
               song.songPath = file.name + "/" + item;
             }
             // Subtitle file
@@ -3811,22 +3861,22 @@ export const toxenMenus = {
           }
         }
       },
-      {
-        label: "Remove from current playlist",
-        click: (menuItem: ToxenElectronMenuItemSong) => {
-          const song: Song = menuItem.songObject;
-          if (song instanceof Song) {
-            if (Settings.current.playlist !== null) {
-              song.removeFromCurrentPlaylist();
-              SongManager.refreshList();
-              new Prompt("Removed from playlist", `Removed "${song.parseName()}" from "${Settings.current.playlist}"`).close(2000);
-            }
-            else {
-              new Prompt("No playlist selected", `You need to have a playlist selected before you can remove it from one.`).close(3000);
-            }
-          }
-        }
-      },
+      // {
+      //   label: "Remove from current playlist",
+      //   click: (menuItem: ToxenElectronMenuItemSong) => {
+      //     const song: Song = menuItem.songObject;
+      //     if (song instanceof Song) {
+      //       if (Settings.current.playlist !== null) {
+      //         song.removeFromCurrentPlaylist();
+      //         SongManager.refreshList();
+      //         new Prompt("Removed from playlist", `Removed "${song.parseName()}" from "${Settings.current.playlist}"`).close(2000);
+      //       }
+      //       else {
+      //         new Prompt("No playlist selected", `You need to have a playlist selected before you can remove it from one.`).close(3000);
+      //       }
+      //     }
+      //   }
+      // },
       {
         label: "Open song folder",
         click: (menuItem: ToxenElectronMenuItemSong) => {
@@ -3940,22 +3990,22 @@ export const toxenMenus = {
   ),
   "selectedSongMenu": Menu.buildFromTemplate(
     [
-      {
-        label: "Remove songs from current playlist",
-        click: (menuItem) => {
-          const songs: Song[] = SongManager.getSelectedSongs();
-          if (Settings.current.playlist !== null) {
-            songs.forEach(song => {
-              song.removeFromCurrentPlaylist();
-            });
-            SongManager.refreshList();
-            new Prompt("Removed from playlist", `Removed "${songs.length}" songs from "${Settings.current.playlist}"`).close(2000);
-          }
-          else {
-            new Prompt("No playlist selected", `You need to have a playlist selected before you can remove songs from one.`).close(3000);
-          }
-        }
-      },
+      // {
+      //   label: "Remove songs from current playlist",
+      //   click: (menuItem) => {
+      //     const songs: Song[] = SongManager.getSelectedSongs();
+      //     if (Settings.current.playlist !== null) {
+      //       songs.forEach(song => {
+      //         song.removeFromCurrentPlaylist();
+      //       });
+      //       SongManager.refreshList();
+      //       new Prompt("Removed from playlist", `Removed "${songs.length}" songs from "${Settings.current.playlist}"`).close(2000);
+      //     }
+      //     else {
+      //       new Prompt("No playlist selected", `You need to have a playlist selected before you can remove songs from one.`).close(3000);
+      //     }
+      //   }
+      // },
       {
         label: "Export songs",
         click: (menuItem) => {
@@ -6115,10 +6165,14 @@ export class Update {
       dialog.showErrorBox("Unidentified release", "No release found for your current operating system (" + process.platform + ")");
       return;
     }
+    if (!remote.app.isPackaged) {
+      dialog.showErrorBox("Cannot update in Developer mode", "Switch to a production release to update.");
+      return;
+    }
     let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${Toxen.updatePlatform}&get=url`;
     let toxenLatestURL = await fetch(toxenGetLatestURL).then(res => res.text());
-    let dl = new ion.Download("https://"+toxenLatestURL, "./latest.zip");
-    
+    let latestPath = "./latest.zip"
+    let dl = new ion.Download("https://"+toxenLatestURL, latestPath);
     
     let dlText = document.createElement("p");
     dlText.innerText = "If it doesn't show any progress here for more than a minute, please restart the program and try again.";
@@ -6140,7 +6194,7 @@ export class Update {
       p.clearButtons();
       
       setTimeout(async () => {
-        let file = new Zip(path.resolve("./latest.zip"));
+        let file = new Zip(path.resolve(latestPath));
         try {
           file.getEntries().forEach((e) => {
             try {
@@ -6156,7 +6210,7 @@ export class Update {
         }
         p.close();
         new Prompt("Update finished!", ["The program will restart in 5 seconds..."]);
-        fs.unlinkSync("./latest.zip");
+        fs.unlinkSync(latestPath);
         setTimeout(() => {
           remote.app.relaunch();
           remote.app.quit();

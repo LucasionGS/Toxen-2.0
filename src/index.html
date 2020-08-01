@@ -378,7 +378,12 @@
         ► <span style="text-decoration: underline;">Advanced Settings</span>
       </label>
       <div id="advancedoptions">
-        <input type="checkbox" name="tntoggle" id="discordpresenceshowdetailsToggle" onclick="settings.discordPresenceShowDetails = this.checked; updateDiscordPresence(); settings.saveToFile();">
+        <input type="checkbox" name="tntoggle" id="discordpresenceToggle" onclick="Settings.current.toggleDiscordPresence(this.checked); settings.saveToFile();">
+        <label for="discordpresenceToggle">Discord Presence</label>
+        <sup>
+          Discord presence makes Toxen appear as the current "game" being played on your Discord status.
+        </sup>
+        <input type="checkbox" name="tntoggle" id="discordpresenceshowdetailsToggle" onclick="settings.discordPresenceShowDetails = this.checked; Toxen.updateDiscordPresence(); settings.saveToFile();">
         <label for="discordpresenceshowdetailsToggle">Discord Presence: Show Details</label>
         <sup>
           Display the details of the current song playing in Discord Presence.

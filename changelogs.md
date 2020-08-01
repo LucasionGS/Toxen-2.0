@@ -20,7 +20,6 @@ Features I want to implement (This will be updated as I get more ideas and remem
 - Better song info editing
   - Multi-song info editing
 - Multi-add to playlist
-- Remove a song from a playlist
 - Remove a playlist
 - Visualizer Quanity Customizer (Interface buttons for `Storyboard`.`setAnalyserFftLevel` and `Storyboard`.`setAnalyserFftSize`)
 - Music Playback Rate Changer (Like the first version of Toxen used to have)
@@ -53,8 +52,10 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+## 202008010520
 - Added support for OGG files to be imported and converted in Toxen.
 - Added a custom header to better fit the theme.
+  - Press on the Toxen text next to the icon in the top left to open up more options that used to be in the top bar.
 - Added `BackgroundDim` function for ToxenScript.
   - `BackgroundDim` takes `1` parameter. A number between `0` and `100`. `0` is no background dim, and `100` is maximum dim, i.e completely black.
   ```js
@@ -72,7 +73,6 @@ Features and changes that has already been made to Toxen.
   ```
 - Added support for whole integers in ToxenScript to be used without needing quotes.
   - Now you can write for example: `5` instead of `"5"`, but if you want to use a float you still need to use quotes like this `"5.2"`
-
   - Changed how playlist management works. You can now select and deselect playlists easily!
 
 ## 202007272153

@@ -3,6 +3,7 @@ export declare let hueApi: import("node-hue-api/lib/api/Api");
 import * as Electron from "electron";
 import * as Zip from "adm-zip";
 import { EventEmitter } from "events";
+import * as rpc from "discord-rpc";
 interface HTMLElementScroll extends HTMLElement {
     scrollIntoViewIfNeeded(): void;
 }
@@ -60,6 +61,13 @@ export declare class Toxen {
      * Close the Toxen application immediately.
      */
     static close(): void;
+    static discordConnect(): Promise<void | rpc.Client>;
+    static discordDisconnect(): Promise<void>;
+    /**
+     * Update Discord presence
+     */
+    static updateDiscordPresence(): Promise<void>;
+    static updateDiscordPresence(song: Song): Promise<void>;
     static ffmpegAvailable(): boolean;
     static ffmpegPath(): string;
     /**
@@ -231,6 +239,7 @@ export declare class Settings {
      * Set the progress bar spot.
      */
     setProgressBarSpot(spotid: number): void;
+    toggleDiscordPresence(force?: boolean): void;
     /**
      * Percentage to dim the background.
      */
@@ -334,6 +343,10 @@ export declare class Settings {
      * `2` Shows backgrounds as a background on the music panel for the songs with a custom background.
      */
     thumbnails: number;
+    /**
+     * Discord presence
+     */
+    discordPresence: boolean;
     /**
      * Display the details of the current song playing in Discord Presence.
      * Details include Artist, Title, and current time.

@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const ToxenCore = require("./toxenCore");
 const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Debug, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, SongGroup, toxenMenus, toxenHeaderMenu, showTutorial, } = ToxenCore;
-const rpc = require("discord-rpc");
 const path = require("path");
 const rimraf = require("rimraf");
 const __toxenVersion = require("./version.json");
@@ -21,30 +20,6 @@ Toxen.version = __toxenVersion;
 const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;
 let browserWindow = remote.getCurrentWindow();
-// Discord RPC
-const discord = new rpc.Client({ "transport": "ipc" });
-const clientId = '647178364511191061';
-let discordReady = false;
-discord.on("ready", () => {
-    console.log('Discord RPC Connected');
-    discordReady = true;
-});
-discordApplicationLogin();
-function discordApplicationLogin(attempts = 3) {
-    let tries = 0;
-    _login();
-    function _login() {
-        discord.login({ clientId }).catch(reason => {
-            console.error(reason);
-            tries++;
-            // Re-enble if I figure out the issue.
-            // if (tries < attempts) {
-            //   console.error(`Login attempt ${tries + 1}...`);
-            //   _login();
-            // }
-        });
-    }
-}
 /**
  * Global Settings Object
  */
@@ -118,6 +93,9 @@ function initialize() {
                     break;
             }
         }
+        if (settings.discordPresence === true) {
+            Toxen.discordConnect();
+        }
         if (settings.showTutorialOnStart) {
             showTutorial();
         }
@@ -161,7 +139,7 @@ function initialize() {
                 // Song Info
                 song.displayInfo();
                 // Discord Rich Presence
-                updateDiscordPresence(song);
+                Toxen.updateDiscordPresence(song);
                 while (isNaN(SongManager.player.duration)) {
                     yield Debug.wait(1);
                 }
@@ -315,7 +293,7 @@ function initialize() {
         window.addEventListener("mouseup", function (e) {
             if (e.button == 0 && document.querySelector("#progressbar").clicking == true) {
                 document.querySelector("#progressbar").clicking = false;
-                updateDiscordPresence();
+                Toxen.updateDiscordPresence();
             }
         });
         document.getElementById("progressbar").addEventListener("click", function (e) {
@@ -323,7 +301,7 @@ function initialize() {
             let percent = (e.clientX - p.clientLeft) / p.clientWidth;
             percent = Math.min(Math.max(0, percent), 1);
             SongManager.moveToTime(SongManager.player.duration * percent);
-            updateDiscordPresence();
+            Toxen.updateDiscordPresence();
         });
         window.addEventListener("mousemove", function (e) {
             const p = document.querySelector("#progressbar");
@@ -464,46 +442,8 @@ function initialize() {
     });
 }
 ipcRenderer.on("updatediscordpresence", () => {
-    updateDiscordPresence();
+    Toxen.updateDiscordPresence();
 });
-/**
- * Update Discord presence
- */
-function updateDiscordPresence(song = SongManager.getCurrentlyPlayingSong()) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let attemptCount = 0;
-        while (true) {
-            if (attemptCount > 30) {
-                break;
-            }
-            if (isNaN(SongManager.player.duration) || !discordReady) {
-                attemptCount++;
-                yield Debug.wait(100);
-            }
-            else {
-                let options = {
-                    "details": `${ScriptEditor.window != null ? "Editing a storyboard" : song.isVideo ? "Watching a video" : "Listening to a song"}`,
-                    "largeImageKey": Settings.current.lightThemeBase ? "toxenlight" : "toxen"
-                };
-                if (settings.discordPresenceShowDetails) {
-                    // options["startTimestamp"] = Date.now(); // For Time left
-                    // options["endTimestamp"] = Date.now() + (SongManager.player.duration - SongManager.player.currentTime) * 1000; // For Time left
-                    if (!SongManager.player.paused)
-                        options["startTimestamp"] = Date.now() - (SongManager.player.currentTime * 1000); // For Time Elapsed
-                    options["details"] = (SongManager.player.paused ? "(Paused) " : "")
-                        + (`${ScriptEditor.window != null ? "Editing "
-                            : song.isVideo ? "Watching "
-                                : "Listening to "}`)
-                        + `${song.details.artist} - ${song.details.title}`;
-                    if (song.details.source)
-                        options["state"] = `\nFrom ${song.details.source}`;
-                }
-                discord.setActivity(options);
-                break;
-            }
-        }
-    });
-}
 var avg = 0;
 var avgSec = 0;
 var dim = 0;
