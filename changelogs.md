@@ -29,7 +29,7 @@ Features I want to implement (This will be updated as I get more ideas and remem
     - https://toxen.net/listings/SUBJECT
   - A Toxen forum where you can ask questions or suggest ideas for future updates.
 
-- Smoother Redesign (Check ref)
+- Smoother Redesign (Check refs from Jiri)
   - Single side panel visible while not idle.
     - Side panel will have the buttons for Music Panel, Settings, and other panels.
     - VSCode has something very similar to this concept, use it for inspiration.
@@ -52,12 +52,16 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+
+## 202008022155
 - Added `Custom Group` as a details each song can have. You can group songs by this new detail to sort them in a custom group that's only mneant for grouping songs together
 - Swapped around the `Artist` detail field and the `Title` detail field. Now `Artist` is above `Title`
 - Reskinned and reformatted the main layout.
   - Progress bar has changed look and is now in the bottom of the screen along with the center buttons.
-  - Changed the center buttons to look less blocky
+  - Changed the center buttons to look less blocky.
   - Progress bar now hides when inactive.
+  - Changed the position of the `current time/duration` text to right above the new Progress bar.
+  - Removed the volume adjuster in the settings menu in favor of the new, prettier volume adjuster in the center of the screen.
 
 ## 202008010520
 - Added support for OGG files to be imported and converted in Toxen.

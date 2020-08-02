@@ -46,21 +46,24 @@
     <video id="musicObject"></video>
     <div id="progressbarspot2" class="hideoninactive" style="position: absolute; width: 100%; bottom: 0;"></div>
     <div class="sidebar left" id="songmenusidebar">
-      <div id="progressbarspot1">
+      <!-- <div id="progressbarspot1">
         <div id="progress">
-          <label id="progresstext"></label>
           <br>
-          <!-- <progress id="progressbar" class="fancyprogress"></progress> -->
+          <progress id="progressbar" class="fancyprogress"></progress>
         </div>
       </div>
-      <hr>
+      <hr> -->
       <div id="lockPanel" onclick="Settings.current.toggleSongPanelLock(); Settings.current.saveToFile()" title="Toggle lock Panel">🔓</div>
-      <label for="search">Search</label>
-      <br>
-      <input type="text" id="search" oninput="SongManager.search(this.value)" class="fancyinput">
+      <div class="flex" style="width: 90%">
+        <div style="width: 100%">
+        <label for="search">Search</label>
+        <br>
+        <input style="width: 90%" type="text" id="search" oninput="SongManager.search(this.value)" class="fancyinput">
+        </div>
+      </div>
       <div id="songselection"></div>
       <div class="flex">
-        <button 
+        <button
         class="fancybutton"
         title="Sort by Artist"
         id="sortByArtist"
@@ -75,6 +78,13 @@
         title="Sort by Length"
         id="sortByLength"
         onclick="SongManager.refreshList('length');">Length</button>
+      </div>
+      <br>
+      <div class="flex">
+        <select style="width: 100%" name="playlist" id="playlistselection" class="fancyselect" onchange="Settings.current.selectPlaylist(this.value); Settings.current.saveToFile();">
+          <option value="%null%">None</option>
+        </select>
+        <button style="width: 35%" class="fancybutton" onclick="Settings.current.addPlaylist();">New</button>
       </div>
       <hr>
       <div class="flex">
@@ -186,21 +196,14 @@
       <sup id="currentversion"></sup>
       <button id="updatetoxen" class="fancybutton">Loading...</button>
       <hr>
-      <label for="volumeValue">Volume</label>
+      <!-- <label for="volumeValue">Volume</label>
       <input type="range" class="fancyrange" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.setVolume(this.value);" onmouseup="settings.saveToFile();">
-      <hr>
+      <hr> -->
       <label for="songFolder">Song Folder</label>
       <input type="text" name="songFolder" id="songfolderValue" readonly class="fancyinput">
       <button class="fancybutton svg_folderopen_white" onclick="Settings.current.selectSongFolder();" id="selectfolderbutton"> Select</button>
       <style>
       </style>
-      <br>
-      <br>
-      <label for="playlist">Playlist</label>
-      <select name="playlist" id="playlistselection" class="fancyselect" onchange="Settings.current.selectPlaylist(this.value); Settings.current.saveToFile();">
-        <option value="%null%">None</option>
-      </select>
-      <button class="fancybutton" onclick="Settings.current.addPlaylist();">New Playlist</button>
       <hr>
       <!-- <h3>Song Grouping</h3> -->
       <label>Song Grouping</label>
@@ -449,6 +452,7 @@
     </div>
     <p id="subtitles"></p>
   </div>
+  <label id="progresstext" class="hideoninactive"></label>
   <div id="midpanelcontainer" class="floatingbutton hideoninactive">
     <!-- <img src="./img/midpanel.png" alt="midpanel.png" draggable="false"> -->
     <div id="smallshufflebutton" class="smallfloatingbutton" style="transform: translateX(0px);" onclick="SongManager.toggleShuffle()" title="Shuffle makes songs play randomly instead of in a list order">
@@ -465,6 +469,10 @@
     </div>
     <div id="smallrepeatbutton" class="smallfloatingbutton" style="transform: translateX(256px);" onclick="SongManager.toggleRepeat()" title="Repeat make the current song repeat forever until disabled">
       <img src="./svg/repeat_black.svg" svgoff="./svg/repeat_black.svg" svgon="./svg/repeat_black_enabled.svg" alt="repeat_black.svg" draggable="false">
+    </div>
+    <div id="audioadjuster" class="smallfloatingbutton" style="transform: translateX(332px);">
+      <label>Volume</label>
+      <!-- JavaScript inserts an object here :) -->
     </div>
   </div>
   <div id="songpanelbutton" class="floatingbutton hideoninactive" title="Open the Song Panel">

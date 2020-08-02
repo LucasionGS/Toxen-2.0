@@ -100,6 +100,13 @@ export class Toxen {
   }
 
   /**
+   * Clear characters windows filesystem or Toxen doesn't understand.
+   */
+  static clearIllegalCharacters(filename: string) {
+    return filename.replace(/[/\\?%*:|"<>#]/g, '-');
+  }
+
+  /**
    * Show an error prompt and a button to send it to the developer for troubleshooting.
    * @param err Error message
    */
@@ -118,7 +125,7 @@ export class Toxen {
    */
   static errorPrompt(err: any, explanation: string, cause: string): void;
   static errorPrompt(err: any, explanation?: string, cause: string = "Unknown") {
-    console.clear();
+    // console.clear();
     const errReport = util.inspect(err, true);
     console.warn("⬇⬇⬇ This error caused Toxen to be unable to complete the task ⬇⬇⬇ -----------------------------\n⬇⬇⬇ Send this error message to the developer ⬇⬇⬇ ------------------------");
     console.error(err);
@@ -287,7 +294,7 @@ export class Toxen {
   static toggleFullScreen(mode = !browserWindow.isFullScreen()) {
     browserWindow.setFullScreen(mode);
     browserWindow.setMenuBarVisibility(!mode);
-    Settings.current.reloadProgressBarSpot();
+    // Settings.current.reloadProgressBarSpot();
     document.getElementById("titlebar").style.opacity = mode ? "0" : "1";
     // document.getElementById("mainbody").style.marginTop = mode ? "0px" : "32px";
     // document.getElementById("mainbody").style.height = mode ? "calc(100vh - 32px)" : "100vh";
@@ -295,14 +302,14 @@ export class Toxen {
     c.style.top = (mode ? "0" : "32px");
     c.style.height = (mode ? "100vh" : "calc(100vh - 32px)");
     c.height = mode ? window.innerHeight : window.innerHeight - 32;
-    
-    // if (Settings.current.progressBarSpot != 2) {
-    //   let panels = document.querySelectorAll<HTMLDivElement>(".sidebar");
-    //   panels.forEach(p => {
-    //     p.style.height = "100vh";
-    //     p.style.height = "calc(100vh - 38px)";
-    //   });
-    // }
+    if (mode) {
+      document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
+      document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
+    }
+    else {
+      document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - 32px)";
+      document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - 32px)";
+    }
   }
 
   static updatePlatform: "win" | "linux" | "mac";
@@ -745,10 +752,30 @@ export namespace Toxen {
       return [...this];
     }
   }
+  export interface InteractiveProgressBar {
+    on(event: "click", listener: (value: number) => void): this;
+    on(event: "drag", listener: (value: number) => void): this;
+    on(event: "release", listener: (value: number) => void): this;
+    
+    emit(event: "click", value: number): boolean;
+    emit(event: "drag", value: number): boolean;
+    emit(event: "release", value: number): boolean;
+  }
 
-  export class InteractiveProgressBar {
+  export namespace InteractiveProgressBar {
+    export interface HTMLInteractiveProgressBar extends HTMLDivElement {
+      object: InteractiveProgressBar,
+      thumb: HTMLDivElement
+    }
+  }
+
+  export class InteractiveProgressBar extends EventEmitter {
     constructor(width: string | number = "100%", height: string | number = 20) {
-      this.element = document.createElement("div");
+      super();
+      this.element = document.createElement("div") as InteractiveProgressBar.HTMLInteractiveProgressBar;
+      console.log(this);
+      
+      this.element.object = this;
       if (typeof width == "number") width = width + "px";
       if (typeof height == "number") height = height + "px";
       this.element.style.display = "block";
@@ -769,11 +796,54 @@ export namespace Toxen {
       this.thumb.style.borderWidth = "1px";
       this.thumb.style.backgroundColor = "white";
 
+      this.element.thumb = this.thumb;
+
       this.element.appendChild(this.thumb);
+
+      window.addEventListener("mouseup", (e) => {
+        if (e.button == 0 && this.clicking == true) {
+          this.clicking = false;
+          this.emit("release", this.value);
+        }
+      });
+      this.element.addEventListener("click", (e) => {
+        const p: InteractiveProgressBar = this;
+        let box = p.element.getBoundingClientRect();
+        let percent = (e.clientX - box.left) / box.width;
+        percent = Math.min(Math.max(0, percent), 1);
+        this.value = this.max * percent;
+        this.emit("click", this.value);
+      });
+      window.addEventListener("mousemove", (e) => {
+        const p: InteractiveProgressBar = this;
+        if (p.clicking === true) {
+          let box = p.element.getBoundingClientRect();
+          let percent = (e.clientX - box.left) / box.width;
+          percent = Math.min(Math.max(0, percent), 1);
+          this.value = this.max * percent;
+          this.emit("drag", this.value);
+        }
+      });
+      this.element.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        if (e.button == 0) {
+          this.clicking = true;
+        }
+      });
     }
 
-    element: HTMLDivElement;
+    element: InteractiveProgressBar.HTMLInteractiveProgressBar;
     thumb: HTMLDivElement;
+    clicking: boolean = false;
+    color: {
+      red: number,
+      green: number,
+      blue: number
+    } = {
+      red: 255,
+      green: 255,
+      blue: 255
+    }
     private _min: number = 0;
     private _max: number = 100;
     private _value: number = 0;
@@ -798,12 +868,16 @@ export namespace Toxen {
       this._value = _value;
       this.updateRange();
     }
-    progressbarspot2
+
+    get percent() {
+      return this.value / this.max * 100;
+    }
+
     updateRange() {
       let pos = this.element.getBoundingClientRect();
       let percent = this.value / this.max * 100;
       this.thumb.style.marginLeft = (pos.width * (this.value / this.max)) + "px";
-      let lGradient = `linear-gradient(90deg, rgba(${Storyboard.red},${Storyboard.green},${Storyboard.blue},0.7) 0%, rgba(${Storyboard.red},${Storyboard.green},${Storyboard.blue},1) ${Math.round(percent)}%, rgba(255,255,255,0) ${Math.round(percent)}%)`;
+      let lGradient = `linear-gradient(90deg, rgba(${this.color.red},${this.color.green},${this.color.blue},0.7) 0%, rgba(${this.color.red},${this.color.green},${this.color.blue},1) ${Math.round(percent)}%, rgba(255,255,255,0) ${Math.round(percent)}%)`;
       this.element.style.background = lGradient;
       // `linear-gradient(90deg, rgba(0,64,0,1) 0%, rgba(0,255,0,1) 49%, rgba(255,255,255,0) 49%);`
     }
@@ -885,8 +959,9 @@ export class Settings {
   setVolume(value: number) {
     this.volume = value;
     SongManager.player.volume = value / 100;
-    let volumeRange = document.querySelector<HTMLInputElement>("#volumeValue");
-    if (+volumeRange.value != value) volumeRange.value = value + "";
+    let volumeRange = document.querySelector<Toxen.InteractiveProgressBar.HTMLInteractiveProgressBar>("#audioadjusterbar");
+
+    if (volumeRange.object.value != value) volumeRange.object.value = value;
   }
 
   applySettingsToPanel() {
@@ -1192,61 +1267,67 @@ export class Settings {
   setProgressBarSpot(spotid: number) {
     this.progressBarSpot = spotid;
     let bar = Toxen.interactiveProgressBar.element;
-    switch (this.progressBarSpot) {
-      case 0:
-        document.getElementById("progressbarspot1").appendChild(bar);
-        if (browserWindow.isFullScreen()) {
-          document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
-          document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
-        }
-        else {
-          document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "";
-          document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "";
-        }
+    // document.getElementById("progressbarspot2").style.bottom = "12px";
+    // document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
+    // document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
+    // document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "32px";
+    // document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
+    // document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
+    // switch (this.progressBarSpot) {
+    //   case 0:
+    //     document.getElementById("progressbarspot1").appendChild(bar);
+    //     if (browserWindow.isFullScreen()) {
+    //       document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
+    //       document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
+    //     }
+    //     else {
+    //       document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "";
+    //       document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "";
+    //     }
         
-        document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "";
-        document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
-        document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
-        break;
-      case 1:
-        document.getElementById("progressbarspot2").appendChild(bar);
-        // if (browserWindow.isFullScreen()) {
-        //   document.getElementById("progressbarspot2").style.top = "0";
-        //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-        //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-        //   document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "64px";
-        //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
-        //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
-        // }
-        // else {
-        //   document.getElementById("progressbarspot2").style.top = "32px";
-        //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
-        //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
-        //   document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "96px";
-        //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "38px";
-        //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "38px";
-        // }
-        document.getElementById("progressbarspot2").style.bottom = "12px";
-        document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
-        document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
-        document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "32px";
-        document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
-        document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
-        break;
-      case 2:
-        document.getElementById("progressbarspot2").appendChild(bar);
-        document.getElementById("progressbarspot2").style.top = "";
-        document.getElementById("progressbarspot2").style.bottom = "0";
-        document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-        document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-        document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "";
-        document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "0";
-        document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "0";
-        break;
+    //     document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "";
+    //     document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
+    //     document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
+    //     break;
+    //   case 1:
+    //     document.getElementById("progressbarspot2").appendChild(bar);
+    //     // if (browserWindow.isFullScreen()) {
+    //     //   document.getElementById("progressbarspot2").style.top = "0";
+    //     //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
+    //     //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
+    //     //   document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "64px";
+    //     //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
+    //     //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
+    //     // }
+    //     // else {
+    //     //   document.getElementById("progressbarspot2").style.top = "32px";
+    //     //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
+    //     //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
+    //     //   document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "96px";
+    //     //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "38px";
+    //     //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "38px";
+    //     // }
+    //     document.getElementById("progressbarspot2").style.bottom = "12px";
+    //     document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
+    //     document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
+    //     document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "32px";
+    //     document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
+    //     document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
+    //     break;
+    //   case 2:
+    //     document.getElementById("progressbarspot2").appendChild(bar);
+    //     document.getElementById("progressbarspot2").style.top = "";
+    //     document.getElementById("progressbarspot2").style.bottom = "0";
+    //     document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
+    //     document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
+    //     document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "";
+    //     document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "0";
+    //     document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "0";
+    //     break;
         
-        default:
-        break;
-    }
+    //     default:
+    //     break;
+    // }
   }
 
   toggleDiscordPresence(force: boolean = !Settings.current.discordPresence) {

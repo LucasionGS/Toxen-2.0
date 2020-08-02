@@ -41,11 +41,24 @@ window.addEventListener("load", () => {
         });
     }, 10);
 });
+// Progress bar
 Toxen.interactiveProgressBar = new Toxen.InteractiveProgressBar("48%", 16);
+Toxen.interactiveProgressBar.element.id = "progressbar";
+Toxen.interactiveProgressBar.element.classList.add("hideoninactive");
+// Progress bar events
+Toxen.interactiveProgressBar.on("click", value => {
+    SongManager.moveToTime(value);
+    Toxen.updateDiscordPresence();
+})
+    .on("drag", value => {
+    SongManager.moveToTime(value);
+})
+    .on("release", () => {
+    Toxen.updateDiscordPresence();
+});
 function initialize() {
     return __awaiter(this, void 0, void 0, function* () {
-        document.getElementById("progress").appendChild(Toxen.interactiveProgressBar.element);
-        // Load settings (IMPORTANT TO BE DONE FIRST)
+        // Load settings
         settings.loadFromFile();
         if (settings.songFolder == null) {
             switch (process.platform) {
@@ -61,6 +74,22 @@ function initialize() {
         if (settings.discordPresence === true) {
             Toxen.discordConnect();
         }
+        document.body.appendChild(Toxen.interactiveProgressBar.element); // Insert the progress bar
+        let audioAdjuster = new Toxen.InteractiveProgressBar(128, 12); // Create the volume bar
+        audioAdjuster.max = 100;
+        audioAdjuster.element.id = "audioadjusterbar";
+        document.getElementById("audioadjuster").appendChild(audioAdjuster.element); // Insert the volume bar
+        audioAdjuster.on("click", value => {
+            Settings.current.setVolume(value);
+            Settings.current.saveToFile();
+        })
+            .on("drag", value => {
+            Settings.current.setVolume(value);
+        })
+            .on("release", value => {
+            Settings.current.setVolume(value);
+            Settings.current.saveToFile();
+        });
         if (settings.showTutorialOnStart) {
             showTutorial();
         }
@@ -116,7 +145,7 @@ function initialize() {
         };
         // Applying everything
         SongManager.player = document.querySelector("#musicObject"); // Important to be done first
-        SongManager.player.volume = settings.volume / 100;
+        settings.setVolume(settings.volume);
         SongManager.songListElement = document.querySelector("#songselection");
         SongManager.toggleShuffle(settings.shuffle);
         SongManager.toggleRepeat(settings.repeat);
@@ -124,7 +153,7 @@ function initialize() {
         settings.toggleSongPanelLock(settings.songMenuLocked);
         settings.toggleVideo(settings.video);
         // settings.setProgressBarSpot(settings.progressBarSpot);
-        settings.setProgressBarSpot(1);
+        // settings.setProgressBarSpot(1);
         Storyboard.rgb(settings.visualizerColor.red, settings.visualizerColor.green, settings.visualizerColor.blue);
         // Get songs from either database or scan folder.
         if (!settings.remote && !fs.existsSync(settings.songFolder + "/db.json")) {
@@ -153,9 +182,15 @@ function initialize() {
         function updateTimer() {
             // document.querySelector<HTMLProgressElement>("div#progress progress#progressbar").value = SongManager.player.currentTime;
             Toxen.interactiveProgressBar.value = SongManager.player.currentTime;
+            if (Toxen.interactiveProgressBar.color.red != Storyboard.red)
+                Toxen.interactiveProgressBar.color.red = Storyboard.red;
+            if (Toxen.interactiveProgressBar.color.green != Storyboard.green)
+                Toxen.interactiveProgressBar.color.green = Storyboard.green;
+            if (Toxen.interactiveProgressBar.color.blue != Storyboard.blue)
+                Toxen.interactiveProgressBar.color.blue = Storyboard.blue;
             let cur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.currentTime);
             let dur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.duration);
-            let progressText = document.querySelector("div#progress label#progresstext");
+            let progressText = document.querySelector("label#progresstext");
             while (dur.startsWith("00:")) {
                 cur = cur.substring(3);
                 dur = dur.substring(3);
@@ -257,38 +292,6 @@ function initialize() {
             let c = document.querySelector("#storyboard");
             c.width = window.innerWidth;
             c.height = browserWindow.isFullScreen() ? window.innerHeight : window.innerHeight - 32;
-        });
-        window.addEventListener("mouseup", function (e) {
-            // if (e.button == 0 && document.querySelector<HTMLProgressElement>("#progressbar").clicking == true) {
-            //   document.querySelector<HTMLProgressElement>("#progressbar").clicking = false;
-            //   Toxen.updateDiscordPresence();
-            // }
-            if (e.button == 0 && Toxen.interactiveProgressBar.element.clicking == true) {
-                Toxen.interactiveProgressBar.element.clicking = false;
-                Toxen.updateDiscordPresence();
-            }
-        });
-        Toxen.interactiveProgressBar.element.addEventListener("click", function (e) {
-            const p = Toxen.interactiveProgressBar.element;
-            let box = p.getBoundingClientRect();
-            let percent = (e.clientX - box.left) / box.width;
-            percent = Math.min(Math.max(0, percent), 1);
-            SongManager.moveToTime(SongManager.player.duration * percent);
-            Toxen.updateDiscordPresence();
-        });
-        window.addEventListener("mousemove", function (e) {
-            const p = Toxen.interactiveProgressBar.element;
-            if (p.clicking === true) {
-                let box = p.getBoundingClientRect();
-                let percent = (e.clientX - box.left) / box.width;
-                percent = Math.min(Math.max(0, percent), 1);
-                SongManager.moveToTime(SongManager.player.duration * percent);
-            }
-        });
-        Toxen.interactiveProgressBar.element.addEventListener("mousedown", function (e) {
-            e.preventDefault();
-            if (e.button == 0)
-                Toxen.interactiveProgressBar.element.clicking = true;
         });
         // Confine window and panels.
         window.addEventListener("scroll", () => {

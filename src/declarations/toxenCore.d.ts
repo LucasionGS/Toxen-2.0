@@ -14,6 +14,10 @@ declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 40
 export declare class Toxen {
     static initialize(): void;
     /**
+     * Clear characters windows filesystem or Toxen doesn't understand.
+     */
+    static clearIllegalCharacters(filename: string): string;
+    /**
      * Show an error prompt and a button to send it to the developer for troubleshooting.
      * @param err Error message
      */
@@ -216,10 +220,30 @@ export declare namespace Toxen {
          */
         toArray(): ArrayType[];
     }
-    export class InteractiveProgressBar {
+    export interface InteractiveProgressBar {
+        on(event: "click", listener: (value: number) => void): this;
+        on(event: "drag", listener: (value: number) => void): this;
+        on(event: "release", listener: (value: number) => void): this;
+        emit(event: "click", value: number): boolean;
+        emit(event: "drag", value: number): boolean;
+        emit(event: "release", value: number): boolean;
+    }
+    export namespace InteractiveProgressBar {
+        interface HTMLInteractiveProgressBar extends HTMLDivElement {
+            object: InteractiveProgressBar;
+            thumb: HTMLDivElement;
+        }
+    }
+    export class InteractiveProgressBar extends EventEmitter {
         constructor(width?: string | number, height?: string | number);
-        element: HTMLDivElement;
+        element: InteractiveProgressBar.HTMLInteractiveProgressBar;
         thumb: HTMLDivElement;
+        clicking: boolean;
+        color: {
+            red: number;
+            green: number;
+            blue: number;
+        };
         private _min;
         private _max;
         private _value;
@@ -229,7 +253,7 @@ export declare namespace Toxen {
         set max(_value: number);
         get value(): number;
         set value(_value: number);
-        progressbarspot2: any;
+        get percent(): number;
         updateRange(): void;
     }
     export {};

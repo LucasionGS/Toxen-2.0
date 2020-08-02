@@ -24,7 +24,6 @@ const {
 import * as path from "path";
 import rimraf = require("rimraf");
 import * as __toxenVersion from "./version.json"
-import * as util from "util";
 Toxen.version = __toxenVersion;
 const { remote, ipcRenderer, shell } = require("electron");
 let debugMode = !remote.app.isPackaged;
@@ -54,11 +53,24 @@ window.addEventListener("load", () => {
   }, 10);
 });
 
+// Progress bar
 Toxen.interactiveProgressBar = new Toxen.InteractiveProgressBar("48%", 16);
-async function initialize() {
-  document.getElementById("progress").appendChild(Toxen.interactiveProgressBar.element);
+Toxen.interactiveProgressBar.element.id = "progressbar";
+Toxen.interactiveProgressBar.element.classList.add("hideoninactive");
+// Progress bar events
+Toxen.interactiveProgressBar.on("click", value => {
+  SongManager.moveToTime(value);
+  Toxen.updateDiscordPresence();
+})
+.on("drag", value => {
+  SongManager.moveToTime(value);
+})
+.on("release", () => {
+  Toxen.updateDiscordPresence();
+});
 
-  // Load settings (IMPORTANT TO BE DONE FIRST)
+async function initialize() {
+  // Load settings
   settings.loadFromFile();
   if (settings.songFolder == null) {
     switch(process.platform) {
@@ -75,6 +87,23 @@ async function initialize() {
   if (settings.discordPresence === true) {
     Toxen.discordConnect();
   }
+
+  document.body.appendChild(Toxen.interactiveProgressBar.element); // Insert the progress bar
+  let audioAdjuster = new Toxen.InteractiveProgressBar(128, 12); // Create the volume bar
+  audioAdjuster.max = 100;
+  audioAdjuster.element.id = "audioadjusterbar";
+  document.getElementById("audioadjuster").appendChild(audioAdjuster.element); // Insert the volume bar
+  audioAdjuster.on("click", value => {
+    Settings.current.setVolume(value);
+    Settings.current.saveToFile();
+  })
+  .on("drag", value => {
+    Settings.current.setVolume(value);
+  })
+  .on("release", value => {
+    Settings.current.setVolume(value);
+    Settings.current.saveToFile();
+  });
   
   if (settings.showTutorialOnStart) { showTutorial(); }
   stats.load();
@@ -129,7 +158,7 @@ async function initialize() {
   
   // Applying everything
   SongManager.player = document.querySelector("#musicObject"); // Important to be done first
-  SongManager.player.volume = settings.volume / 100;
+  settings.setVolume(settings.volume);
   SongManager.songListElement = document.querySelector("#songselection");
 
   SongManager.toggleShuffle(settings.shuffle);
@@ -138,7 +167,7 @@ async function initialize() {
   settings.toggleSongPanelLock(settings.songMenuLocked);
   settings.toggleVideo(settings.video);
   // settings.setProgressBarSpot(settings.progressBarSpot);
-  settings.setProgressBarSpot(1);
+  // settings.setProgressBarSpot(1);
   Storyboard.rgb(settings.visualizerColor.red, settings.visualizerColor.green, settings.visualizerColor.blue);
 
   // Get songs from either database or scan folder.
@@ -171,9 +200,12 @@ async function initialize() {
   function updateTimer() {
     // document.querySelector<HTMLProgressElement>("div#progress progress#progressbar").value = SongManager.player.currentTime;
     Toxen.interactiveProgressBar.value = SongManager.player.currentTime;
+    if (Toxen.interactiveProgressBar.color.red != Storyboard.red) Toxen.interactiveProgressBar.color.red = Storyboard.red;
+    if (Toxen.interactiveProgressBar.color.green != Storyboard.green) Toxen.interactiveProgressBar.color.green = Storyboard.green;
+    if (Toxen.interactiveProgressBar.color.blue != Storyboard.blue) Toxen.interactiveProgressBar.color.blue = Storyboard.blue;
     let cur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.currentTime);
     let dur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.duration);
-    let progressText = document.querySelector<HTMLLabelElement>("div#progress label#progresstext");
+    let progressText = document.querySelector<HTMLLabelElement>("label#progresstext");
     while (dur.startsWith("00:")) {
       cur = cur.substring(3);
       dur = dur.substring(3);
@@ -291,50 +323,12 @@ async function initialize() {
     }
   });
 
-  interface HTMLProgressElement extends Element {
-    clicking: boolean;
-    value: number;
-    max: number;
-  }
-
   window.addEventListener("resize", (e) => {
     let c: HTMLCanvasElement = document.querySelector("#storyboard");
     c.width = window.innerWidth;
     c.height = browserWindow.isFullScreen() ? window.innerHeight : window.innerHeight - 32;
   });
   
-  window.addEventListener("mouseup", function(e) {
-    // if (e.button == 0 && document.querySelector<HTMLProgressElement>("#progressbar").clicking == true) {
-    //   document.querySelector<HTMLProgressElement>("#progressbar").clicking = false;
-    //   Toxen.updateDiscordPresence();
-    // }
-    if (e.button == 0 && (Toxen.interactiveProgressBar.element as any as HTMLProgressElement).clicking == true) {
-      (Toxen.interactiveProgressBar.element as any as HTMLProgressElement).clicking = false;
-      Toxen.updateDiscordPresence();
-    }
-  });
-  Toxen.interactiveProgressBar.element.addEventListener("click", function(e) {
-    const p: HTMLProgressElement = (Toxen.interactiveProgressBar.element as any as HTMLProgressElement);
-    let box = p.getBoundingClientRect();
-    let percent = (e.clientX - box.left) / box.width;
-    percent = Math.min(Math.max(0, percent), 1);
-    SongManager.moveToTime(SongManager.player.duration * percent);
-    Toxen.updateDiscordPresence();
-  });
-  window.addEventListener("mousemove", function(e) {
-    const p: HTMLProgressElement = (Toxen.interactiveProgressBar.element as any as HTMLProgressElement);
-    if (p.clicking === true) {
-      let box = p.getBoundingClientRect();
-      let percent = (e.clientX - box.left) / box.width;
-      percent = Math.min(Math.max(0, percent), 1);
-      SongManager.moveToTime(SongManager.player.duration * percent);
-    }
-  });
-  Toxen.interactiveProgressBar.element.addEventListener("mousedown", function(e) {
-    e.preventDefault();
-    if (e.button == 0) (Toxen.interactiveProgressBar.element as any as HTMLProgressElement).clicking = true;
-  });
-
   // Confine window and panels.
   window.addEventListener("scroll", () => {
     if (window.scrollY > 0 || window.scrollX > 0) {

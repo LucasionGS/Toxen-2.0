@@ -228,7 +228,7 @@ div.sidebar {
   bottom: 0;
   background-color: var(--panelcolor);
   height: calc(100vh - 32px);
-  max-height: calc(100vh - 32px);
+  max-height: calc(100vh);
   margin-top: 32px;
   min-width: 0%;
   width: 0%;
@@ -271,9 +271,9 @@ div.floatingbutton#midpanelcontainer {
   transition: all 0.5s ease-in-out;
   width: 320px;
   height: 96px;
-  bottom: 36px;
+  bottom: 40px;
   left: 50vw;
-  transform: translateX(-50%);
+  transform: translateX(-49%);
 }
 
 div.floatingbutton#midpanelcontainer div.smallfloatingbutton {
@@ -289,12 +289,24 @@ div.floatingbutton#midpanelcontainer div.smallfloatingbutton {
   bottom: 4px;
 }
 
-div.floatingbutton#midpanelcontainer:hover div.smallfloatingbutton {
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  width: 56px;
-  height: 56px;
-  bottom: 8px;
+div.floatingbutton#midpanelcontainer:hover {
+  cursor: default;
+}
+
+div.floatingbutton#midpanelcontainer div.smallfloatingbutton#audioadjuster {
+  bottom: -2px;
+}
+
+div.floatingbutton#midpanelcontainer div.smallfloatingbutton#audioadjuster:hover {
+  bottom: -2px;
+}
+
+div.floatingbutton#midpanelcontainer:hover div.smallfloatingbutton#audioadjuster {
+  bottom: -2px;
+}
+
+div.floatingbutton#midpanelcontainer div.smallfloatingbutton#audioadjuster:hover {
+  bottom: -2px;
 }
 
 div.floatingbutton#midpanelcontainer div.smallfloatingbutton:hover {
@@ -483,12 +495,21 @@ div#progress {
   z-index: 10;
 }
 
-div#progress label#progresstext {
-  margin-left: 4px;
+#progressbar {
+  position: absolute;
+  bottom: 12px;
+  left: 50vw;
+  transform: translateX(-50%);
 }
 
-div#progress progress#progressbar {
-  width: 100%;
+label#progresstext {
+  position: absolute;
+  display: inline;
+  bottom: 32px;
+  left: 50vw;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: 1px;
 }
 
 input[type="checkbox"], input[type="radio"] {
@@ -732,6 +753,8 @@ div.selectlist select {
   background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
   transition: all 0.2s ease-in-out;
 }
+
+
 
 /* ToxenScript Values */
 .toxenscript_number {
