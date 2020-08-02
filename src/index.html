@@ -42,14 +42,15 @@
   </header>
   <div id="mainbody">
     <canvas id="storyboard"></canvas>
+    <div id="bottomgradient" class="hideoninactive"></div>
     <video id="musicObject"></video>
-    <div id="progressbarspot2" style="position: absolute; width: 100%; top: 32px;"></div>
+    <div id="progressbarspot2" class="hideoninactive" style="position: absolute; width: 100%; bottom: 0;"></div>
     <div class="sidebar left" id="songmenusidebar">
       <div id="progressbarspot1">
         <div id="progress">
           <label id="progresstext"></label>
           <br>
-          <progress id="progressbar" class="fancyprogress"></progress>
+          <!-- <progress id="progressbar" class="fancyprogress"></progress> -->
         </div>
       </div>
       <hr>
@@ -125,13 +126,13 @@
       <div id="songinfo">
         <h2>Song Info</h2>
         <div class="pinput" title="Click to edit">
-          <input type="search" name="title">
-          <p name="title"></p>
+          <input type="search" name="artist">
+          <p name="artist"></p>
         </div>
         <br>
         <div class="pinput" title="Click to edit">
-          <input type="search" name="artist">
-          <p name="artist"></p>
+          <input type="search" name="title">
+          <p name="title"></p>
         </div>
         <br>
         <div class="pinput" title="Click to edit">
@@ -167,6 +168,11 @@
         <div class="pinput" title="Click to edit">
           <input type="search" name="tags">
           <p name="tags"></p>
+        </div>
+        <br>
+        <div class="pinput" title="Click to edit">
+          <input type="search" name="customGroup">
+          <p name="customGroup"></p>
         </div>
 
         <!-- <div class="pinput">
@@ -214,9 +220,11 @@
       <input type="radio" name="sgstyle" id="songgrouping=6" value="6" onclick="settings.songGrouping = 6; settings.saveToFile(); SongManager.refreshList();">
       <label for="songgrouping=6">By Year</label><br>
       <input type="radio" name="sgstyle" id="songgrouping=7" value="7" onclick="settings.songGrouping = 7; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=7">Alphabetically (Artist)</label><br>
-      <input type="radio" name="sgstyle" id="songgrouping=8" value="8" onclick="settings.songGrouping = 8; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=8">Alphabetically (Title)</label>
+      <label for="songgrouping=7">By Custom Group</label><br>
+      <input type="radio" name="sgstyle" id="songgrouping=8" value="7" onclick="settings.songGrouping = 7; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=8">Alphabetically (Artist)</label><br>
+      <input type="radio" name="sgstyle" id="songgrouping=9" value="8" onclick="settings.songGrouping = 8; settings.saveToFile(); SongManager.refreshList();">
+      <label for="songgrouping=9">Alphabetically (Title)</label>
       <hr>
       <h3>Visual Settings</h3>
       <label>Visualizer Style</label>
@@ -331,14 +339,14 @@
           }
         </script>
       </div>
-      <br>
+      <!-- <br>
       <label>Progress Bar Position</label>
       <sup>Change the position of the progress bar.</sup>
       <input type="radio" name="pbsstyle" id="progressbarspot=0" value="0" onclick="settings.setProgressBarSpot(0); settings.saveToFile();">
       <label for="progressbarspot=0">Side Menu</label><br>
       <input type="radio" name="pbsstyle" id="progressbarspot=1" value="1" onclick="settings.setProgressBarSpot(1); settings.saveToFile();">
       <label for="progressbarspot=1">Top of screen</label><br>
-      <!-- <input type="radio" name="pbsstyle" id="progressbarspot=2" value="2" onclick="settings.setProgressBarSpot(2); settings.saveToFile();">
+      <input type="radio" name="pbsstyle" id="progressbarspot=2" value="2" onclick="settings.setProgressBarSpot(2); settings.saveToFile();">
       <label for="progressbarspot=2">Bottom of screen</label><br> -->
       <hr>
       <label for="backgrounddimValue">Background Dimming</label>
@@ -365,6 +373,13 @@
       <label for="thumbnails=2">Background Images</label>
       <sup>
         Display background image as the background behind the song name in the song list.<br>
+        If you're experiencing low performance, try to disable this.
+      </sup>
+      <input type="radio" name="tnstyle" id="thumbnails=3" onclick="settings.thumbnails = 3; SongManager.refreshList(); settings.saveToFile();">
+      <label for="thumbnails=3">Background Images (Small & Repeating)</label>
+      <sup>
+        Display background image as the background behind the song name in the song list.<br>
+        This however, makes the images small and repeat across the song item. Use this if you want to see the full images.<br>
         If you're experiencing low performance, try to disable this.
       </sup>
       <hr>
@@ -434,28 +449,28 @@
     </div>
     <p id="subtitles"></p>
   </div>
-  <div id="midpanelcontainer" class="floatingbutton">
-    <img src="./img/midpanel.png" alt="midpanel.png" draggable="false">
-    <div id="smallprevbutton" class="smallfloatingbutton" style="transform: translateX(16px);" onclick="SongManager.playPrev()" title="Go to the previous song">
-      <img src="./svg/prev_black.svg" alt="prev_black.svg" draggable="false">
-    </div>
-    <div id="smallplaybutton" class="smallfloatingbutton" style="transform: translateX(80px);" onclick="SongManager.getCurrentlyPlayingSong().play();" title="Pause/play the current song">
-      <img src="./svg/pause_black.svg" id="svgplaybutton" svgplay="./svg/play_black.svg" svgpause="./svg/pause_black.svg" draggable="false">
-    </div>
-    <div id="smallnextbutton" class="smallfloatingbutton" style="transform: translateX(144px);" onclick="local_playNext()" title="Play the next song">
-      <img src="./svg/next_black.svg" alt="next_black.svg" draggable="false">
-    </div>
-    <div id="smallshufflebutton" class="smallfloatingbutton" style="transform: translateX(208px);" onclick="SongManager.toggleShuffle()" title="Shuffle makes songs play randomly instead of in a list order">
+  <div id="midpanelcontainer" class="floatingbutton hideoninactive">
+    <!-- <img src="./img/midpanel.png" alt="midpanel.png" draggable="false"> -->
+    <div id="smallshufflebutton" class="smallfloatingbutton" style="transform: translateX(0px);" onclick="SongManager.toggleShuffle()" title="Shuffle makes songs play randomly instead of in a list order">
       <img src="./svg/shuffle_black.svg" svgoff="./svg/shuffle_black.svg" svgon="./svg/shuffle_black_enabled.svg" alt="shuffle_black.svg" draggable="false">
     </div>
-    <div id="smallrepeatbutton" class="smallfloatingbutton" style="transform: translateX(272px);" onclick="SongManager.toggleRepeat()" title="Repeat make the current song repeat forever until disabled">
+    <div id="smallprevbutton" class="smallfloatingbutton" style="transform: translateX(64px);" onclick="SongManager.playPrev()" title="Go to the previous song">
+      <img src="./svg/prev_black.svg" alt="prev_black.svg" draggable="false">
+    </div>
+    <div id="smallplaybutton" class="smallfloatingbutton" style="transform: translateX(128px);" onclick="SongManager.getCurrentlyPlayingSong().play();" title="Pause/play the current song">
+      <img src="./svg/pause_black.svg" id="svgplaybutton" svgplay="./svg/play_black.svg" svgpause="./svg/pause_black.svg" draggable="false">
+    </div>
+    <div id="smallnextbutton" class="smallfloatingbutton" style="transform: translateX(192px);" onclick="local_playNext()" title="Play the next song">
+      <img src="./svg/next_black.svg" alt="next_black.svg" draggable="false">
+    </div>
+    <div id="smallrepeatbutton" class="smallfloatingbutton" style="transform: translateX(256px);" onclick="SongManager.toggleRepeat()" title="Repeat make the current song repeat forever until disabled">
       <img src="./svg/repeat_black.svg" svgoff="./svg/repeat_black.svg" svgon="./svg/repeat_black_enabled.svg" alt="repeat_black.svg" draggable="false">
     </div>
   </div>
-  <div id="songpanelbutton" class="floatingbutton" title="Open the Song Panel">
+  <div id="songpanelbutton" class="floatingbutton hideoninactive" title="Open the Song Panel">
     <img src="./svg/doublemusicnote_white.svg" alt="doublemusicnote_white.svg" draggable="false">
   </div>
-  <div id="settingsbutton" class="floatingbutton" title="Open the Settings Panel">
+  <div id="settingsbutton" class="floatingbutton hideoninactive" title="Open the Settings Panel">
     <img src="./svg/settings_white.svg" alt="settings_white.svg" draggable="false">
   </div>
 </body>

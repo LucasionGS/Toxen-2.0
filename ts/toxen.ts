@@ -54,7 +54,10 @@ window.addEventListener("load", () => {
   }, 10);
 });
 
+Toxen.interactiveProgressBar = new Toxen.InteractiveProgressBar("48%", 16);
 async function initialize() {
+  document.getElementById("progress").appendChild(Toxen.interactiveProgressBar.element);
+
   // Load settings (IMPORTANT TO BE DONE FIRST)
   settings.loadFromFile();
   if (settings.songFolder == null) {
@@ -134,7 +137,8 @@ async function initialize() {
   SongManager.toggleOnlyVisible(settings.onlyVisible);
   settings.toggleSongPanelLock(settings.songMenuLocked);
   settings.toggleVideo(settings.video);
-  settings.setProgressBarSpot(settings.progressBarSpot);
+  // settings.setProgressBarSpot(settings.progressBarSpot);
+  settings.setProgressBarSpot(1);
   Storyboard.rgb(settings.visualizerColor.red, settings.visualizerColor.green, settings.visualizerColor.blue);
 
   // Get songs from either database or scan folder.
@@ -165,7 +169,8 @@ async function initialize() {
 
   updateTimer();
   function updateTimer() {
-    document.querySelector<HTMLProgressElement>("div#progress progress#progressbar").value = SongManager.player.currentTime;
+    // document.querySelector<HTMLProgressElement>("div#progress progress#progressbar").value = SongManager.player.currentTime;
+    Toxen.interactiveProgressBar.value = SongManager.player.currentTime;
     let cur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.currentTime);
     let dur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.duration);
     let progressText = document.querySelector<HTMLLabelElement>("div#progress label#progresstext");
@@ -181,7 +186,8 @@ async function initialize() {
   }
 
   SongManager.player.addEventListener("canplay", () => {
-    document.querySelector<HTMLProgressElement>("div#progress progress#progressbar").max = SongManager.player.duration;
+    // document.querySelector<HTMLProgressElement>("div#progress progress#progressbar").max = SongManager.player.duration;
+    Toxen.interactiveProgressBar.max = SongManager.player.duration;
   });
 
   // Initialize other objects
@@ -298,29 +304,35 @@ async function initialize() {
   });
   
   window.addEventListener("mouseup", function(e) {
-    if (e.button == 0 && document.querySelector<HTMLProgressElement>("#progressbar").clicking == true) {
-      document.querySelector<HTMLProgressElement>("#progressbar").clicking = false;
+    // if (e.button == 0 && document.querySelector<HTMLProgressElement>("#progressbar").clicking == true) {
+    //   document.querySelector<HTMLProgressElement>("#progressbar").clicking = false;
+    //   Toxen.updateDiscordPresence();
+    // }
+    if (e.button == 0 && (Toxen.interactiveProgressBar.element as any as HTMLProgressElement).clicking == true) {
+      (Toxen.interactiveProgressBar.element as any as HTMLProgressElement).clicking = false;
       Toxen.updateDiscordPresence();
     }
   });
-  document.getElementById("progressbar").addEventListener("click", function(e) {
-    const p: HTMLProgressElement = document.querySelector("#progressbar");
-    let percent = (e.clientX - p.clientLeft) / p.clientWidth;
+  Toxen.interactiveProgressBar.element.addEventListener("click", function(e) {
+    const p: HTMLProgressElement = (Toxen.interactiveProgressBar.element as any as HTMLProgressElement);
+    let box = p.getBoundingClientRect();
+    let percent = (e.clientX - box.left) / box.width;
     percent = Math.min(Math.max(0, percent), 1);
     SongManager.moveToTime(SongManager.player.duration * percent);
     Toxen.updateDiscordPresence();
   });
   window.addEventListener("mousemove", function(e) {
-    const p: HTMLProgressElement = document.querySelector("#progressbar");
+    const p: HTMLProgressElement = (Toxen.interactiveProgressBar.element as any as HTMLProgressElement);
     if (p.clicking === true) {
-      let percent = (e.clientX - p.clientLeft) / p.clientWidth;
+      let box = p.getBoundingClientRect();
+      let percent = (e.clientX - box.left) / box.width;
       percent = Math.min(Math.max(0, percent), 1);
       SongManager.moveToTime(SongManager.player.duration * percent);
     }
   });
-  document.getElementById("progressbar").addEventListener("mousedown", function(e) {
+  Toxen.interactiveProgressBar.element.addEventListener("mousedown", function(e) {
     e.preventDefault();
-    if (e.button == 0) document.querySelector<HTMLProgressElement>("#progressbar").clicking = true;
+    if (e.button == 0) (Toxen.interactiveProgressBar.element as any as HTMLProgressElement).clicking = true;
   });
 
   // Confine window and panels.

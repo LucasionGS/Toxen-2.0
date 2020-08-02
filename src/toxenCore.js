@@ -77,7 +77,7 @@ class Toxen {
         });
         Toxen.on("active", () => {
             document.body.style.cursor = "";
-            let btns = document.querySelectorAll(".floatingbutton");
+            let btns = document.querySelectorAll(".hideoninactive");
             for (let i = 0; i < btns.length; i++) {
                 const btn = btns[i];
                 btn.style.opacity = "1";
@@ -85,7 +85,7 @@ class Toxen {
         });
         Toxen.on("inactive", () => {
             document.body.style.cursor = "none";
-            let btns = document.querySelectorAll(".floatingbutton");
+            let btns = document.querySelectorAll(".hideoninactive");
             for (let i = 0; i < btns.length; i++) {
                 const btn = btns[i];
                 btn.style.opacity = "0";
@@ -524,7 +524,7 @@ switch (process.platform) {
                 this.push(...array);
         }
         /**
-         * Craetes a copy of the TArray and cleans it up with your chosen options.
+         * Creates a copy of the TArray and cleans it up with your chosen options.
          */
         cleanArray(itemsToClean) {
             let a = new TArray(this);
@@ -591,6 +591,65 @@ switch (process.platform) {
         }
     }
     Toxen.TArray = TArray;
+    class InteractiveProgressBar {
+        constructor(width = "100%", height = 20) {
+            this._min = 0;
+            this._max = 100;
+            this._value = 0;
+            this.element = document.createElement("div");
+            if (typeof width == "number")
+                width = width + "px";
+            if (typeof height == "number")
+                height = height + "px";
+            this.element.style.display = "block";
+            this.element.style.margin = "auto";
+            this.element.style.width = width;
+            this.element.style.height = height;
+            this.element.style.borderStyle = "solid";
+            this.element.style.borderWidth = "1px";
+            this.element.style.boxSizing = "border-box";
+            this.element.style.borderRadius = "20px";
+            this.thumb = document.createElement("div");
+            this.thumb.style.borderRadius = "50%";
+            this.thumb.style.transform = `translate(-50%, calc(-${height} * 0.25))`;
+            this.thumb.style.width = `calc(${height} * 1.3)`;
+            this.thumb.style.height = `calc(${height} * 1.3)`;
+            this.thumb.style.borderStyle = "solid";
+            this.thumb.style.borderWidth = "1px";
+            this.thumb.style.backgroundColor = "white";
+            this.element.appendChild(this.thumb);
+        }
+        get min() {
+            return this._min;
+        }
+        set min(_value) {
+            this._min = _value;
+            this.updateRange();
+        }
+        get max() {
+            return this._max;
+        }
+        set max(_value) {
+            this._max = _value;
+            this.updateRange();
+        }
+        get value() {
+            return this._value;
+        }
+        set value(_value) {
+            this._value = _value;
+            this.updateRange();
+        }
+        updateRange() {
+            let pos = this.element.getBoundingClientRect();
+            let percent = this.value / this.max * 100;
+            this.thumb.style.marginLeft = (pos.width * (this.value / this.max)) + "px";
+            let lGradient = `linear-gradient(90deg, rgba(${Storyboard.red},${Storyboard.green},${Storyboard.blue},0.7) 0%, rgba(${Storyboard.red},${Storyboard.green},${Storyboard.blue},1) ${Math.round(percent)}%, rgba(255,255,255,0) ${Math.round(percent)}%)`;
+            this.element.style.background = lGradient;
+            // `linear-gradient(90deg, rgba(0,64,0,1) 0%, rgba(0,255,0,1) 49%, rgba(255,255,255,0) 49%);`
+        }
+    }
+    Toxen.InteractiveProgressBar = InteractiveProgressBar;
 })(Toxen = exports.Toxen || (exports.Toxen = {}));
 class Settings {
     constructor(doNotReplaceCurrent = false) {
@@ -1109,7 +1168,7 @@ class Settings {
      */
     setProgressBarSpot(spotid) {
         this.progressBarSpot = spotid;
-        let bar = document.getElementById("progress");
+        let bar = Toxen.interactiveProgressBar.element;
         switch (this.progressBarSpot) {
             case 0:
                 document.getElementById("progressbarspot1").appendChild(bar);
@@ -1127,23 +1186,28 @@ class Settings {
                 break;
             case 1:
                 document.getElementById("progressbarspot2").appendChild(bar);
-                if (browserWindow.isFullScreen()) {
-                    document.getElementById("progressbarspot2").style.top = "0";
-                    document.querySelector("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-                    document.querySelector("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-                    document.querySelector("p#subtitles").style.top = "64px";
-                    document.querySelector("#songmenusidebar").style.top = "";
-                    document.querySelector("#settingsmenusidebar").style.top = "";
-                }
-                else {
-                    document.getElementById("progressbarspot2").style.top = "32px";
-                    document.querySelector("#songmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
-                    document.querySelector("#settingsmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
-                    document.querySelector("p#subtitles").style.top = "96px";
-                    document.querySelector("#songmenusidebar").style.top = "38px";
-                    document.querySelector("#settingsmenusidebar").style.top = "38px";
-                }
-                document.getElementById("progressbarspot2").style.bottom = "";
+                // if (browserWindow.isFullScreen()) {
+                //   document.getElementById("progressbarspot2").style.top = "0";
+                //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
+                //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
+                //   document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "64px";
+                //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
+                //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
+                // }
+                // else {
+                //   document.getElementById("progressbarspot2").style.top = "32px";
+                //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
+                //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
+                //   document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "96px";
+                //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "38px";
+                //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "38px";
+                // }
+                document.getElementById("progressbarspot2").style.bottom = "12px";
+                document.querySelector("#songmenusidebar").style.height = "100vh";
+                document.querySelector("#settingsmenusidebar").style.height = "100vh";
+                document.querySelector("p#subtitles").style.top = "32px";
+                document.querySelector("#songmenusidebar").style.top = "";
+                document.querySelector("#settingsmenusidebar").style.top = "";
                 break;
             case 2:
                 document.getElementById("progressbarspot2").appendChild(bar);
@@ -1216,6 +1280,7 @@ class Song {
             tags: [],
             playlists: [],
             songLength: 0,
+            customGroup: null,
         };
         this.element = null;
         /**
@@ -1470,7 +1535,17 @@ class Song {
                 _path = _path.replace(/\\+/g, "/");
             }
             this.element.style.background = "linear-gradient(to right,  rgba(0, 0, 0, 1), rgba(0, 0, 0, 0) ), "
-                + `url("${_path}"),` + "center center / cover no-repeat fixed";
+                + `url("${_path}")`;
+            this.element.style.backgroundSize = "cover";
+        }
+        else if (this.background != null && Settings.current.thumbnails == 3) {
+            let _path = this.getFullPath("background");
+            if (process.platform == "win32") {
+                _path = _path.replace(/\\+/g, "/");
+            }
+            this.element.style.background = "linear-gradient(to right,  rgba(0, 0, 0, 1), rgba(0, 0, 0, 0) ), "
+                + `url("${_path}")`;
+            this.element.style.backgroundSize = "contain";
         }
         else {
             this.element.style.background = "";
@@ -1673,7 +1748,7 @@ class Song {
                     self.details[detailsItemName] = input.value.split(`${isArraySeparatedBy}`).map(v => v = v.trim());
                     self.saveDetails();
                     input.blur();
-                    p.innerHTML = "Tags: ".bold() + self.details[detailsItemName].join(`${isArraySeparatedBy} `);
+                    p.innerHTML = `${title}: `.bold() + self.details[detailsItemName].join(`${isArraySeparatedBy} `);
                     input.value = self.details[detailsItemName].join(`${isArraySeparatedBy} `);
                     self.refreshElement();
                 };
@@ -1699,6 +1774,7 @@ class Song {
         makeElement("year", "Year", "year");
         makeElement("genre", "Genre", "genre");
         makeElement("tags", "Tags", "tags", ",");
+        makeElement("customGroup", "Custom Group", "customGroup");
     }
     saveDetails() {
         try {
@@ -2175,7 +2251,7 @@ class SongManager {
             SongManager.songListElement.innerHTML = "";
             let noGrouping = false;
             // Group Songs
-            if (typeof Settings.current.songGrouping == "number" && Settings.current.songGrouping > 0 && Settings.current.songGrouping <= 6) {
+            if (typeof Settings.current.songGrouping == "number" && Settings.current.songGrouping > 0 && Settings.current.songGrouping <= 7) {
                 let groups = {};
                 let addToGroup = function (name, song, missingText = "No group set") {
                     if (name == null || (typeof name == "string" && name.trim() == "")) {
@@ -2221,10 +2297,15 @@ class SongManager {
                         break;
                     case 7:
                         SongManager.songList.forEach(s => {
-                            addToGroup(s.details.artist[0].toUpperCase(), s, "[No artist set]");
+                            addToGroup(s.details.customGroup, s, "[No group set]");
                         });
                         break;
                     case 8:
+                        SongManager.songList.forEach(s => {
+                            addToGroup(s.details.artist[0].toUpperCase(), s, "[No artist set]");
+                        });
+                        break;
+                    case 9:
                         SongManager.songList.forEach(s => {
                             addToGroup(s.details.title[0].toUpperCase(), s, "[No title set]");
                         });
@@ -4417,9 +4498,10 @@ class ToxenScriptManager {
             function lineParser(line) {
                 try { // Massive trycatch for any error.
                     let maxPerSecond = 0;
-                    const checkVariable = /(?<=^\s*)(\$\w+)\s*(=>?|:|\()\s*"(.*?[^\\])"/g;
+                    const checkVariable = /(?<=^\s*)(\$\w+)\s*(?:=>?|:|\()\s*(?:"(.*?[^\\]|(\d+))")/g;
                     if (checkVariable.test(line)) {
                         line.replace(checkVariable, function (item, $1, $2) {
+                            console.log(item, $1, $2);
                             $2 = $2.replace(/\\"/g, "\"");
                             $2 = ToxenScriptManager.applyVariables($2);
                             ToxenScriptManager.variables[$1] = $2;

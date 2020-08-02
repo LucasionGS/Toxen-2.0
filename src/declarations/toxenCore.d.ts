@@ -66,6 +66,7 @@ export declare class Toxen {
     static toggleFullScreen(): void;
     static toggleFullScreen(mode: boolean): void;
     static updatePlatform: "win" | "linux" | "mac";
+    static interactiveProgressBar: Toxen.InteractiveProgressBar;
     static inactivityState: boolean;
     /**
      * Restarts Toxen immediately.
@@ -186,7 +187,7 @@ export declare namespace Toxen {
         constructor();
         constructor(array: ArrayType[]);
         /**
-         * Craetes a copy of the TArray and cleans it up with your chosen options.
+         * Creates a copy of the TArray and cleans it up with your chosen options.
          */
         cleanArray(itemsToClean: (CleanOptions[])): TArray<ArrayType>;
         /**
@@ -214,6 +215,22 @@ export declare namespace Toxen {
          * Return a regular array.
          */
         toArray(): ArrayType[];
+    }
+    export class InteractiveProgressBar {
+        constructor(width?: string | number, height?: string | number);
+        element: HTMLDivElement;
+        thumb: HTMLDivElement;
+        private _min;
+        private _max;
+        private _value;
+        get min(): number;
+        set min(_value: number);
+        get max(): number;
+        set max(_value: number);
+        get value(): number;
+        set value(_value: number);
+        progressbarspot2: any;
+        updateRange(): void;
     }
     export {};
 }
@@ -529,6 +546,10 @@ export declare class Song {
          * List of tags to better help find this song in searches.
          */
         tags: string[];
+        /**
+         * A custom group that songs can be grouped by.
+         */
+        customGroup: string;
         /**
          * List of playlists this song belongs in.
          */

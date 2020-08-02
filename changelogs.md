@@ -52,6 +52,13 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+- Added `Custom Group` as a details each song can have. You can group songs by this new detail to sort them in a custom group that's only mneant for grouping songs together
+- Swapped around the `Artist` detail field and the `Title` detail field. Now `Artist` is above `Title`
+- Reskinned and reformatted the main layout.
+  - Progress bar has changed look and is now in the bottom of the screen along with the center buttons.
+  - Changed the center buttons to look less blocky
+  - Progress bar now hides when inactive.
+
 ## 202008010520
 - Added support for OGG files to be imported and converted in Toxen.
 - Added a custom header to better fit the theme.

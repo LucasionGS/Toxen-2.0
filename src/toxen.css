@@ -271,42 +271,22 @@ div.floatingbutton#midpanelcontainer {
   transition: all 0.5s ease-in-out;
   width: 320px;
   height: 96px;
-  bottom: 0px;
+  bottom: 36px;
   left: 50vw;
   transform: translateX(-50%);
-}
-
-div.floatingbutton#midpanelcontainer:hover {
-  cursor: default;
-  transition: all 0.2s ease-in-out;
-  filter: brightness(1);
-  width: 328px;
-}
-
-div.floatingbutton#midpanelcontainer > img {
-  transition: all 0.2s ease-in-out;
-  user-select: none;
-  position: absolute;
-  bottom: 0;
-  max-width: 120%;
-  width: 120%;
-  transform: translateX(-8%);
-  height: 75%;
-}
-
-div.floatingbutton#midpanelcontainer:hover > img {
-  height: 50%;
 }
 
 div.floatingbutton#midpanelcontainer div.smallfloatingbutton {
   user-select: none;
   position: absolute;
   transition: all 0.5s ease-in-out;
-  filter: brightness(0.7);
-  width: 32px;
+  filter: brightness(0.8);
+  /* width: 32px;
   height: 32px;
-  bottom: 0;
-  /* transform-origin: center; */
+  bottom: 0px; */
+  width: 56px;
+  height: 56px;
+  bottom: 4px;
 }
 
 div.floatingbutton#midpanelcontainer:hover div.smallfloatingbutton {
@@ -334,9 +314,9 @@ div.smallfloatingbutton img {
   width: 100%;
 }
 
-div.floatingbutton#midpanelcontainer:hover div.smallfloatingbutton img {
+/* div.floatingbutton#midpanelcontainer div.smallfloatingbutton img {
   transform: translateX(-8px);
-}
+} */
 
 ::-webkit-scrollbar {
   background-color: var(--scrollbarColor);
@@ -739,6 +719,18 @@ div.selectlist select {
   color: var(--txtcolor);
   background-color: var(--panelcolor);
   width: 100%;
+}
+
+#bottomgradient {
+  position: absolute;
+  pointer-events: none;
+  bottom: 0px;
+  left: 0;
+  width: 100vw;
+  height: 128px;
+  /* background-color: black; */
+  background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+  transition: all 0.2s ease-in-out;
 }
 
 /* ToxenScript Values */
