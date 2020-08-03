@@ -236,9 +236,22 @@ export declare namespace Toxen {
     }
     export class InteractiveProgressBar extends EventEmitter {
         constructor(width?: string | number, height?: string | number);
+        /**
+         * The element that contains the slider.
+         */
         element: InteractiveProgressBar.HTMLInteractiveProgressBar;
+        /**
+         * The thumb circle element that is used to indicate where the value is in the slider.
+         */
         thumb: HTMLDivElement;
+        /**
+         * Whether or not the slider is currently being clicked on.
+         */
         clicking: boolean;
+        _vertical: boolean;
+        /**
+         * RGB value of the slider track color.
+         */
         color: {
             red: number;
             green: number;
@@ -247,12 +260,30 @@ export declare namespace Toxen {
         private _min;
         private _max;
         private _value;
+        /**
+         * Whether or not the slider is shown vertically.
+         */
+        get vertical(): boolean;
+        set vertical(_value: boolean);
+        /**
+         * The minimum value for the slider.
+         */
         get min(): number;
         set min(_value: number);
+        /**
+         * The maximum value for the slider.
+         */
         get max(): number;
         set max(_value: number);
+        /**
+         * The current value for the slider.
+         */
         get value(): number;
         set value(_value: number);
+        /**
+         * The percentage value for the slider.
+         * How many percent (in `xx[.xx]` format) the value is to reach the maximum value.
+         */
         get percent(): number;
         updateRange(): void;
     }
