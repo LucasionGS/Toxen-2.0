@@ -88,22 +88,51 @@ async function initialize() {
     Toxen.discordConnect();
   }
 
+  //#region Custom sliders/Progress bars
   document.body.appendChild(Toxen.interactiveProgressBar.element); // Insert the progress bar
-  let audioAdjuster = new Toxen.InteractiveProgressBar(128, 12); // Create the volume bar
-  audioAdjuster.max = 100;
-  audioAdjuster.element.id = "audioadjusterbar";
-  document.getElementById("audioadjuster").appendChild(audioAdjuster.element); // Insert the volume bar
-  audioAdjuster.on("click", value => {
-    Settings.current.setVolume(value);
-    Settings.current.saveToFile();
-  })
-  .on("drag", value => {
-    Settings.current.setVolume(value);
-  })
-  .on("release", value => {
-    Settings.current.setVolume(value);
-    Settings.current.saveToFile();
-  });
+
+  { // Block scope
+    let audioAdjuster = new Toxen.InteractiveProgressBar(128, 12); // Create the volume bar
+    audioAdjuster.max = 100;
+    audioAdjuster.element.id = "audioadjusterbar";
+    document.getElementById("audioadjuster").appendChild(audioAdjuster.element); // Insert the volume bar
+    audioAdjuster.on("click", value => {
+      Settings.current.setVolume(value);
+      Settings.current.saveToFile();
+    })
+    .on("drag", value => {
+      Settings.current.setVolume(value);
+    })
+    .on("release", value => {
+      Settings.current.setVolume(value);
+      Settings.current.saveToFile();
+    });
+
+    let bd = new Toxen.InteractiveProgressBar("100%", 20);
+    // bd.vertical = true;
+    document.getElementById("backgrounddiminteractivebarcontainer").appendChild(bd.element);
+    bd.value = settings.backgroundDim;
+    bd.on("click", value => {
+      _chnBd(value);
+      settings.saveToFile();
+    })
+    .on("drag", value => {
+      _chnBd(value);
+    })
+    .on("release", value => {
+      _chnBd(value);
+      settings.saveToFile();
+    });
+
+    let _chnBd = function(value: number) {
+      settings.backgroundDim = value;
+      Storyboard.backgroundDim = settings.backgroundDim;
+      bd.color.red = 255 - (255 * (settings.backgroundDim / 100))
+      bd.color.green = 255 - (255 * (settings.backgroundDim / 100))
+      bd.color.blue = 255 - (255 * (settings.backgroundDim / 100))
+    }
+  }
+  //#endregion
   
   if (settings.showTutorialOnStart) { showTutorial(); }
   stats.load();
@@ -118,7 +147,7 @@ async function initialize() {
     function copyFilesRecursively(srcDir: string, targetDir: string) {
       fs.exists(targetDir, async exists => {
         if (!exists) await fs.promises.mkdir(targetDir);
-        fs.readdir(srcDir, {withFileTypes: true}, (err, files) => {
+        fs.readdir(srcDir, {withFileTypes: true}, (_, files) => {
           files.forEach(file => {
             if (file.isFile()) {
               fs.copyFile(path.resolve(srcDir, file.name), path.resolve(targetDir, file.name), err => {
@@ -203,8 +232,8 @@ async function initialize() {
     if (Toxen.interactiveProgressBar.color.red != Storyboard.red) Toxen.interactiveProgressBar.color.red = Storyboard.red;
     if (Toxen.interactiveProgressBar.color.green != Storyboard.green) Toxen.interactiveProgressBar.color.green = Storyboard.green;
     if (Toxen.interactiveProgressBar.color.blue != Storyboard.blue) Toxen.interactiveProgressBar.color.blue = Storyboard.blue;
-    let cur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.currentTime);
-    let dur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.duration);
+    let cur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.currentTime, false, true);
+    let dur = ToxenScriptManager.convertSecondsToDigitalClock(SongManager.player.duration, false, true);
     let progressText = document.querySelector<HTMLLabelElement>("label#progresstext");
     while (dur.startsWith("00:")) {
       cur = cur.substring(3);
@@ -218,7 +247,6 @@ async function initialize() {
   }
 
   SongManager.player.addEventListener("canplay", () => {
-    // document.querySelector<HTMLProgressElement>("div#progress progress#progressbar").max = SongManager.player.duration;
     Toxen.interactiveProgressBar.max = SongManager.player.duration;
   });
 

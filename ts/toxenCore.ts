@@ -260,7 +260,11 @@ export class Toxen {
     /**
      * Convertable music file
      */
-    "ogg"
+    "ogg",
+    /**
+     * Convertable music file
+     */
+    "m4a",
   ];
 
   /**
@@ -387,8 +391,8 @@ export class Toxen {
           + (`${ScriptEditor.window != null ? "Editing "
           : song.isVideo ? "Watching "
           : "Listening to "}`)
-          + `${song.details.artist} - ${song.details.title}`;
-          if (song.details.source) options["state"] = `\nFrom ${song.details.source}`;
+          + `${Debug.stripHTML(song.parseName())}`;
+          if (song.details.source) options["state"] = `\nFrom ${Debug.stripHTML(song.details.source)}`;
         }
         discordClient.setActivity(options);
         break;
@@ -786,12 +790,13 @@ export namespace Toxen {
       this.element.style.borderWidth = "1px";
       this.element.style.boxSizing = "border-box";
       this.element.style.borderRadius = "20px";
-
+      
       this.thumb = document.createElement("div");
       this.thumb.style.borderRadius = "50%"
       this.thumb.style.borderStyle = "solid";
       this.thumb.style.borderWidth = "1px";
       this.thumb.style.backgroundColor = "white";
+      // this.thumb.style.boxSizing = "border-box";
 
       setTimeout(() => {
         this.vertical = this.vertical;
@@ -844,7 +849,6 @@ export namespace Toxen {
      * Whether or not the slider is currently being clicked on.
      */
     clicking = false;
-    _vertical = false;
     /**
      * RGB value of the slider track color.
      */
@@ -857,6 +861,7 @@ export namespace Toxen {
       green: 255,
       blue: 255
     }
+    private _vertical = false;
     private _min: number = 0;
     private _max: number = 100;
     private _value: number = 0;
@@ -870,12 +875,18 @@ export namespace Toxen {
       this._vertical = _value;
       let elm = this.element.getBoundingClientRect();
       if (!_value) {
+        // this.thumb.style.transform = `translate(-50%, 0)`;
+        // this.thumb.style.width = `calc(${elm.height}px - 1px)`;
+        // this.thumb.style.height = `calc(${elm.height}px - 1px)`;
         this.thumb.style.transform = `translate(-50%, calc(-${elm.height}px * 0.25))`;
         this.thumb.style.width = `calc(${elm.height}px * 1.3)`;
         this.thumb.style.height = `calc(${elm.height}px * 1.3)`;
         console.log(_value, elm);
       }
       else {
+        // this.thumb.style.transform = `translate(0, -50%)`;
+        // this.thumb.style.width = `calc(${elm.width}px - 1px)`;
+        // this.thumb.style.height = `calc(${elm.width}px - 1px)`;
         this.thumb.style.transform = `translate(calc(-${elm.width}px * 0.25), -50%)`;
         this.thumb.style.width = `calc(${elm.width}px * 1.3)`;
         this.thumb.style.height = `calc(${elm.width}px * 1.3)`;
@@ -1312,78 +1323,6 @@ export class Settings {
     else {
       Toxen.setStyleSource("");
     }
-  }
-
-  reloadProgressBarSpot() {
-    this.setProgressBarSpot(this.progressBarSpot);
-  }
-  /**
-   * Set the progress bar spot.
-   */
-  setProgressBarSpot(spotid: number) {
-    this.progressBarSpot = spotid;
-    let bar = Toxen.interactiveProgressBar.element;
-    // document.getElementById("progressbarspot2").style.bottom = "12px";
-    // document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
-    // document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
-    // document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "32px";
-    // document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
-    // document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
-    // switch (this.progressBarSpot) {
-    //   case 0:
-    //     document.getElementById("progressbarspot1").appendChild(bar);
-    //     if (browserWindow.isFullScreen()) {
-    //       document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
-    //       document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
-    //     }
-    //     else {
-    //       document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "";
-    //       document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "";
-    //     }
-        
-    //     document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "";
-    //     document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
-    //     document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
-    //     break;
-    //   case 1:
-    //     document.getElementById("progressbarspot2").appendChild(bar);
-    //     // if (browserWindow.isFullScreen()) {
-    //     //   document.getElementById("progressbarspot2").style.top = "0";
-    //     //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-    //     //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-    //     //   document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "64px";
-    //     //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
-    //     //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
-    //     // }
-    //     // else {
-    //     //   document.getElementById("progressbarspot2").style.top = "32px";
-    //     //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
-    //     //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + (bar.clientHeight + 32) + "px)";
-    //     //   document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "96px";
-    //     //   document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "38px";
-    //     //   document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "38px";
-    //     // }
-    //     document.getElementById("progressbarspot2").style.bottom = "12px";
-    //     document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
-    //     document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
-    //     document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "32px";
-    //     document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "";
-    //     document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "";
-    //     break;
-    //   case 2:
-    //     document.getElementById("progressbarspot2").appendChild(bar);
-    //     document.getElementById("progressbarspot2").style.top = "";
-    //     document.getElementById("progressbarspot2").style.bottom = "0";
-    //     document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-    //     document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "calc(100vh - " + bar.clientHeight + "px)";
-    //     document.querySelector<HTMLParagraphElement>("p#subtitles").style.top = "";
-    //     document.querySelector<HTMLDivElement>("#songmenusidebar").style.top = "0";
-    //     document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.top = "0";
-    //     break;
-        
-    //     default:
-    //     break;
-    // }
   }
 
   toggleDiscordPresence(force: boolean = !Settings.current.discordPresence) {
@@ -2002,6 +1941,8 @@ export class Song {
   /**
    * Play this song.
    */
+  play(): void;
+  play(hash: string): void;
   play(hash = this.hash) {
     if (typeof hash == "string" && hash.length > 0) hash = "?" + hash;
     let fp = this.getFullPath("songPath");
@@ -2033,11 +1974,8 @@ export class Song {
           SongManager.player.src = fp + hash;
           // GOHERE
         }
-        else if ([
-          "wma",
-          "ogg"
-        ].find(a => fp.toLowerCase().endsWith("."+a)) != null) {
-          let newSrc;
+        else if (Toxen.audioExtensions.find(a => fp.toLowerCase().endsWith("."+a)) != null) {
+          let newSrc: string;
           fs.readdirSync(this.getFullPath("path")).forEach(f => {
             if (f.toLowerCase().endsWith(".mp3")) {
               newSrc = this.getFullPath("path") + "/" + f;
@@ -2534,6 +2472,10 @@ export class SongManager {
    * List of playable songs from a search.
    */
   static playableSongs: Song[] = [];
+
+  // static history: Song[] = [];
+
+  private static historyIndex = 0;
 
   /**
    * If `Settings.onlyVisible` is `true`, returns only the physically visible songs in the song list.
@@ -5904,8 +5846,11 @@ export class ToxenScriptManager {
 
   /**
    * Convert seconds to digital time format.
+   * @param trim Whether or not to cut off 0 values on the endings
+   * @param removeDecimals Whether or not to remove the decimals from the time.  
+   * `Note: Removing decimals lowers the accuracy if you want to re-convert it back to seconds.`
    */
-  static convertSecondsToDigitalClock(seconds: number, trim = false) {
+  static convertSecondsToDigitalClock(seconds: number, trim = false, removeDecimals = false) {
     var milliseconds = seconds * 1000;
     var time = "";
     var curNumber = 0;
@@ -5942,23 +5887,25 @@ export class ToxenScriptManager {
       milliseconds -= 1000;
     }
     if (curNumber < 10) {
-      time += "0" + (curNumber) + ".";
+      time += "0" + (curNumber);
     }
     else {
-      time += curNumber + ".";
+      time += curNumber;
     }
     curNumber = 0;
 
     // Use rest as decimal
-    milliseconds = Math.round(milliseconds);
-    if (milliseconds >= 100) {
-      time += "" + milliseconds;
-    }
-    else if (milliseconds >= 10) {
-      time += "0" + milliseconds;
-    }
-    else if (milliseconds < 10) {
-      time += "00" + milliseconds;
+    if (!removeDecimals) {
+      milliseconds = Math.round(milliseconds);
+      if (milliseconds >= 100) {
+        time += "." + milliseconds;
+      }
+      else if (milliseconds >= 10) {
+        time += ".0" + milliseconds;
+      }
+      else if (milliseconds < 10) {
+        time += ".00" + milliseconds;
+      }
     }
 
     while(trim == true && time.startsWith("00:")) {
@@ -6150,7 +6097,7 @@ export class Prompt {
     this.main.appendChild(this.buttonsElement);
 
     this.main.style.position = "absolute";
-    this.main.style.top = "10px";
+    this.main.style.top = "42px";
     this.main.style.left = "50vw";
     this.main.style.transform = "translateX(-50%)";
     this.main.style.border = "solid 2px #2b2b2b";
@@ -6612,7 +6559,7 @@ export class ScriptEditor {
 
 export class Effect {
   /**
-   * Highlight an element with a flash that lasts 2 seconds.
+   * Highlight an element with a white color, with a flash that lasts 2 seconds.
    * @param element HTML Element to highlight with a flash.
    */
   static flashElement(element: HTMLElement): void;
@@ -6623,7 +6570,7 @@ export class Effect {
    */
   static flashElement(element: HTMLElement, color: string): void;
   /**
-   * Highlight an element with a flash that lasts 2 seconds.
+   * Highlight an element with a flash that lasts for `ms` milliseconds.
    * @param element HTML Element to highlight with a flash.
    * @param color CSS color to flash with.
    * @param ms Total time in millseconds it should be visible. (Including fade in and out)
@@ -7379,14 +7326,6 @@ export class PanelManager {
       }
     }
   }
-  
-  static hideButtons() {
-  
-  }
-
-  static showButtons() {
-  
-  }
 
   static songPanelButton: HTMLDivElement;
   static settingsPanelButton: HTMLDivElement;
@@ -7447,7 +7386,7 @@ export function showTutorial() {
         prompt.headerText = "The Song Panel";
         Settings.current.toggleSongPanelLock(true);
         prompt.addContent("This is your song panel.");
-        prompt.addContent(`You can get the song panel out by hovering your mouse to the <b>${Settings.current.songMenuToRight ? "right" : "left"}</b> side of the app.`);
+        prompt.addContent(`You can get the song panel out by ${Settings.current.buttonActivationByHover ? "hovering" : "clicking"} your mouse over the music icon.`);
         prompt.addContent(`Here you'll see a list of all the songs you have.<br>They can be sorted and grouped, as you'll see later in the tutorial.`);
         prompt.addContent(`You can lock and unlock the song panel by pressing on the Pad Lock🔒 (or press <b>CTRL + L</b>).<br>This will prevent it from disappearing when your mouse moves away.`);
         // prompt.addContent(`Continue by pressing on the padlock`);
@@ -7469,12 +7408,12 @@ export function showTutorial() {
           prompt.addContent("Though... your song list does look a bit empty now, doesn't it? Let's change that!");
         }
         else {
-          prompt.addContent("It seems like you already have music in your library, but I'll still tell you how to add new songs, if you forgot.");
+          prompt.addContent("It seems like you already have music in your library, but I'll still tell you how to add new songs, in case you forgot.");
         }
-        prompt.addContent("You can add one from your computer or download one from a YouTube URL, directly within Toxen.");
-        prompt.addContent("Press on the <b>Add Song</b> button to add a new song now if you'd like.");
+        prompt.addContent("You can add one from your computer or download one from a YouTube URL directly within Toxen.");
+        prompt.addContent("Press on the <b>Import Songs</b> button to add a new song now if you'd like.");
         document.getElementById("addsongbutton").scrollIntoView();
-        Effect.flashElement(document.getElementById("addsongbutton"), "#0f0");
+        Effect.flashElement(document.getElementById("addsongbutton"), "#0f0", 3000);
         // prompt.main.style.marginLeft = "0%";''
         break;
       // Backgrounds
@@ -7515,7 +7454,7 @@ export function showTutorial() {
         Settings.current.toggleSettingsPanelLock(false);
         prompt.main.style.marginLeft = "0%";
         prompt.headerText = "Enjoy using Toxen";
-        prompt.addContent("Add some songs and make the experience you want.");
+        prompt.addContent("Add some songs and customize the experience you want.");
         prompt.addContent("If you need more help, go to https://toxen.net to learn more.");
         next.parentElement.removeChild(next);
       break;

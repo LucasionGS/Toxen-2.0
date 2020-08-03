@@ -150,37 +150,37 @@
           <p name="album"></p>
         </div>
         <br>
-        <div class="pinput" title="Click to edit">
+        <div class="pinput" title="Click to edit, Enter to save changes.">
           <input type="search" name="source">
           <p name="source"></p>
         </div>
         <br>
-        <div class="pinput" title="Click to edit">
+        <div class="pinput" title="Click to edit, Enter to save changes.">
           <input type="search" name="sourceLink">
           <p name="sourceLink"></p>
         </div>
         <br>
-        <div class="pinput" title="Click to edit">
+        <div class="pinput" title="Click to edit, Enter to save changes.">
           <input type="search" name="language">
           <p name="language"></p>
         </div>
         <br>
-        <div class="pinput" title="Click to edit">
+        <div class="pinput" title="Click to edit, Enter to save changes.">
           <input type="search" name="year">
           <p name="year"></p>
         </div>
         <br>
-        <div class="pinput" title="Click to edit">
+        <div class="pinput" title="Click to edit, Enter to save changes.">
           <input type="search" name="genre">
           <p name="genre"></p>
         </div>
         <br>
-        <div class="pinput" title="Click to edit">
+        <div class="pinput" title="Click to edit, Enter to save changes. Separate tags by comma (,)">
           <input type="search" name="tags">
           <p name="tags"></p>
         </div>
         <br>
-        <div class="pinput" title="Click to edit">
+        <div class="pinput" title="Click to edit, Enter to save changes.">
           <input type="search" name="customGroup">
           <p name="customGroup"></p>
         </div>
@@ -342,18 +342,11 @@
           }
         </script>
       </div>
-      <!-- <br>
-      <label>Progress Bar Position</label>
-      <sup>Change the position of the progress bar.</sup>
-      <input type="radio" name="pbsstyle" id="progressbarspot=0" value="0" onclick="settings.setProgressBarSpot(0); settings.saveToFile();">
-      <label for="progressbarspot=0">Side Menu</label><br>
-      <input type="radio" name="pbsstyle" id="progressbarspot=1" value="1" onclick="settings.setProgressBarSpot(1); settings.saveToFile();">
-      <label for="progressbarspot=1">Top of screen</label><br>
-      <input type="radio" name="pbsstyle" id="progressbarspot=2" value="2" onclick="settings.setProgressBarSpot(2); settings.saveToFile();">
-      <label for="progressbarspot=2">Bottom of screen</label><br> -->
       <hr>
       <label for="backgrounddimValue">Background Dimming</label>
-      <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = Storyboard.backgroundDim = this.value" onmouseup="settings.saveToFile();">
+      <!-- <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = Storyboard.backgroundDim = this.value" onmouseup="settings.saveToFile();"> -->
+      <br>
+      <div id="backgrounddiminteractivebarcontainer" style="width: 128px; margin-left: 16px; margin-top: 8px;"></div>
       <hr>
       <input type="checkbox" name="sptrtoggle" id="songmenutorightToggle" onclick="settings.toggleSongPanelToRight(this.checked); settings.saveToFile();">
       <label for="songmenutorightToggle">Right-hand Song Menu</label>

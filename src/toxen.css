@@ -245,7 +245,6 @@ div.floatingbutton {
   user-select: none;
   position: absolute;
   transition: all 0.5s ease-in-out;
-  filter: brightness(0.7);
   width: 128px;
   height: 128px;
 }
@@ -253,7 +252,6 @@ div.floatingbutton {
 div.floatingbutton:hover {
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  filter: brightness(1);
   width: 138px;
   height: 138px;
 }
@@ -280,7 +278,7 @@ div.floatingbutton#midpanelcontainer div.smallfloatingbutton {
   user-select: none;
   position: absolute;
   transition: all 0.5s ease-in-out;
-  filter: brightness(1);
+  filter: brightness(0.8);
   /* width: 32px;
   height: 32px;
   bottom: 0px; */

@@ -248,7 +248,6 @@ export declare namespace Toxen {
          * Whether or not the slider is currently being clicked on.
          */
         clicking: boolean;
-        _vertical: boolean;
         /**
          * RGB value of the slider track color.
          */
@@ -257,6 +256,7 @@ export declare namespace Toxen {
             green: number;
             blue: number;
         };
+        private _vertical;
         private _min;
         private _max;
         private _value;
@@ -324,11 +324,6 @@ export declare class Settings {
      * @param base
      */
     setThemeBase(base: boolean): void;
-    reloadProgressBarSpot(): void;
-    /**
-     * Set the progress bar spot.
-     */
-    setProgressBarSpot(spotid: number): void;
     toggleDiscordPresence(force?: boolean): void;
     /**
      * Percentage to dim the background.
@@ -629,7 +624,8 @@ export declare class Song {
     /**
      * Play this song.
      */
-    play(hash?: string): void;
+    play(): void;
+    play(hash: string): void;
     get isVideo(): boolean;
     /**
      * Get the full path to a file. (Default is `songPath`)
@@ -673,6 +669,7 @@ export declare class SongManager {
      * List of playable songs from a search.
      */
     static playableSongs: Song[];
+    private static historyIndex;
     /**
      * If `Settings.onlyVisible` is `true`, returns only the physically visible songs in the song list.
      *
@@ -939,8 +936,11 @@ export declare class ToxenScriptManager {
     static timeStampToSeconds(timestamp: string | number, throwError?: boolean): number;
     /**
      * Convert seconds to digital time format.
+     * @param trim Whether or not to cut off 0 values on the endings
+     * @param removeDecimals Whether or not to remove the decimals from the time.
+     * `Note: Removing decimals lowers the accuracy if you want to re-convert it back to seconds.`
      */
-    static convertSecondsToDigitalClock(seconds: number, trim?: boolean): string;
+    static convertSecondsToDigitalClock(seconds: number, trim?: boolean, removeDecimals?: boolean): string;
     /**
      * List of events in order for the current song.
      */
@@ -1088,7 +1088,7 @@ export declare class ScriptEditor {
 }
 export declare class Effect {
     /**
-     * Highlight an element with a flash that lasts 2 seconds.
+     * Highlight an element with a white color, with a flash that lasts 2 seconds.
      * @param element HTML Element to highlight with a flash.
      */
     static flashElement(element: HTMLElement): void;
@@ -1099,7 +1099,7 @@ export declare class Effect {
      */
     static flashElement(element: HTMLElement, color: string): void;
     /**
-     * Highlight an element with a flash that lasts 2 seconds.
+     * Highlight an element with a flash that lasts for `ms` milliseconds.
      * @param element HTML Element to highlight with a flash.
      * @param color CSS color to flash with.
      * @param ms Total time in millseconds it should be visible. (Including fade in and out)
@@ -1300,8 +1300,6 @@ export declare class SelectList<SelectItemValueType = any> extends EventEmitter 
 }
 export declare class PanelManager {
     static initialize(): void;
-    static hideButtons(): void;
-    static showButtons(): void;
     static songPanelButton: HTMLDivElement;
     static settingsPanelButton: HTMLDivElement;
 }

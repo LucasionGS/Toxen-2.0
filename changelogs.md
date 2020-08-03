@@ -52,7 +52,7 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
-
+- Starting to replace the basic sliders with prettier ones
 ## 202008022155
 - Added `Custom Group` as a details each song can have. You can group songs by this new detail to sort them in a custom group that's only mneant for grouping songs together
 - Swapped around the `Artist` detail field and the `Title` detail field. Now `Artist` is above `Title`
