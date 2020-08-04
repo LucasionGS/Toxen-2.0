@@ -29,12 +29,12 @@ let settings = new Settings();
  */
 // This is automatically set to Statistics.current as well
 let stats = new Statistics();
+Toxen.title = "Loading Toxen...";
 window.addEventListener("load", () => {
-    Toxen.title = "Loading Toxen...";
     setTimeout(() => {
         initialize().then(() => {
-            if (Toxen.title == "Loading Toxen...")
-                Toxen.title = "";
+            if (SongManager.songList.length == 0)
+                Toxen.title = "Add some songs to start listening!";
         }).catch(err => {
             Toxen.title = "Unable to load Toxen";
             Toxen.errorPrompt(err);

@@ -76,6 +76,13 @@ class Toxen {
             if (inactivityTimer > 0)
                 inactivityTimer = 0;
         });
+        document.body.addEventListener("click", e => {
+            if (inactivityTimer == 5) {
+                Toxen.emit("active");
+            }
+            if (inactivityTimer > 0)
+                inactivityTimer = 0;
+        });
         Toxen.on("active", () => {
             document.body.style.cursor = "";
             let btns = document.querySelectorAll(".hideoninactive");
@@ -151,14 +158,12 @@ class Toxen {
                 console.log("Sending report...");
             let body = new FormData();
             body.set("reportmessage", reportMessage);
-            console.log(body);
             return axios_1.default.post("http://toxen.net/internal/report.php", body, {
                 "headers": { "Content-Type": "multipart/form-data" }
             })
                 .then(r => {
                 if (typeof r == "boolean")
                     return r;
-                console.log(r);
                 let res = r.data;
                 if (logRequest)
                     console.log("Response:", res);
@@ -623,7 +628,6 @@ switch (process.platform) {
             this._max = 100;
             this._value = 0;
             this.element = document.createElement("div");
-            console.log(this);
             this.element.object = this;
             if (typeof width == "number")
                 width = width + "px";
@@ -695,7 +699,6 @@ switch (process.platform) {
                 this.thumb.style.transform = `translate(-50%, calc(-${elm.height}px * 0.25))`;
                 this.thumb.style.width = `calc(${elm.height}px * 1.3)`;
                 this.thumb.style.height = `calc(${elm.height}px * 1.3)`;
-                console.log(_value, elm);
             }
             else {
                 // this.thumb.style.transform = `translate(0, -50%)`;
@@ -704,7 +707,6 @@ switch (process.platform) {
                 this.thumb.style.transform = `translate(calc(-${elm.width}px * 0.25), -50%)`;
                 this.thumb.style.width = `calc(${elm.width}px * 1.3)`;
                 this.thumb.style.height = `calc(${elm.width}px * 1.3)`;
-                console.log(_value, elm);
             }
             this.updateRange();
         }
@@ -1509,9 +1511,9 @@ class Song {
                 console.error(err);
                 fc.kill("");
             });
-            console.log(sp);
-            console.log(tmpPath);
-            console.log(fc._getArguments().join(" "));
+            // console.log(sp);
+            // console.log(tmpPath);
+            // console.log(fc._getArguments().join(" "));
         });
     }
     /**
@@ -1710,9 +1712,10 @@ class Song {
             Storyboard.setBackground(this.getFullPath("background"));
             Toxen.title = ionMarkDown_1.Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
             ToxenScriptManager.loadCurrentScript();
+            if (SongManager.history.items[SongManager.history.items.length - 1] != this)
+                SongManager.history.insert(this);
             if (this.subtitlePath) {
                 Subtitles.renderSubtitles(this.getFullPath("subtitlePath"));
-                // Maybe await
             }
             else {
                 Subtitles.current = [];
@@ -1866,7 +1869,7 @@ class Song {
         }
         setTimeout(() => {
             this.element.scrollIntoViewIfNeeded();
-        }, 0);
+        }, 250);
     }
     /**
      * Return all playlists as a keyvalue pair object.
@@ -2018,12 +2021,12 @@ class Song {
                 }
             }, 1000);
         }
+        SongManager.revealSongPanel();
     }
     importMetadata() {
         return __awaiter(this, void 0, void 0, function* () {
             // Apply metadata
             let meta = yield mm.parseFile(this.getFullPath("songPath"));
-            console.log(meta, { showHidden: false, depth: null });
             let _tags = this.details.tags;
             if (meta.common.artist) {
                 this.details.artist = meta.common.artist;
@@ -2666,7 +2669,19 @@ class SongManager {
         return SongManager.songList.find(s => s.path === songFolderName);
     }
     static getCurrentlyPlayingSong() {
-        return SongManager.getSong(+SongManager.player.getAttribute("songid"));
+        if (SongManager.player == null) {
+            return null;
+        }
+        try {
+            if (SongManager.player.hasAttribute("src")) {
+                return SongManager.getSongWithPath(path.basename(path.dirname(SongManager.player.getAttribute("src"))));
+            }
+            return SongManager.getSongWithPath(path.basename(path.dirname(SongManager.player.firstElementChild.getAttribute("src"))));
+        }
+        catch (error) {
+            return null;
+        }
+        // return SongManager.getSong(+SongManager.player.getAttribute("songid"));
     }
     static moveToTime(timeInSeconds) {
         if (isNaN(timeInSeconds))
@@ -2701,6 +2716,7 @@ class SongManager {
             song.play();
         else
             console.error("No songs are playable");
+        return song;
     }
     static playNext() {
         const song = SongManager.getCurrentlyPlayingSong();
@@ -2712,7 +2728,7 @@ class SongManager {
             }, 10);
         }
         else if (Settings.current.shuffle) {
-            SongManager.playRandom();
+            return SongManager.playRandom();
         }
         else {
             // if (!song) {
@@ -2726,14 +2742,17 @@ class SongManager {
                 if (g)
                     g.collapsed = false;
                 if (SongManager.playableSongs.length > 0)
-                    SongManager.playNext();
-                return;
+                    return SongManager.playNext();
             }
             if (typeof id == "number" && _songs.length > id + 1) {
-                _songs[id + 1].play();
+                let s = _songs[id + 1];
+                s.play();
+                return s;
             }
             else {
-                _songs[0].play();
+                let s = _songs[0];
+                s.play();
+                return s;
             }
         }
     }
@@ -3426,8 +3445,32 @@ SongManager.songList = [];
  * List of playable songs from a search.
  */
 SongManager.playableSongs = [];
-// static history: Song[] = [];
-SongManager.historyIndex = 0;
+/**
+ * Song History
+ */
+SongManager.history = new class History {
+    constructor() {
+        this.historyIndex = 0;
+        this.items = [];
+        // TODO:
+    }
+    next() {
+        this.historyIndex++;
+        if (this.historyIndex >= this.items.length)
+            this.historyIndex = this.items.length - 1;
+        this.items[this.historyIndex].play();
+    }
+    previous() {
+        this.historyIndex--;
+        if (this.historyIndex < 0)
+            this.historyIndex = 0;
+        this.items[this.historyIndex].play();
+    }
+    insert(song) {
+        // this.items.splice(this.historyIndex);
+        this.items.push(song);
+    }
+};
 /**
  * The div element containing all of the songs elements.
  */
@@ -4543,10 +4586,13 @@ class ToxenScriptManager {
             function lineParser(line) {
                 try { // Massive trycatch for any error.
                     let maxPerSecond = 0;
-                    const checkVariable = /(?<=^\s*)(\$\w+)\s*(?:=>?|:|\()\s*(?:"(.*?[^\\]|(\d+))")/g;
+                    const checkVariable = /(?<=^\s*)(\$\w+)\s*(?:=>?|:|\()\s*((?:"(?:.*?(?<!\\))"|(?:\d+)))/g;
                     if (checkVariable.test(line)) {
                         line.replace(checkVariable, function (item, $1, $2) {
-                            console.log(item, $1, $2);
+                            if ($2.startsWith("\"") && $2.endsWith("\"")) {
+                                $2 = $2.substring(1, $2.length - 1);
+                            }
+                            // console.log(item, $1, $2);
                             $2 = $2.replace(/\\"/g, "\"");
                             $2 = ToxenScriptManager.applyVariables($2);
                             ToxenScriptManager.variables[$1] = $2;
@@ -4674,40 +4720,8 @@ class ToxenScriptManager {
                     if (typeof argString != "string") {
                         return `Arguments are not in a valid format.`;
                     }
-                    // TODO: Replace with regex
-                    // Regex: /"(.*?)(?<!\\)"/g
                     function parseArgumentsFromString(as) {
                         var argList = [];
-                        // var curArg = "";
-                        // var waitForQuote = true;
-                        // for (let i = 0; i < as.length; i++) {
-                        //   const l = as[i];
-                        //   if (l == "\"" && i == 0) {
-                        //     waitForQuote = false;
-                        //     continue;
-                        //   }
-                        //   else if (l == "\"" && curArg == "" && waitForQuote == true) {
-                        //     waitForQuote = false;
-                        //     continue;
-                        //   }
-                        //   else if (l == "\\\\" && curArg != "" && as[i + 1] == "\"") {
-                        //     i++;
-                        //     curArg += "\"";
-                        //     continue;
-                        //   }
-                        //   else if (l == "\"" && curArg != "") {
-                        //     argList.push(curArg);
-                        //     curArg = "";
-                        //     waitForQuote = true;
-                        //     continue;
-                        //   }
-                        //   else {
-                        //     if (!waitForQuote) {
-                        //       curArg += l;
-                        //     }
-                        //     continue;
-                        //   }
-                        // }
                         argList = as.match(/(?:"(.*?)(?<!\\)"|\d+)/g);
                         // argList.shift();
                         return argList.map(v => v.replace("\\\"", "\"").replace(/^"(.*)"$/g, function ($0, $1) {
@@ -5832,7 +5846,6 @@ class ScriptEditor {
             },
             "show": false,
             "parent": browserWindow,
-            "icon": "./icon.ico"
         });
     }
 }
@@ -6315,7 +6328,6 @@ class SelectList extends events_1.EventEmitter {
             this.selectElement.appendChild(option);
         });
         this.selectElement.addEventListener("change", () => {
-            console.log("CHANGE");
             if (this.selectElement.value != "-1" && this.selectElement.value != "cancel") {
                 let option = this.optionElements.find(oe => oe.value == this.selectElement.value);
                 resolve(option.selectListItem);
@@ -6559,7 +6571,7 @@ function showTutorial() {
                 Settings.current.toggleSongPanelLock(true);
                 prompt.headerText = "The Song Panel: Adding Backgrounds";
                 prompt.addContent("When you're listening to a song, you can press the <b>Set Background</b> to give the song you're currently listening to, a background.");
-                Effect.flashElement(document.getElementById("setbackgroundbutton"), "#0f0");
+                Effect.flashElement(document.getElementById("setbackgroundbutton"), "#0f0", 3000);
                 break;
             // Settings panel
             case 4:
@@ -6568,9 +6580,8 @@ function showTutorial() {
                 Settings.current.toggleSettingsPanelLock(true);
                 prompt.headerText = "Settings Panel";
                 prompt.addContent("This is your settings panel.");
-                prompt.addContent(`You can get the settings panel out by hovering your mouse to the <b>${Settings.current.songMenuToRight ? "left" : "right"}</b> side of the app.`);
+                prompt.addContent(`You can get the settings panel out by ${Settings.current.buttonActivationByHover ? "hovering" : "clicking"} your mouse over the gear icon.`);
                 prompt.addContent(`Here you can customize Toxen however you like.<br>Take a look at the settings and set your preferences!`);
-                // prompt.addContent(`Continue by pressing on the padlock`);
                 if (Settings.current.songMenuToRight) {
                     prompt.main.style.marginLeft = "10%";
                 }
@@ -6580,9 +6591,32 @@ function showTutorial() {
                 Effect.flashElement(document.getElementById("settingsmenusidebar"));
                 for (let i = 0; i < document.getElementById("settingsmenusidebar").clientHeight; i++) {
                     setTimeout(() => {
-                        document.getElementById("settingsmenusidebar").scrollTop += 2;
+                        if (currentStep == 4)
+                            document.getElementById("settingsmenusidebar").scrollTop += 2;
                     }, i * 5);
                 }
+                break;
+            // Specific settings
+            case 5:
+                clearContent();
+                Settings.current.toggleSongPanelLock(false);
+                Settings.current.toggleSettingsPanelLock(true);
+                prompt.headerText = "Settings Panel: Grouping";
+                prompt.addContent("You can group your music by a lot of fields.");
+                prompt.addContent(`Selecting any of these options will regroup your songs or remove grouping entirely if you prefer that.`);
+                document.querySelector("#songgroupinglabel").scrollIntoView();
+                Effect.flashElement(document.querySelector("#songgroupinglabel"), "#0f0", 3000);
+                [...document.querySelectorAll("[name=sgstyle]")].forEach(e => Effect.flashElement(e, "#0f0", 3000));
+                break;
+            case 6:
+                clearContent();
+                Settings.current.toggleSongPanelLock(false);
+                Settings.current.toggleSettingsPanelLock(true);
+                prompt.headerText = "Settings Panel: Visualizer Color";
+                prompt.addContent("If you prefer to have the visualizer a certain color, you can change it here at any time!");
+                prompt.addContent(`You can use the 3 sliders or press on the colored box with the white outline to use a color selector`);
+                document.querySelector("#visualizercolorlabel").scrollIntoView();
+                Effect.flashElement(document.querySelector("#visualizercolorflexbox"), "#0f0", 3000);
                 break;
             default:
                 clearContent();

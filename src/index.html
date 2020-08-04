@@ -206,7 +206,7 @@
       </style>
       <hr>
       <!-- <h3>Song Grouping</h3> -->
-      <label>Song Grouping</label>
+      <label id="songgroupinglabel">Song Grouping</label>
       <sup>Group songs into smaller folders in the song menu.</sup>
       <input type="radio" name="sgstyle" id="songgrouping=0" value="0" onclick="settings.songGrouping = 0; settings.saveToFile(); SongManager.refreshList();">
       <label for="songgrouping=0">No grouping</label><br>
@@ -281,8 +281,8 @@
         <span style="text-decoration: underline;">Not recommended to use as it isn't fully compatible with newer features.<br>This might be fixed or possibily removed in a future update.</span>
       </sup>
       <br>
-      <label>Visualizer Color</label>
-      <div class="flex">
+      <label id="visualizercolorlabel">Visualizer Color</label>
+      <div class="flex" id="visualizercolorflexbox">
         <div style="width: 48px;">
           <label for="visualizercolor.redValue" style="text-align: center; width: 100%; display: block">Red</label>
           <input type="range" class="fancyrange" id="visualizercolor.redValue" orient="vertical" value="0" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.red = +this.value" onmouseup="settings.saveToFile();">

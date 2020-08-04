@@ -23,13 +23,14 @@ Features I want to implement (This will be updated as I get more ideas and remem
 - Remove a playlist
 - Visualizer Quanity Customizer (Interface buttons for `Storyboard`.`setAnalyserFftLevel` and `Storyboard`.`setAnalyserFftSize`)
 - Music Playback Rate Changer (Like the first version of Toxen used to have)
+- Custom mini-notice for small, not super important and temporary notifications that doesn't require to be shoved in your face.
 
 - [Toxen.net](https://toxen.net/) website
   - Hub for downloading modules, storyboards, subtitles, custom themes, etc...
     - https://toxen.net/listings/SUBJECT
   - A Toxen forum where you can ask questions or suggest ideas for future updates.
 
-- Smoother Redesign (Check refs from Jiri)
+- Smoother Redesign (Check refs from Jiri & Ruby)
   - Single side panel visible while not idle.
     - Side panel will have the buttons for Music Panel, Settings, and other panels.
     - VSCode has something very similar to this concept, use it for inspiration.
@@ -52,7 +53,11 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
-- Starting to replace the basic sliders with prettier ones
+- Replaced the background dim slider with the new custom slider.
+- Optimized Toxen more for new users
+- Updated the Tutorial to be more up to date with the new layout.
+
+
 ## 202008022155
 - Added `Custom Group` as a details each song can have. You can group songs by this new detail to sort them in a custom group that's only mneant for grouping songs together
 - Swapped around the `Artist` detail field and the `Title` detail field. Now `Artist` is above `Title`

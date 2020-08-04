@@ -669,7 +669,16 @@ export declare class SongManager {
      * List of playable songs from a search.
      */
     static playableSongs: Song[];
-    private static historyIndex;
+    /**
+     * Song History
+     */
+    static history: {
+        historyIndex: number;
+        items: Song[];
+        next(): void;
+        previous(): void;
+        insert(song: Song): void;
+    };
     /**
      * If `Settings.onlyVisible` is `true`, returns only the physically visible songs in the song list.
      *
@@ -747,8 +756,8 @@ export declare class SongManager {
     static moveToTime(timeInSeconds: number): boolean;
     static playSongById(id: number): void;
     static playSong(song: Song): void;
-    static playRandom(): void;
-    static playNext(): void;
+    static playRandom(): Song;
+    static playNext(): Song;
     static playPrev(): void;
     static toggleShuffle(force?: boolean): boolean;
     static toggleRepeat(force?: boolean): boolean;
