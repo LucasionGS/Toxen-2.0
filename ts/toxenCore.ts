@@ -52,6 +52,11 @@ declare function local_playNext(): void;
  */
 export class Toxen {
   static initialize() {
+    // Update interval
+    setInterval(() => {
+      Update.check(Toxen.version);
+    }, 1800000);
+    
     let songmenusidebar: HTMLDivElement = document.querySelector("#songmenusidebar");
     let settingsmenusidebar: HTMLDivElement = document.querySelector("#settingsmenusidebar");
     // Emit events
@@ -86,6 +91,7 @@ export class Toxen {
     });
 
     Toxen.on("active", () => {
+      inactivityTimer = 0;
       document.body.style.cursor = "";
       let btns = document.querySelectorAll<HTMLDivElement>(".hideoninactive");
       for (let i  = 0; i < btns.length; i++) {
@@ -94,6 +100,7 @@ export class Toxen {
       }
     });
     Toxen.on("inactive", () => {
+      inactivityTimer = 5;
       document.body.style.cursor = "none";
       let btns = document.querySelectorAll<HTMLDivElement>(".hideoninactive");
       for (let i  = 0; i < btns.length; i++) {
@@ -217,18 +224,6 @@ export class Toxen {
       })
     });
     sm.appendChild(div);
-    // menu.items.forEach(mi => {
-    //   let div = document.createElement("div");
-    //   div.classList.add("button");
-    //   div.innerText = mi.label;
-    //   div.addEventListener("click", () => {
-    //     mi.submenu.popup({
-    //       x: div.getBoundingClientRect().x,
-    //       y: div.getBoundingClientRect().bottom
-    //     });
-    //   sm.appendChild(div);
-    //   });
-    // });
   }
 
   /**
@@ -243,7 +238,7 @@ export class Toxen {
    */
   static set title(value: string) {
     document.getElementById("toxen-title-text").innerHTML = value;
-    let plain = Debug.stripHTML(value);
+    let plain = Debug.decodeHTML(value);
     document.title = plain;
   }
   
@@ -311,6 +306,9 @@ export class Toxen {
     if (mode) {
       document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "100vh";
       document.querySelector<HTMLDivElement>("#settingsmenusidebar").style.height = "100vh";
+      setTimeout(() => {
+        Toxen.emit("inactive");
+      }, 100);
     }
     else {
       document.querySelector<HTMLDivElement>("#songmenusidebar").style.height = "calc(100vh - 32px)";
@@ -393,8 +391,8 @@ export class Toxen {
           + (`${ScriptEditor.window != null ? "Editing "
           : song.isVideo ? "Watching "
           : "Listening to "}`)
-          + `${Debug.stripHTML(song.parseName())}`;
-          if (song.details.source) options["state"] = `\nFrom ${Debug.stripHTML(song.details.source)}`;
+          + `${Debug.decodeHTML(song.parseName())}`;
+          if (song.details.source) options["state"] = `\nFrom ${Debug.decodeHTML(song.details.source)}`;
         }
         discordClient.setActivity(options);
         break;
@@ -767,14 +765,12 @@ export namespace Toxen {
     emit(event: "drag", value: number): boolean;
     emit(event: "release", value: number): boolean;
   }
-
   export namespace InteractiveProgressBar {
     export interface HTMLInteractiveProgressBar extends HTMLDivElement {
       object: InteractiveProgressBar,
       thumb: HTMLDivElement
     }
   }
-
   export class InteractiveProgressBar extends EventEmitter {
     constructor(width: string | number = "100%", height: string | number = 20) {
       super();
@@ -1558,6 +1554,8 @@ export class Song {
           "y": e.clientY
         });
       }
+
+      SongManager.revealSongPanel();
     });
   }
 
@@ -2042,6 +2040,15 @@ export class Song {
       Toxen.title = Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
       ToxenScriptManager.loadCurrentScript();
       if (SongManager.history.items[SongManager.history.items.length - 1] != this) SongManager.history.insert(this);
+      
+      if (browserWindow.isFullScreen()) {
+        Prompt.close("currentsongnamepopup_hjks798dsabd");
+        let _p = new Prompt("", this.parseName())
+        .setInteractive(false)
+        .close(2000);
+        _p.name = "currentsongnamepopup_hjks798dsabd";
+      }
+
       if (this.subtitlePath) {
         Subtitles.renderSubtitles(this.getFullPath("subtitlePath"));
       }
@@ -2493,7 +2500,7 @@ export class SongManager {
       // this.items.splice(this.historyIndex);
       this.items.push(song);
     }
-    // TODO:
+    // TODO: History for Next and Previous on SongManager.playNext and ~.playPrev
   }
 
 
@@ -3437,6 +3444,19 @@ export class SongManager {
     ytInputTitle.style.margin = "auto";
     ytInputTitle.placeholder = "Title*";
     
+    let ytInputSubs = document.createElement("select");
+    ytInputSubs.classList.add("fancyselect");
+    ytInputSubs.style.display = "block";
+    ytInputSubs.style.width = "92%";
+    ytInputSubs.style.margin = "auto";
+    
+    let _emptyOption = document.createElement("option");
+    _emptyOption.text = "No subtitles available";
+    _emptyOption.value = "";
+
+    ytInputSubs.disabled = true;
+    ytInputSubs.appendChild(_emptyOption);
+    
     let ytVideoCheckContainer = document.createElement("div");
     let ytInputVideo = document.createElement("input");
     ytInputVideo.type = "checkbox";
@@ -3475,6 +3495,76 @@ export class SongManager {
       }
     });
 
+    ytInput.addEventListener("input", e => {
+      let url = ytInput.value.trim();
+      if (ytdl.validateURL(url)) {
+        ytdl.getBasicInfo(url, (err, info) => {
+          if (err) return console.error(err);
+          console.log(info);
+          
+          let artists = SongManager.getAllArtists();
+          if (artists.includes(ytInputArtist.value.trim())) {
+            ytInputArtist.style.color = "lightgreen";
+          }
+          else {
+            ytInputArtist.style.color = "white";
+          }
+          
+          ytInputArtist.value = info.media.artist ? info.media.artist : info.title.split(/-|~/).length > 1 ? info.title.split(/-|~/)[0].trim() : info.author.name;
+          ytInputTitle.value = info.media.song ? info.media.song : info.title.split(/-|~/).length > 1 ? info.title.split(/-|~/).filter((v, i) => i > 0).join("-").trim() : info.title;
+          if (info.player_response.captions) {
+            ytInputSubs.innerHTML = "";
+            let opt = document.createElement("option");
+            opt.text = "<Click to select Subtitles>";
+            opt.value = "";
+            ytInputSubs.appendChild(opt);
+            ytInputSubs.disabled = false;
+            
+            for (let i = 0; i < info.player_response.captions.playerCaptionsTracklistRenderer.captionTracks.length; i++) {
+              const cap = info.player_response.captions.playerCaptionsTracklistRenderer.captionTracks[i];
+              
+              let opt = document.createElement("option");
+              opt.text = cap.name.simpleText;
+              opt.value = cap.baseUrl;
+              ytInputSubs.appendChild(opt);
+              console.log(cap);
+              
+            }
+          }
+          else {
+            ytInputSubs.innerHTML = "";
+            let _emptyOption = document.createElement("option");
+            _emptyOption.text = "No subtitles available";
+            _emptyOption.value = "";
+            ytInputSubs.value = "";
+            
+            ytInputSubs.disabled = true;
+            ytInputSubs.appendChild(_emptyOption);
+          }
+        });
+      }
+      else {
+        ytInputSubs.innerHTML = "";
+        let _emptyOption = document.createElement("option");
+        _emptyOption.text = "No subtitles available";
+        _emptyOption.value = "";
+        ytInputSubs.value = "";
+        
+        ytInputSubs.disabled = true;
+        ytInputSubs.appendChild(_emptyOption);
+      }
+    });
+
+    ytInputArtist.addEventListener("input", e => {
+      let artists = SongManager.getAllArtists();
+      if (artists.includes(ytInputArtist.value.trim())) {
+        ytInputArtist.style.color = "lightgreen";
+      }
+      else {
+        ytInputArtist.style.color = "white";
+      }
+    });
+
     p.addContent(sl.element);
     sl.element.style.position = "relative";
 
@@ -3491,6 +3581,8 @@ export class SongManager {
         downloadYouTube.click();
       }
     });
+    
+    p.addContent(ytInputSubs);
 
     var isVideo = false;
     p.addContent(ytVideoCheckContainer);
@@ -3523,6 +3615,7 @@ export class SongManager {
       let url = ytInput.value.trim();
       let artist = ytInputArtist.value.trim();
       let title = ytInputTitle.value.trim();
+      let subsURL = ytInputSubs.value;
       let error = false;
       if (url == "" || !ytdl.validateURL(url)) {
         dialog.showErrorBox("Invalid URL", "Please enter a valid YouTube URL");
@@ -3551,13 +3644,8 @@ export class SongManager {
       const song = new Song();
       song.songId = SongManager.songList.length;
       song.path = isValid(artist) == "" ? isValid(title) : isValid(artist) + " - " + isValid(title);
-      song.songPath = song.getFullPath("path") + "/audio.mp3";
-      song.background = song.getFullPath("path") + "/maxresdefault.jpg";
-      song.details.artist = artist === "" ? null : artist;
-      song.details.title = title;
-      song.details.source = "YouTube";
-      song.details.sourceLink = url;
       
+
       let surfix = 0;
       while (fs.existsSync(song.getFullPath("path"))) {
         let len = surfix.toString().length + 3;
@@ -3570,6 +3658,16 @@ export class SongManager {
         surfix++;
       }
 
+      // Rest of the details.
+      song.songPath = song.path + "/audio.mp3";
+      song.background = song.path + "/maxresdefault.jpg";
+      song.details.artist = artist === "" ? null : artist;
+      song.details.title = title;
+      song.details.source = "YouTube";
+      song.details.sourceLink = url;
+      if (subsURL) song.subtitlePath = song.path + "/"
+      + ([...ytInputSubs.childNodes] as HTMLOptionElement[]).find(o => o.value == subsURL).text + ".srt";
+ 
       fs.mkdirSync(song.getFullPath("path"));
       if (error || audio == null) {
         dialog.showErrorBox("Invalid URL", "Please enter a valid YouTube URL");
@@ -3580,11 +3678,19 @@ export class SongManager {
         ytInput.focus();
         return;
       }
-      let dl = new ion.Download(
+      let dlBg = new ion.Download(
         "https://i.ytimg.com/vi/" + ytdl.getURLVideoID(url) + "/maxresdefault.jpg",
         song.getFullPath("background")
       );
-      dl.start(); // Download BG image
+      dlBg.start(); // Download BG image
+      
+      if (subsURL) {
+        let srt = Subtitles.convertXMLToSRT(await (await fetch(subsURL)).text());
+        fs.writeFile(song.getFullPath("subtitlePath"), srt, err => {
+          if (err) console.error(err);
+        });
+        console.log(srt);
+      }
       let ws = new fs.WriteStream(song.getFullPath("songPath") as unknown);
 
       let cancelledByUser = false;
@@ -4822,14 +4928,15 @@ export class Storyboard {
   static _fadingEnabled: boolean | number | NodeJS.Timeout = false;
 }
 
+interface SubtitleObject {
+  id: number;
+  startTime: number;
+  endTime: number;
+  text: string;
+}
 
 class Subtitles {
-  static current: {
-    id: number;
-    startTime: number;
-    endTime: number;
-    text: string;
-  }[] = [];
+  static current: SubtitleObject[] = [];
 
   static async parseSrt(srtPath: string) {
     try {
@@ -4844,12 +4951,7 @@ class Subtitles {
       console.error(e);
       return null;
     }
-    var subData: {
-      id: number;
-      startTime: number;
-      endTime: number;
-      text: string;
-    }[] = [];
+    var subData: SubtitleObject[] = [];
     //Parsing
     var lines = srtText.split("\n");
   
@@ -4919,6 +5021,27 @@ class Subtitles {
         subText.innerHTML = "";
       }
     }, 5);
+  }
+
+  static convertXMLToSRT(xml: string) {
+    let subs: SubtitleObject[] = []
+    let index = 1;
+    let reg = /(?:<text start="(.+?)" dur="(.+?)">(.+?)<\/text>)/gs;
+    xml.replace(reg, function($0, $1: string, $2: string, $3: string) {
+      subs.push({
+        "id": index++,
+        "startTime": +$1,
+        "endTime": (+$1) + (+$2),
+        "text": Debug.decodeHTML($3)
+      });
+      return $0;
+    });
+    
+    return subs.map(s => {
+      return `${s.id}
+${ToxenScriptManager.convertSecondsToDigitalClock(s.startTime).replace(".", ",")} --> ${ToxenScriptManager.convertSecondsToDigitalClock(s.endTime).replace(".", ",")}
+${s.text}`;
+    }).join("\n\n");
   }
 }
 //#region ToxenScript Objects
@@ -6053,17 +6176,37 @@ export class Debug {
    * Strips all HTML tags from one or more strings.
    * @param html HTML code string
    */
-  static stripHTML(html: string): string ;
+  static stripHTML(html: string): string;
   /**
    * Strips all HTML tags from one or more strings.
    * @param html HTML code strings
    */
-  static stripHTML(...html: string[]): string[] ;
+  static stripHTML(...html: string[]): string[];
   static stripHTML(...html: string[]) {
     let _d = document.createElement("div");
     for (let i = 0; i < html.length; i++) {
       _d.innerHTML = html[i];
       html[i] = _d.innerText;
+    }
+    if (html.length == 1) return html[0];
+    return html;
+  }
+
+  /**
+   * Decodes all HTML text from one or more strings.
+   * @param html HTML code string
+   */
+  static decodeHTML(html: string): string;
+  /**
+   * Decodes all HTML text from one or more strings.
+   * @param html HTML code strings
+   */
+  static decodeHTML(...html: string[]): string[];
+  static decodeHTML(...html: string[]) {
+    let _d = document.createElement("textarea");
+    for (let i = 0; i < html.length; i++) {
+      _d.innerHTML = html[i];
+      html[i] = _d.childNodes.length === 0 ? "" : _d.childNodes[0].nodeValue;
     }
     if (html.length == 1) return html[0];
     return html;
@@ -6103,7 +6246,7 @@ export class Prompt {
     this.main.appendChild(this.buttonsElement);
 
     this.main.style.position = "absolute";
-    this.main.style.top = "42px";
+    this.main.style.top = "100vh";
     this.main.style.left = "50vw";
     this.main.style.transform = "translateX(-50%)";
     this.main.style.border = "solid 2px #2b2b2b";
@@ -6112,7 +6255,7 @@ export class Prompt {
     this.main.style.paddingLeft = "32px";
     this.main.style.paddingRight = "32px";
     this.main.style.zIndex = "10000";
-    this.main.style.transition = "all 0.1s ease-in-out";
+    this.main.style.transition = "all 0.2s ease-in-out";
     this.main.style.maxWidth = "95vw";
     this.main.style.maxHeight = "95vh";
 
@@ -6121,6 +6264,10 @@ export class Prompt {
     document.body.appendChild(this.main);
 
     this.main.prompt = this;
+
+    setTimeout(() => {
+      this.main.style.top = "42px";
+    }, 10);
 
     // Promise based
     this.promise = new Promise((res, rej) => {
@@ -6190,6 +6337,18 @@ export class Prompt {
 
   clearButtons() {
     this.buttonsElement.innerHTML = "";
+  }
+
+  setInteractive(mode: boolean) {
+    if (mode) {
+      this.main.style.pointerEvents = "all";
+      this.main.style.opacity = "1";
+    }
+    else {
+      this.main.style.pointerEvents = "none";
+      this.main.style.opacity = "0.5";
+    }
+    return this;
   }
 
   /**
@@ -6320,15 +6479,21 @@ export class Prompt {
   close(ms: number = 0): this {
     if (typeof ms == "number" && ms > 0) {
       setTimeout(() => {
-        if (typeof this.main == "object" && this.main.parentElement) {
-          this.main.parentElement.removeChild(this.main);
-        }
+        this.main.style.top = -10 - this.main.clientHeight + "px";
+        setTimeout(() => {
+          if (typeof this.main == "object" && this.main.parentElement) {
+            this.main.parentElement.removeChild(this.main);
+          }
+        }, 200);
       }, ms);
     }
     else {
-      if (typeof this.main == "object" && this.main.parentElement) {
-        this.main.parentElement.removeChild(this.main);
-      }
+      this.main.style.top = -10 - this.main.clientHeight + "px";
+      setTimeout(() => {
+        if (typeof this.main == "object" && this.main.parentElement) {
+          this.main.parentElement.removeChild(this.main);
+        }
+      }, 200);
     }
     this._res(null);
     // this._rej("Prompt closed");

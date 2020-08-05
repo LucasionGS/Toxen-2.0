@@ -1008,6 +1008,16 @@ export declare class Debug {
      * @param html HTML code strings
      */
     static stripHTML(...html: string[]): string[];
+    /**
+     * Decodes all HTML text from one or more strings.
+     * @param html HTML code string
+     */
+    static decodeHTML(html: string): string;
+    /**
+     * Decodes all HTML text from one or more strings.
+     * @param html HTML code strings
+     */
+    static decodeHTML(...html: string[]): string[];
 }
 export declare class Prompt {
     /**
@@ -1038,6 +1048,7 @@ export declare class Prompt {
     setContent(content: HTMLElement | string, textAsHTML?: boolean): void;
     clearContent(): void;
     clearButtons(): void;
+    setInteractive(mode: boolean): this;
     /**
      * Append content to the content field.
      * @param textAsHTML If `content` is a string, set to `false` to disable HTML parsing.

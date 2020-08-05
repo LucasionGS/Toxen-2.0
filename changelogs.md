@@ -53,13 +53,21 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+- Added automatically checking for updates every 30 minutes.
+- Updates to YouTube Downloader
+  - Added automatically filling out YouTube artist and title details when inserting a URL. They can still be manually edited before pressing download.
+  - Added tinting to the `artist` field, indicating with a light green tint if you already have a song from the same artist. This makes it easier to tell if you have spelled it correctly with the correct caps and such if you already have the artist in your library.
+  - Added an animation on the popups when they enter and exit
+  - Optional subtitle download when downloading audio/videos
+
+## 202008042032
 - Replaced the background dim slider with the new custom slider.
 - Optimized Toxen more for new users
 - Updated the Tutorial to be more up to date with the new layout.
-
+- Changed positioning of the popup notifications to not be overlapping the top bar.
 
 ## 202008022155
-- Added `Custom Group` as a details each song can have. You can group songs by this new detail to sort them in a custom group that's only mneant for grouping songs together
+- Added `Custom Group` as a details each song can have. You can group songs by this new detail to sort them in a custom group that's only meant for grouping songs together
 - Swapped around the `Artist` detail field and the `Title` detail field. Now `Artist` is above `Title`
 - Reskinned and reformatted the main layout.
   - Progress bar has changed look and is now in the bottom of the screen along with the center buttons.
