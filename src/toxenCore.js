@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Debug = exports.ToxenScriptManager = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -1174,7 +1175,7 @@ class Settings {
                     SongManager.scanDirectory();
                 }
                 self.saveToFile();
-                // Toxen.reload();
+                SongManager.history.clear();
                 SongManager.search();
                 setTimeout(() => {
                     SongManager.playRandom();
@@ -1406,7 +1407,10 @@ class Song {
         let end = document.createElement("input");
         end.classList.add("fancyinput");
         end.value = ToxenScriptManager.convertSecondsToDigitalClock(this.details.songLength ? this.details.songLength : 60);
-        end.placeholder = "Seconds or timestamp (HH:MM:SS)";
+        let trimSubs = document.createElement("input");
+        trimSubs.type = "checkbox";
+        trimSubs.value = ToxenScriptManager.convertSecondsToDigitalClock(this.details.songLength ? this.details.songLength : 60);
+        trimSubs.placeholder = "Seconds or timestamp (HH:MM:SS)";
         let setCurStart = document.createElement("button");
         setCurStart.classList.add("fancybutton");
         setCurStart.innerText = "Use current time";
@@ -1439,6 +1443,8 @@ class Song {
             "When should it end?",
             end,
             setCurEnd,
+            "Trim any subtitles to fit as well?",
+            trimSubs,
         ]);
         let [trim, close] = p.addButtons(["Trim", "Close"], "fancybutton", true);
         start.addEventListener("input", () => {
@@ -1463,17 +1469,30 @@ class Song {
                 trim.disabled = true;
             }
         });
-        trim.addEventListener("click", () => {
+        trim.addEventListener("click", () => __awaiter(this, void 0, void 0, function* () {
             start.disabled = true;
             end.disabled = true;
             trim.disabled = true;
+            trimSubs.disabled = true;
             close.disabled = true;
+            let trimSubsChecked = trimSubs.checked;
             p.return(true, false);
             let sp = this.getFullPath("songPath");
             let fc = ffmpeg(sp);
             let tmpPath = path.resolve(path.dirname(sp) + "/tmp_" + path.basename(sp));
             let ss = ToxenScriptManager.timeStampToSeconds(start.value);
             let se = ToxenScriptManager.timeStampToSeconds(end.value) - ss;
+            // Trimming subtitles
+            let srt = null;
+            if (this.subtitlePath) {
+                let subs = yield Subtitles.parseSrt(this.getFullPath("subtitlePath"));
+                for (let i = 0; i < subs.length; i++) {
+                    const sub = subs[i];
+                    sub.startTime -= ss;
+                    sub.endTime -= ss;
+                }
+                srt = Subtitles.subToSRT(subs);
+            }
             fc.setStartTime(ss)
                 .addOption("-to " + se)
                 .saveToFile(tmpPath)
@@ -1483,12 +1502,17 @@ class Song {
                 p.clearButtons();
             })
                 .on("progress", (progress) => {
-                p.setContent(`Trimming song...<br>${((ToxenScriptManager.timeStampToSeconds(progress.timemark) / se) * 100).toFixed(2)}%`);
+                let prog = ToxenScriptManager.timeStampToSeconds(progress.timemark) / se;
+                p.setContent(`Trimming song...<br>${(prog * 100).toFixed(2)}%`);
+                browserWindow.setProgressBar(prog);
             })
                 .on("end", () => {
                 p.setContent(`Trimmed song!`);
+                browserWindow.setProgressBar(-1);
+                if (srt != null)
+                    fs.writeFileSync(this.getFullPath("subtitlePath"), srt);
                 let curSong = SongManager.getCurrentlyPlayingSong();
-                if (curSong && curSong.songId === this.songId) {
+                if (curSong && curSong.songId == this.songId) {
                     SongManager.clearPlay();
                 }
                 rimraf(sp, (err) => {
@@ -1511,7 +1535,7 @@ class Song {
             // console.log(sp);
             // console.log(tmpPath);
             // console.log(fc._getArguments().join(" "));
-        });
+        }));
     }
     /**
      * Returns the full name for this song with parsed markdown, if any.
@@ -1682,6 +1706,7 @@ class Song {
                         p.addButtons("Close", null, true);
                         var duration;
                         src.toFormat("mp3").saveToFile(newName).once("end", () => {
+                            browserWindow.setProgressBar(-1);
                             SongManager.player.src = newName + hash;
                             p.close();
                             new Prompt("Convertion Completed.").close(2000);
@@ -1695,10 +1720,13 @@ class Song {
                             if (duration != null) {
                                 // p.setContent(`Converting...<br>${progress.targetSize}%`);
                                 // p.setContent(`Converting...<br>${duration}%`);
-                                p.setContent(`Converting...<br>${(ToxenScriptManager.timeStampToSeconds(progress.timemark) / duration * 100).toFixed(2)}%`);
+                                let prog = ToxenScriptManager.timeStampToSeconds(progress.timemark) / duration;
+                                p.setContent(`Converting...<br>${(prog * 100).toFixed(2)}%`);
+                                browserWindow.setProgressBar(prog);
                             }
                         })
                             .once("error", (err) => {
+                            browserWindow.setProgressBar(-1);
                             console.error(err);
                         });
                         return;
@@ -1707,9 +1735,9 @@ class Song {
             }
             SongManager.player.play().catch(err => console.error(err));
             Storyboard.setBackground(this.getFullPath("background"));
-            Toxen.title = ionMarkDown_1.Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
+            Toxen.title = this.parseName();
             ToxenScriptManager.loadCurrentScript();
-            if (SongManager.history.items[SongManager.history.items.length - 1] != this)
+            if (SongManager.history.historyIndex >= SongManager.history.items.length - 1 && SongManager.history.items[SongManager.history.historyIndex] != this)
                 SongManager.history.insert(this);
             if (browserWindow.isFullScreen()) {
                 Prompt.close("currentsongnamepopup_hjks798dsabd");
@@ -2117,8 +2145,17 @@ class SongManager {
      *
      * If `Settings.onlyVisible` is `false`, returns the full `SongManager.playableSongs` list
      */
-    static onlyVisibleSongList() {
-        return Settings.current.onlyVisible && Settings.current.songGrouping > 0 ? SongManager.playableSongs.filter(s => s.getGroup() == null || s.getGroup().collapsed == false) : SongManager.playableSongs;
+    static onlyVisibleSongList(forceOnlyVisible = Settings.current.onlyVisible) {
+        if (Settings.current.playlist) {
+            return forceOnlyVisible ? SongManager.songList
+                .filter(s => (s.getGroup() == null || s.getGroup().collapsed == false)
+                && !s.element.hidden
+                && (Settings.current.playlist == null || (s.details.playlists && s.details.playlists.includes(Settings.current.playlist)))) : SongManager.songList.filter(s => (s.details.playlists && s.details.playlists.includes(Settings.current.playlist)));
+        }
+        return forceOnlyVisible ? SongManager.songList
+            .filter(s => (s.getGroup() == null || s.getGroup().collapsed == false)
+            && !s.element.hidden) : SongManager.songList;
+        // // return Settings.current.onlyVisible && Settings.current.songGrouping > 0 ? SongManager.playableSongs.filter(s => s.getGroup() == null || s.getGroup().collapsed == false) : SongManager.playableSongs;
     }
     /**
      * Export every song into a folder.
@@ -2723,6 +2760,9 @@ class SongManager {
         return song;
     }
     static playNext() {
+        if (SongManager.history.historyIndex < SongManager.history.items.length - 1) {
+            return SongManager.history.next();
+        }
         const song = SongManager.getCurrentlyPlayingSong();
         if (Settings.current.repeat) {
             SongManager.player.currentTime = 0;
@@ -2761,6 +2801,9 @@ class SongManager {
         }
     }
     static playPrev() {
+        if (SongManager.history.historyIndex > 0) {
+            return SongManager.history.previous();
+        }
         let song = SongManager.getCurrentlyPlayingSong();
         let _songs = SongManager.onlyVisibleSongList();
         let id = _songs.findIndex(s => s.songId === song.songId);
@@ -2769,14 +2812,18 @@ class SongManager {
             if (g)
                 g.collapsed = false;
             if (SongManager.playableSongs.length > 0)
-                SongManager.playPrev();
+                return SongManager.playPrev();
             return;
         }
         if (id - 1 >= 0) {
-            _songs[id - 1].play();
+            let _song = _songs[id - 1];
+            _song.play();
+            return _song;
         }
         else {
-            _songs[_songs.length - 1].play();
+            let _song = _songs[_songs.length - 1];
+            _song.play();
+            return _song;
         }
     }
     static toggleShuffle(force) {
@@ -3185,6 +3232,7 @@ class SongManager {
                 let cancelledByUser = false;
                 audio.pipe(ws)
                     .on("finish", () => {
+                    browserWindow.setProgressBar(-1);
                     if (cancelledByUser == true) {
                         return;
                     }
@@ -3222,6 +3270,7 @@ class SongManager {
                             // .map("1:a:0")
                             .save(song.getFullPath("path") + "/output.mp4");
                         video.on("finish", () => {
+                            browserWindow.setProgressBar(-1);
                             // When everything has finished including downloading audio, downloading video, and merging:
                             ws.close();
                             try {
@@ -3244,6 +3293,7 @@ class SongManager {
                             }, 100);
                         })
                             .on("error", (err) => {
+                            browserWindow.setProgressBar(-1);
                             console.error(err);
                             dialog.showErrorBox("Unexpected Error", err.message);
                             ytInput.disabled = false;
@@ -3257,8 +3307,10 @@ class SongManager {
                             ytProgressBar.max = total * 2;
                             ytProgressBar.value = (total * 1) + downloaded;
                             progressText.innerText = (ytProgressBar.value / ytProgressBar.max * 100).toFixed(2) + "%";
+                            browserWindow.setProgressBar(ytProgressBar.value / ytProgressBar.max);
                         })
                             .on("error", (err) => {
+                            browserWindow.setProgressBar(-1);
                             console.error(err);
                             dialog.showErrorBox("Unexpected Error", err.message);
                             ytInput.disabled = false;
@@ -3277,6 +3329,7 @@ class SongManager {
                     }
                 })
                     .on("error", (err) => {
+                    browserWindow.setProgressBar(-1);
                     ws.close();
                     console.error(err);
                     dialog.showErrorBox("Unexpected Error", err.message);
@@ -3291,6 +3344,7 @@ class SongManager {
                     ytProgressBar.max = isVideo ? total * 2 : total;
                     ytProgressBar.value = downloaded;
                     progressText.innerText = (ytProgressBar.value / ytProgressBar.max * 100).toFixed(2) + "%";
+                    browserWindow.setProgressBar(ytProgressBar.value / ytProgressBar.max);
                 });
                 audio.on("error", (err) => {
                     ws.close();
@@ -3308,6 +3362,7 @@ class SongManager {
                     cancel.innerText = "Cancel Download";
                     cancel.classList.add("color-red");
                     cancel.onclick = function () {
+                        browserWindow.setProgressBar(-1);
                         cancelledByUser = true;
                         audio.destroy();
                         ws.close();
@@ -3540,25 +3595,42 @@ SongManager.playableSongs = [];
  */
 SongManager.history = new class History {
     constructor() {
-        this.historyIndex = 0;
+        this.historyIndex = -1;
         this.items = [];
-        // TODO: History for Next and Previous on SongManager.playNext and ~.playPrev
     }
     next() {
         this.historyIndex++;
         if (this.historyIndex >= this.items.length)
             this.historyIndex = this.items.length - 1;
-        this.items[this.historyIndex].play();
+        let song = this.items[this.historyIndex];
+        song.play();
+        return song;
     }
     previous() {
         this.historyIndex--;
         if (this.historyIndex < 0)
             this.historyIndex = 0;
-        this.items[this.historyIndex].play();
+        let song = this.items[this.historyIndex];
+        song.play();
+        return song;
     }
     insert(song) {
         // this.items.splice(this.historyIndex);
-        this.items.push(song);
+        this.historyIndex = this.items.push(song) - 1;
+    }
+    /**
+     * Clear the history.
+     */
+    clear() {
+        this.historyIndex = -1;
+        this.items = [];
+    }
+    /**
+     * Clear the history.
+     */
+    clearAndPrompt() {
+        SongManager.history.clear();
+        new Prompt("", "History cleared.").close(2000);
     }
 };
 /**
@@ -4444,10 +4516,12 @@ class Subtitles {
             if (subText && subText.innerHTML) {
                 subText.innerHTML = "";
             }
-            if (!Subtitles.current) {
+            if (!Subtitles.current || Subtitles.isRendering !== false) {
                 return;
             }
-            Subtitles.isRendering = setInterval(function () {
+            Subtitles.isRendering = true;
+            requestAnimationFrame(_gl);
+            function _gl() {
                 var hasSub = false;
                 for (var i = 0; i < Subtitles.current.length; i++) {
                     if (SongManager.player.currentTime >= Subtitles.current[i].startTime && SongManager.player.currentTime <= Subtitles.current[i].endTime) {
@@ -4460,9 +4534,21 @@ class Subtitles {
                 if (!hasSub) {
                     subText.innerHTML = "";
                 }
-            }, 5);
+                requestAnimationFrame(_gl);
+            }
         });
     }
+    static subToSRT(subs) {
+        return subs.map(s => {
+            return `${s.id}
+${ToxenScriptManager.convertSecondsToDigitalClock(s.startTime).replace(".", ",")} --> ${ToxenScriptManager.convertSecondsToDigitalClock(s.endTime).replace(".", ",")}
+${s.text}`;
+        }).join("\n\n");
+    }
+    /**
+     * Convert XML subtitles to SRT
+     * @param xml XML code string
+     */
     static convertXMLToSRT(xml) {
         let subs = [];
         let index = 1;
@@ -4476,11 +4562,7 @@ class Subtitles {
             });
             return $0;
         });
-        return subs.map(s => {
-            return `${s.id}
-${ToxenScriptManager.convertSecondsToDigitalClock(s.startTime).replace(".", ",")} --> ${ToxenScriptManager.convertSecondsToDigitalClock(s.endTime).replace(".", ",")}
-${s.text}`;
-        }).join("\n\n");
+        return Subtitles.subToSRT(subs);
     }
 }
 Subtitles.current = [];
@@ -4582,6 +4664,7 @@ class ToxenScriptManager {
      */
     static loadCurrentScript() {
         return __awaiter(this, void 0, void 0, function* () {
+            Prompt.close("toxenscripterrormessage"); // Remove the last error, if any
             ToxenScriptManager.events = [];
             ToxenScriptManager.variables = {};
             for (const key in ToxenScriptManager.defaultVariables) {
@@ -4668,15 +4751,17 @@ class ToxenScriptManager {
                     // Failures
                     if (typeof fb == "string") {
                         setTimeout(() => {
-                            new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1), (typeof fb == "string" ? fb : "")])
-                                .addButtons("Close", null, true);
+                            let p = new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1), (typeof fb == "string" ? fb : "")]);
+                            p.addButtons("Close", null, true);
+                            p.name = "toxenscripterrormessage";
                         }, 100);
                         throw "Failed parsing script. Error at line " + (i + 1) + "\n" + fb;
                     }
                     if (fb.success == false) {
                         setTimeout(() => {
-                            new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1)])
-                                .addButtons("Close", null, true);
+                            let p = new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1)]);
+                            p.addButtons("Close", null, true);
+                            p.name = "toxenscripterrormessage";
                         }, 100);
                         throw "Failed parsing script. Error at line " + (i + 1) + "\n" + fb.error;
                     }
@@ -5530,6 +5615,16 @@ class Debug {
         for (let i = 0; i < html.length; i++) {
             _d.innerHTML = html[i];
             html[i] = _d.childNodes.length === 0 ? "" : _d.childNodes[0].nodeValue;
+        }
+        if (html.length == 1)
+            return html[0];
+        return html;
+    }
+    static encodeHTML(...html) {
+        for (let i = 0; i < html.length; i++) {
+            html[i] = html[i].replace(/[\u00A0-\u9999<>\&]/gim, function (i) {
+                return '&#' + i.charCodeAt(0) + ';';
+            });
         }
         if (html.length == 1)
             return html[0];

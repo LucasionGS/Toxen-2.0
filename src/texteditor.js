@@ -1,5 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TextEditor = void 0;
+const toxenCore_1 = require("./toxenCore");
 class TextEditor {
     /**
      * @param {HTMLTextAreaElement | HTMLInputElement} textarea
@@ -15,9 +17,6 @@ class TextEditor {
          * @type {{[eventName: string]: ((...any) => void)[]}}
          */
         this._events = [];
-        /**
-         * @type {string[]}
-         */
         this.suggestions = [];
         /**
          * If `string`, `TAB` action is cancelled and will autocomplete suggestion.
@@ -34,12 +33,43 @@ class TextEditor {
             const { key, ctrlKey, altKey, shiftKey } = e;
             let cursor = this.getCursor();
             let word = this.getWord();
+            if (document.getElementById("jdksaklajdklajkkadjkldkkjdksla")) {
+                document.getElementById("jdksaklajdklajkkadjkldkkjdksla").remove();
+                this.textarea.focus();
+                this.setCursor(cursor.start, cursor.end);
+            }
             if (key == "Tab" && typeof (this.currentSuggestion = this.suggest()) == "string") {
                 e.preventDefault();
                 e.stopPropagation();
-                this.insert(this.currentSuggestion, word.start, word.end);
-                this.emit("finish", this.currentSuggestion);
-                this.currentSuggestion = null;
+                let self = this;
+                let as = self.allSuggestions();
+                if (as.length > 0) {
+                    let sl = new toxenCore_1.SelectList(as.map(s => {
+                        return {
+                            text: s,
+                            value: s
+                        };
+                    })).on("select", si => {
+                        self.textarea.focus();
+                        self.insert(si.value, word.start, word.end);
+                        self.emit("finish", si.value);
+                        self.currentSuggestion = null;
+                    });
+                    let size = self.textarea.getBoundingClientRect();
+                    let x = size.x;
+                    let y = size.y + (self.getCurrentLines()[0].index * 20);
+                    sl.element.style.position = "fixed";
+                    sl.element.style.zIndex = "1000";
+                    sl.element.style.left = x + "px";
+                    sl.element.style.top = y + "px";
+                    sl.element.id = "jdksaklajdklajkkadjkldkkjdksla";
+                    document.body.appendChild(sl.element);
+                    sl.selectElement.focus();
+                    sl.value.catch(reason => {
+                        this.textarea.focus();
+                        this.setCursor(cursor.start, cursor.end);
+                    });
+                }
             }
             else if (key == "Tab" && !ctrlKey && !shiftKey && !altKey) {
                 e.preventDefault();
@@ -252,7 +282,6 @@ class TextEditor {
         let allLines = this.getAllLines();
         /**
          * List of line texts
-         * @type {{"text": string, "index": number, "start": number, "end": number}[]}
          */
         let lines = [];
         // let t = this.value;
@@ -376,9 +405,6 @@ class TextEditor {
             // if (/[\s]/g.test(text[se])) {
             //   se--;
             // }
-            /**
-             * @type {Word}
-             */
             let word = {
                 "word": text.substring(ss, se),
                 "start": ss,
@@ -411,6 +437,20 @@ class TextEditor {
             }
         }
         return null;
+    }
+    allSuggestions() {
+        let { word, start, end } = this.getWord();
+        if (word == "") {
+            return null;
+        }
+        let suggestions = [];
+        for (let i = 0; i < this.suggestions.length; i++) {
+            const suggestion = this.suggestions[i];
+            if (suggestion.toLowerCase().startsWith(word.toLowerCase())) {
+                suggestions.push(suggestion);
+            }
+        }
+        return suggestions;
     }
     /**
      * Insert a string into a spot

@@ -1,3 +1,8 @@
+declare type Word = {
+    "word": string;
+    "start": number;
+    "end": number;
+};
 declare type CursorPosition = {
     "start": number;
     "end": number;
@@ -54,7 +59,12 @@ export declare class TextEditor {
      * @param direction
      */
     setCursor(start: number, end?: number, direction?: "forward" | "backward" | "none"): void;
-    getCurrentLines(): any[];
+    getCurrentLines(): {
+        text: string;
+        index: number;
+        start: number;
+        end: number;
+    }[];
     /**
      * Get a line by index.
      *
@@ -83,16 +93,10 @@ export declare class TextEditor {
      */
     setLine(lineIndex: any, newText: any): void;
     getAllLines(): string[];
-    /**
-     * @type {string[]}
-     */
-    suggestions: any[];
-    getWord(): {
-        word: string;
-        start: number;
-        end: number;
-    };
-    suggest(): any;
+    suggestions: string[];
+    getWord(): Word;
+    suggest(): string;
+    allSuggestions(): string[];
     /**
      * If `string`, `TAB` action is cancelled and will autocomplete suggestion.
      *

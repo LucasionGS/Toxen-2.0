@@ -1211,8 +1211,7 @@ export class Settings {
         SongManager.scanDirectory();
       }
       self.saveToFile();
-
-      // Toxen.reload();
+      SongManager.history.clear();
       SongManager.search();
       setTimeout(() => {
         SongManager.playRandom();
@@ -1591,13 +1590,20 @@ export class Song {
     start.classList.add("fancyinput");
     start.value = "0";
     start.placeholder = "Seconds or timestamp (HH:MM:SS)";
+    
     let end = document.createElement("input");
     end.classList.add("fancyinput");
     end.value = ToxenScriptManager.convertSecondsToDigitalClock(this.details.songLength ? this.details.songLength : 60);
-    end.placeholder = "Seconds or timestamp (HH:MM:SS)";
+    
+    let trimSubs = document.createElement("input");
+    trimSubs.type = "checkbox";
+    trimSubs.value = ToxenScriptManager.convertSecondsToDigitalClock(this.details.songLength ? this.details.songLength : 60);
+    trimSubs.placeholder = "Seconds or timestamp (HH:MM:SS)";
+    
     let setCurStart = document.createElement("button");
     setCurStart.classList.add("fancybutton");
     setCurStart.innerText = "Use current time";
+    
     let setCurEnd = document.createElement("button");
     setCurEnd.classList.add("fancybutton");
     setCurEnd.innerText = "Use current time";
@@ -1631,6 +1637,8 @@ export class Song {
          "When should it end?",
          end,
          setCurEnd,
+         "Trim any subtitles to fit as well?",
+         trimSubs,
        ]
     );
 
@@ -1647,18 +1655,33 @@ export class Song {
       else { end.style.color = "red"; trim.disabled = true; }
     });
 
-    trim.addEventListener("click", () => {
+    trim.addEventListener("click", async () => {
       start.disabled = true;
       end.disabled = true;
       trim.disabled = true;
+      trimSubs.disabled = true;
       close.disabled = true;
+      let trimSubsChecked = trimSubs.checked;
       p.return(true, false);
       let sp = this.getFullPath("songPath");
       let fc = ffmpeg(sp);
       let tmpPath = path.resolve(path.dirname(sp) + "/tmp_" + path.basename(sp));
-
+      
       let ss = ToxenScriptManager.timeStampToSeconds(start.value);
       let se = ToxenScriptManager.timeStampToSeconds(end.value) - ss;
+      
+      // Trimming subtitles
+      let srt: string = null;
+      if (this.subtitlePath) {
+        let subs = await Subtitles.parseSrt(this.getFullPath("subtitlePath"));
+        for (let i = 0; i < subs.length; i++) {
+          const sub = subs[i];
+          sub.startTime -= ss;
+          sub.endTime -= ss;
+        }
+        srt = Subtitles.subToSRT(subs);
+      }
+
       fc.setStartTime(ss)
       .addOption("-to " + se)
       .saveToFile(tmpPath)
@@ -1668,12 +1691,16 @@ export class Song {
         p.clearButtons();
       })
       .on("progress", (progress) => {
-        p.setContent(`Trimming song...<br>${((ToxenScriptManager.timeStampToSeconds(progress.timemark) / se) * 100).toFixed(2)}%`);
+        let prog = ToxenScriptManager.timeStampToSeconds(progress.timemark) / se;
+        p.setContent(`Trimming song...<br>${(prog * 100).toFixed(2)}%`);
+        browserWindow.setProgressBar(prog);
       })
       .on("end", () => {
         p.setContent(`Trimmed song!`);
+        browserWindow.setProgressBar(-1);
+        if (srt != null) fs.writeFileSync(this.getFullPath("subtitlePath"), srt);
         let curSong = SongManager.getCurrentlyPlayingSong();
-        if (curSong && curSong.songId === this.songId) {
+        if (curSong && curSong.songId == this.songId) {
           SongManager.clearPlay();
         }
         rimraf(sp, (err) => {
@@ -2005,6 +2032,7 @@ export class Song {
             p.addButtons("Close", null, true);
             var duration: number;
             src.toFormat("mp3").saveToFile(newName).once("end", () => {
+              browserWindow.setProgressBar(-1);
               SongManager.player.src = newName + hash;
               p.close();
               new Prompt("Convertion Completed.").close(2000);
@@ -2025,10 +2053,13 @@ export class Song {
               if (duration != null) {
                 // p.setContent(`Converting...<br>${progress.targetSize}%`);
                 // p.setContent(`Converting...<br>${duration}%`);
-                p.setContent(`Converting...<br>${(ToxenScriptManager.timeStampToSeconds(progress.timemark) / duration * 100).toFixed(2)}%`);
+                let prog = ToxenScriptManager.timeStampToSeconds(progress.timemark) / duration;
+                p.setContent(`Converting...<br>${(prog * 100).toFixed(2)}%`);
+                browserWindow.setProgressBar(prog);
               }
             })
             .once("error", (err) => {
+              browserWindow.setProgressBar(-1);
               console.error(err);
             });
             return;
@@ -2037,9 +2068,9 @@ export class Song {
       }
       SongManager.player.play().catch(err => console.error(err));
       Storyboard.setBackground(this.getFullPath("background"));
-      Toxen.title = Imd.MarkDownToHTML(this.details.artist + " - " + this.details.title);
+      Toxen.title = this.parseName();
       ToxenScriptManager.loadCurrentScript();
-      if (SongManager.history.items[SongManager.history.items.length - 1] != this) SongManager.history.insert(this);
+      if (SongManager.history.historyIndex >= SongManager.history.items.length - 1 && SongManager.history.items[SongManager.history.historyIndex] != this) SongManager.history.insert(this);
       
       if (browserWindow.isFullScreen()) {
         Prompt.close("currentsongnamepopup_hjks798dsabd");
@@ -2484,23 +2515,41 @@ export class SongManager {
    * Song History
    */
   static history = new class History {
-    historyIndex = 0;
+    historyIndex = -1;
     items: Song[] = [];
     next() {
       this.historyIndex++;
       if (this.historyIndex >= this.items.length) this.historyIndex = this.items.length - 1;
-      this.items[this.historyIndex].play();
+      let song = this.items[this.historyIndex];
+      song.play();
+      return song;
     }
     previous() {
       this.historyIndex--;
       if (this.historyIndex < 0) this.historyIndex = 0;
-      this.items[this.historyIndex].play();
+      let song = this.items[this.historyIndex];
+      song.play();
+      return song;
     }
     insert(song: Song) {
       // this.items.splice(this.historyIndex);
-      this.items.push(song);
+      this.historyIndex = this.items.push(song) - 1;
     }
-    // TODO: History for Next and Previous on SongManager.playNext and ~.playPrev
+    
+    /**
+     * Clear the history.
+     */
+    clear() {
+      this.historyIndex = -1;
+      this.items = [];
+    }
+    /**
+     * Clear the history.
+     */
+    clearAndPrompt() {
+      SongManager.history.clear();
+      new Prompt("", "History cleared.").close(2000);
+    }
   }
 
 
@@ -2509,10 +2558,21 @@ export class SongManager {
    *  
    * If `Settings.onlyVisible` is `false`, returns the full `SongManager.playableSongs` list
    */
-  static onlyVisibleSongList() {
-    return Settings.current.onlyVisible && Settings.current.songGrouping > 0 ? SongManager.playableSongs.filter(s => s.getGroup() == null || s.getGroup().collapsed == false) : SongManager.playableSongs;
+  static onlyVisibleSongList(forceOnlyVisible = Settings.current.onlyVisible) {
+    if (Settings.current.playlist) {
+      return forceOnlyVisible ? SongManager.songList
+      .filter(s => 
+        (s.getGroup() == null || s.getGroup().collapsed == false)
+        && !s.element.hidden
+        && (Settings.current.playlist == null || (s.details.playlists && s.details.playlists.includes(Settings.current.playlist)))
+      ) : SongManager.songList.filter(s => ( s.details.playlists && s.details.playlists.includes(Settings.current.playlist)));
+    }
+    return forceOnlyVisible ? SongManager.songList
+    .filter(s =>
+      (s.getGroup() == null || s.getGroup().collapsed == false)
+      && !s.element.hidden) : SongManager.songList;
+    // // return Settings.current.onlyVisible && Settings.current.songGrouping > 0 ? SongManager.playableSongs.filter(s => s.getGroup() == null || s.getGroup().collapsed == false) : SongManager.playableSongs;
   }
-
   /**
    * Export every song into a folder.
    */
@@ -2826,7 +2886,7 @@ export class SongManager {
       return str.replace(/[\[\\\^\$\.\|\?\*\+\(\)\]]/g, "\\$&");
     }
 
-    let nSearch = [];
+    let nSearch: Song[] = [];
     this.songList.forEach(s => {
       let searchTags = [
         s.details.artist,
@@ -3181,6 +3241,9 @@ export class SongManager {
   }
 
   static playNext(): Song {
+    if (SongManager.history.historyIndex < SongManager.history.items.length - 1) {
+      return SongManager.history.next();
+    }
     const song = SongManager.getCurrentlyPlayingSong();
     if (Settings.current.repeat) {
       SongManager.player.currentTime = 0;
@@ -3217,21 +3280,28 @@ export class SongManager {
     }
   }
 
-  static playPrev() {
+  static playPrev(): Song {
+    if (SongManager.history.historyIndex > 0) {
+      return SongManager.history.previous();
+    }
     let song = SongManager.getCurrentlyPlayingSong();
     let _songs = SongManager.onlyVisibleSongList();
     let id = _songs.findIndex(s => s.songId === song.songId);
     if (_songs.length == 0) {
       let g = song.getGroup();
       if (g) g.collapsed = false;
-      if (SongManager.playableSongs.length > 0) SongManager.playPrev();
+      if (SongManager.playableSongs.length > 0) return SongManager.playPrev();
       return;
     }
     if (id - 1 >= 0) {
-      _songs[id - 1].play();
+      let _song = _songs[id - 1];
+      _song.play();
+      return _song;
     }
     else {
-      _songs[_songs.length - 1].play();
+      let _song = _songs[_songs.length - 1];
+      _song.play();
+      return _song;
     }
   }
 
@@ -3697,6 +3767,7 @@ export class SongManager {
 
       audio.pipe(ws)
       .on("finish", () => {
+        browserWindow.setProgressBar(-1);
         if (cancelledByUser == true) {
           return;
         }
@@ -3735,6 +3806,7 @@ export class SongManager {
           // .map("1:a:0")
           .save(song.getFullPath("path") + "/output.mp4");
           video.on("finish", () => {
+            browserWindow.setProgressBar(-1);
             // When everything has finished including downloading audio, downloading video, and merging:
             ws.close();
             try {
@@ -3756,6 +3828,7 @@ export class SongManager {
             }, 100);
           })
           .on("error", (err) => {
+            browserWindow.setProgressBar(-1);
             console.error(err);
             dialog.showErrorBox("Unexpected Error", err.message);
             ytInput.disabled = false;
@@ -3769,8 +3842,10 @@ export class SongManager {
             ytProgressBar.max = total * 2;
             ytProgressBar.value = (total * 1) + downloaded;
             progressText.innerText = (ytProgressBar.value / ytProgressBar.max * 100).toFixed(2) + "%";
+            browserWindow.setProgressBar(ytProgressBar.value / ytProgressBar.max);
           })
           .on("error", (err) => {
+            browserWindow.setProgressBar(-1);
             console.error(err);
             dialog.showErrorBox("Unexpected Error", err.message);
             ytInput.disabled = false;
@@ -3789,6 +3864,7 @@ export class SongManager {
         }
       })
       .on("error", (err) => {
+        browserWindow.setProgressBar(-1);
         ws.close();
         console.error(err);
         dialog.showErrorBox("Unexpected Error", err.message);
@@ -3804,6 +3880,7 @@ export class SongManager {
         ytProgressBar.max = isVideo ? total * 2 : total;
         ytProgressBar.value = downloaded;
         progressText.innerText = (ytProgressBar.value / ytProgressBar.max * 100).toFixed(2) + "%";
+        browserWindow.setProgressBar(ytProgressBar.value / ytProgressBar.max);
       });
 
       audio.on("error", (err) => {
@@ -3824,6 +3901,7 @@ export class SongManager {
         cancel.innerText = "Cancel Download";
         cancel.classList.add("color-red");
         cancel.onclick = function() {
+          browserWindow.setProgressBar(-1);
           cancelledByUser = true;
           audio.destroy();
           ws.close();
@@ -4997,17 +5075,19 @@ class Subtitles {
     return subData;
   }
   
-  static isRendering: false | NodeJS.Timeout = false;
+  static isRendering: boolean = false;
   static async renderSubtitles(srtFile: string) {
     Subtitles.current = await Subtitles.parseSrt(srtFile);
     var subText = document.querySelector("p#subtitles");
     if (subText && subText.innerHTML) {
       subText.innerHTML = "";
     }
-    if (!Subtitles.current) {
+    if (!Subtitles.current || Subtitles.isRendering !== false) {
       return;
     }
-    Subtitles.isRendering = setInterval(function () {
+    Subtitles.isRendering = true
+    requestAnimationFrame(_gl);
+    function _gl() {
       var hasSub = false;
       for (var i = 0; i < Subtitles.current.length; i++) {
         if (SongManager.player.currentTime >= Subtitles.current[i].startTime && SongManager.player.currentTime <= Subtitles.current[i].endTime) {
@@ -5020,9 +5100,22 @@ class Subtitles {
       if (!hasSub) {
         subText.innerHTML = "";
       }
-    }, 5);
+      requestAnimationFrame(_gl);
+    }
   }
 
+  static subToSRT(subs: SubtitleObject[]) {
+    return subs.map(s => {
+      return `${s.id}
+${ToxenScriptManager.convertSecondsToDigitalClock(s.startTime).replace(".", ",")} --> ${ToxenScriptManager.convertSecondsToDigitalClock(s.endTime).replace(".", ",")}
+${s.text}`;
+    }).join("\n\n");
+  }
+
+  /**
+   * Convert XML subtitles to SRT 
+   * @param xml XML code string
+   */
   static convertXMLToSRT(xml: string) {
     let subs: SubtitleObject[] = []
     let index = 1;
@@ -5037,11 +5130,7 @@ class Subtitles {
       return $0;
     });
     
-    return subs.map(s => {
-      return `${s.id}
-${ToxenScriptManager.convertSecondsToDigitalClock(s.startTime).replace(".", ",")} --> ${ToxenScriptManager.convertSecondsToDigitalClock(s.endTime).replace(".", ",")}
-${s.text}`;
-    }).join("\n\n");
+    return Subtitles.subToSRT(subs);
   }
 }
 //#region ToxenScript Objects
@@ -5180,6 +5269,7 @@ export class ToxenScriptManager {
    * Loads or reloads the script for the currently playing song.
    */
   static async loadCurrentScript() {
+    Prompt.close("toxenscripterrormessage"); // Remove the last error, if any
     ToxenScriptManager.events = [];
     ToxenScriptManager.variables = {};
     for (const key in ToxenScriptManager.defaultVariables) {
@@ -5297,15 +5387,17 @@ export class ToxenScriptManager {
         // Failures
         if (typeof fb == "string") {
           setTimeout(() => {
-            new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1), (typeof fb == "string" ? fb : "")])
-            .addButtons("Close", null, true);
+            let p = new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1), (typeof fb == "string" ? fb : "")]);
+            p.addButtons("Close", null, true);
+            p.name = "toxenscripterrormessage";
           }, 100);
           throw "Failed parsing script. Error at line " + (i + 1) + "\n" + fb;
         }
         if (fb.success == false) {
           setTimeout(() => {
-            new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1)])
-            .addButtons("Close", null, true);
+            let p = new Prompt("Parsing error", ["Failed parsing script:", "\"" + scriptFile + "\"", "Error at line " + (i + 1)]);
+            p.addButtons("Close", null, true);
+            p.name = "toxenscripterrormessage";
           }, 100);
           throw "Failed parsing script. Error at line " + (i + 1) + "\n" + fb.error;
         }
@@ -6207,6 +6299,26 @@ export class Debug {
     for (let i = 0; i < html.length; i++) {
       _d.innerHTML = html[i];
       html[i] = _d.childNodes.length === 0 ? "" : _d.childNodes[0].nodeValue;
+    }
+    if (html.length == 1) return html[0];
+    return html;
+  }
+
+  /**
+   * Encodes all HTML text from one or more strings.
+   * @param html HTML code string
+   */
+  static encodeHTML(html: string): string;
+  /**
+   * Encodes all HTML text from one or more strings.
+   * @param html HTML code strings
+   */
+  static encodeHTML(...html: string[]): string[];
+  static encodeHTML(...html: string[]) {
+    for (let i = 0; i < html.length; i++) {
+      html[i] = html[i].replace(/[\u00A0-\u9999<>\&]/gim, function(i) {
+        return '&#'+i.charCodeAt(0)+';';
+     });
     }
     if (html.length == 1) return html[0];
     return html;

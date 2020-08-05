@@ -57,8 +57,16 @@ Features and changes that has already been made to Toxen.
 - Updates to YouTube Downloader
   - Added automatically filling out YouTube artist and title details when inserting a URL. They can still be manually edited before pressing download.
   - Added tinting to the `artist` field, indicating with a light green tint if you already have a song from the same artist. This makes it easier to tell if you have spelled it correctly with the correct caps and such if you already have the artist in your library.
-  - Added an animation on the popups when they enter and exit
-  - Optional subtitle download when downloading audio/videos
+  - Added an animation on the popups when they enter and exit.
+  - Optional subtitle download when downloading audio/videos.
+- Optimized subtitle rendering to be frame based instead of ms based, since trying to render mid frame is pointless.
+- Added optional automatic trimming of subtitles when trimming a song.
+- While in fullscreen, a small, faded notice with the song artist and title will appear in the top for 2 seconds and disappear automatically.
+- Implemented history feature! Going back and forth now remembers which song you had playing previously and goes forward to the same one you went backwards from.
+- Automatically hiding the UI when going fullscreen with `F11` if the mouse stays still when toggling.
+- ToxenScript
+  - Added full auto suggestions for available functions.
+- Removed Toxen only looping through songs that was visible in the search list even with "Only visible" enabled.
 
 ## 202008042032
 - Replaced the background dim slider with the new custom slider.

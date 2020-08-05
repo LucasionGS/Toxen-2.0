@@ -1,3 +1,6 @@
+import {
+  SelectList
+} from "./toxenCore"
 type Word = {"word": string,"start": number,"end": number};
 type CursorPosition = {"start": number,"end": number};
 
@@ -22,15 +25,48 @@ export class TextEditor {
 
       let cursor = this.getCursor();
       let word = this.getWord();
+
+      if (document.getElementById("jdksaklajdklajkkadjkldkkjdksla")) {
+        document.getElementById("jdksaklajdklajkkadjkldkkjdksla").remove();
+        this.textarea.focus();
+        this.setCursor(cursor.start, cursor.end);
+      }
       
       if (key == "Tab" && typeof (this.currentSuggestion = this.suggest()) == "string") {
         e.preventDefault();
         e.stopPropagation();
-        this.insert(this.currentSuggestion, word.start, word.end);
-        this.emit("finish", this.currentSuggestion);
-        this.currentSuggestion = null;
+        let self = this;
+
+        let as = self.allSuggestions();
+        if (as.length > 0) {
+          let sl = new SelectList(as.map(s => {
+            return {
+              text: s,
+              value: s
+            }
+          })).on("select", si => {
+            self.textarea.focus();
+            self.insert(si.value, word.start, word.end);
+            self.emit("finish", si.value);
+            self.currentSuggestion = null;
+          });
+          let size = self.textarea.getBoundingClientRect();
+          let x = size.x;
+          let y = size.y + (self.getCurrentLines()[0].index * 20);
+          sl.element.style.position = "fixed";
+          sl.element.style.zIndex = "1000";
+          sl.element.style.left = x + "px";
+          sl.element.style.top = y + "px";
+          sl.element.id = "jdksaklajdklajkkadjkldkkjdksla";
+          document.body.appendChild(sl.element);
+          sl.selectElement.focus();
+          sl.value.catch(reason => {
+            this.textarea.focus();
+            this.setCursor(cursor.start, cursor.end);
+          });
+        }
       }
-      else if (key == "Tab"  && !ctrlKey && !shiftKey && !altKey) {
+      else if (key == "Tab" && !ctrlKey && !shiftKey && !altKey) {
         e.preventDefault();
         e.stopPropagation();
         let c = this.getCursor();
@@ -46,7 +82,7 @@ export class TextEditor {
           this.setCursor(cu.start + 2, cu.end + 2);
         }
       }
-      else if (key == "Tab"  && !ctrlKey && shiftKey && !altKey) {
+      else if (key == "Tab" && !ctrlKey && shiftKey && !altKey) {
         e.preventDefault();
         e.stopPropagation();
         let c = this.getCurrentLines();
@@ -273,9 +309,8 @@ export class TextEditor {
     let allLines = this.getAllLines();
     /**
      * List of line texts
-     * @type {{"text": string, "index": number, "start": number, "end": number}[]}
      */
-    let lines = [];
+    let lines: {"text": string, "index": number, "start": number, "end": number}[] = [];
     // let t = this.value;
     for (let i = 0; i < allLines.length; i++) {
       const line = allLines[i];
@@ -381,10 +416,7 @@ export class TextEditor {
     return this.value.split("\n");
   }
 
-  /**
-   * @type {string[]}
-   */
-  suggestions = [];
+  suggestions: string[] = [];
 
   getWord() {
     let ss = this.textarea.selectionStart;
@@ -408,10 +440,7 @@ export class TextEditor {
       //   se--;
       // }
 
-      /**
-       * @type {Word}
-       */
-      let word = {
+      let word: Word = {
         "word": text.substring(ss, se),
         "start": ss,
         "end": se,
@@ -454,6 +483,29 @@ export class TextEditor {
     }
 
     return null;
+  }
+  
+  allSuggestions() {
+    let {
+      word,
+      start,
+      end
+    } = this.getWord();
+
+    if (word == "") {
+      return null;
+    }
+
+    let suggestions: string[] = [];
+
+    for (let i = 0; i < this.suggestions.length; i++) {
+      const suggestion = this.suggestions[i];
+      if (suggestion.toLowerCase().startsWith(word.toLowerCase())) {
+        suggestions.push(suggestion);
+      }
+    }
+
+    return suggestions;
   }
 
   /**

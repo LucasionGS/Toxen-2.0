@@ -271,7 +271,7 @@ async function initialize() {
   let search: HTMLInputElement = document.querySelector("#search");
   search.addEventListener("keydown", e => {
     let songs;
-    if (e.key == "Enter" && (songs = SongManager.onlyVisibleSongList()).length == 1 && songs[0].songId != SongManager.getCurrentlyPlayingSong().songId) {
+    if (e.key == "Enter" && (songs = SongManager.onlyVisibleSongList(true)).length == 1 && songs[0].songId != SongManager.getCurrentlyPlayingSong().songId) {
       songs[0].play();
       search.blur();
     }

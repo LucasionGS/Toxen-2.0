@@ -675,16 +675,24 @@ export declare class SongManager {
     static history: {
         historyIndex: number;
         items: Song[];
-        next(): void;
-        previous(): void;
+        next(): Song;
+        previous(): Song;
         insert(song: Song): void;
+        /**
+         * Clear the history.
+         */
+        clear(): void;
+        /**
+         * Clear the history.
+         */
+        clearAndPrompt(): void;
     };
     /**
      * If `Settings.onlyVisible` is `true`, returns only the physically visible songs in the song list.
      *
      * If `Settings.onlyVisible` is `false`, returns the full `SongManager.playableSongs` list
      */
-    static onlyVisibleSongList(): Song[];
+    static onlyVisibleSongList(forceOnlyVisible?: boolean): Song[];
     /**
      * Export every song into a folder.
      */
@@ -758,7 +766,7 @@ export declare class SongManager {
     static playSong(song: Song): void;
     static playRandom(): Song;
     static playNext(): Song;
-    static playPrev(): void;
+    static playPrev(): Song;
     static toggleShuffle(force?: boolean): boolean;
     static toggleRepeat(force?: boolean): boolean;
     static toggleOnlyVisible(force?: boolean): boolean;
@@ -1018,6 +1026,16 @@ export declare class Debug {
      * @param html HTML code strings
      */
     static decodeHTML(...html: string[]): string[];
+    /**
+     * Encodes all HTML text from one or more strings.
+     * @param html HTML code string
+     */
+    static encodeHTML(html: string): string;
+    /**
+     * Encodes all HTML text from one or more strings.
+     * @param html HTML code strings
+     */
+    static encodeHTML(...html: string[]): string[];
 }
 export declare class Prompt {
     /**

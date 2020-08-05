@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as Electron from "electron";
 import { TextEditor } from "../texteditor";
-import { ScriptEditor, Song, ToxenScriptManager } from "../toxenCore.js";
+import { ScriptEditor, Song, ToxenScriptManager, SelectList } from "../toxenCore.js";
 import {Imd} from "../../src/ionMarkDown";
 const { remote, shell, ipcRenderer } = Electron;
 const { Menu, dialog } = remote;
