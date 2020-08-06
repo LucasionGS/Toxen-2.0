@@ -8,7 +8,7 @@ const {
   SongManager,
   Storyboard,
   ToxenScriptManager,
-  Debug,
+  Tools,
   Prompt,
   Update,
   ScriptEditor,
@@ -177,7 +177,7 @@ async function initialize() {
     Toxen.updateDiscordPresence(song);
 
     while(isNaN(SongManager.player.duration)) {
-      await Debug.wait(1); 
+      await Tools.wait(1); 
     }
     if (song.details.songLength != SongManager.player.duration) {
       song.details.songLength = SongManager.player.duration;
@@ -216,12 +216,12 @@ async function initialize() {
       return;
     }
     else {
-      if (settings.shuffle) {
-        SongManager.playRandom();
-      }
-      else {
-        SongManager.playNext();
-      }
+      // if (settings.shuffle) {
+      //   SongManager.playRandom();
+      // }
+      // else {
+      // }
+      SongManager.playNext();
     }
   });
 
@@ -449,7 +449,7 @@ async function initialize() {
     }
     
     setInterval(() => {
-      Debug.updateCSS();
+      Tools.updateCSS();
     }, 1000);
 
     // Debug.refreshOnChange(["src/toxen.css", "data/settings.json"]);
@@ -471,7 +471,7 @@ async function initialize() {
     (document.querySelector<HTMLDivElement>("#greenColorBlock").firstElementChild as unknown as HTMLLabelElement).innerText = green.toString();
     (document.querySelector<HTMLDivElement>("#blueColorBlock").firstElementChild as unknown as HTMLLabelElement).innerText = blue.toString();
 
-    document.querySelector<HTMLInputElement>("#colorPicker").value = Debug.rgbToHex(red, green, blue);
+    document.querySelector<HTMLInputElement>("#colorPicker").value = Tools.rgbToHex(red, green, blue);
   })();
 
   // Load modules

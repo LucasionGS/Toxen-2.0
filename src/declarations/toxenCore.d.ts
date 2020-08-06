@@ -687,6 +687,7 @@ export declare class SongManager {
          */
         clearAndPrompt(): void;
     };
+    static multiManagePlaylists(songs?: Song[]): void;
     /**
      * If `Settings.onlyVisible` is `true`, returns only the physically visible songs in the song list.
      *
@@ -977,7 +978,7 @@ declare class ToxenEvent {
     hasRun: boolean;
     type: string;
 }
-export declare class Debug {
+export declare class Tools {
     static updateCSS(): void;
     static refreshOnChange(exceptions?: string[]): void;
     static generateRandomString(length?: number): string;
@@ -1036,6 +1037,22 @@ export declare class Debug {
      * @param html HTML code strings
      */
     static encodeHTML(...html: string[]): string[];
+    /**
+     * @param object
+     * @param text Preformatted string or function that outputs a string.
+     * @param HTMLSupport Whether or not to allow HTML to be parsed or use as raw.
+     */
+    static hoverMenu(object: HTMLElement, text: string | ((div: HTMLDivElement) => string), HTMLSupport: boolean): void;
+    /**
+     * @param json JSON Object.
+     */
+    static hoverMenuJSON(object: HTMLElement, json: any): void;
+    static closeAllHoverMenus(): void;
+    /**
+     * Highlight a JSON string.
+     * @param json Can be either a already converted string JSON or an object.
+     */
+    static syntaxHighlight(json: any): string;
 }
 export declare class Prompt {
     /**

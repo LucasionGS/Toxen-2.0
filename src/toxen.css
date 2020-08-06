@@ -66,6 +66,7 @@ body {
   /* background: linear-gradient(0deg, var(--bgcolor) 50%, var(--panelcolor) 100%); */
   color: var(--bgcolor);
   color: var(--txtcolor);
+  z-index: 100000;
 }
 
 .maximized #titlebar {

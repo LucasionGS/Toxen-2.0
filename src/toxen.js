@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const ToxenCore = require("./toxenCore");
-const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Debug, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, SongGroup, toxenMenus, toxenHeaderMenu, showTutorial, } = ToxenCore;
+const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Tools, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, SongGroup, toxenMenus, toxenHeaderMenu, showTutorial, } = ToxenCore;
 const path = require("path");
 const rimraf = require("rimraf");
 const __toxenVersion = require("./version.json");
@@ -161,7 +161,7 @@ function initialize() {
                 // Discord Rich Presence
                 Toxen.updateDiscordPresence(song);
                 while (isNaN(SongManager.player.duration)) {
-                    yield Debug.wait(1);
+                    yield Tools.wait(1);
                 }
                 if (song.details.songLength != SongManager.player.duration) {
                     song.details.songLength = SongManager.player.duration;
@@ -196,12 +196,12 @@ function initialize() {
                 return;
             }
             else {
-                if (settings.shuffle) {
-                    SongManager.playRandom();
-                }
-                else {
-                    SongManager.playNext();
-                }
+                // if (settings.shuffle) {
+                //   SongManager.playRandom();
+                // }
+                // else {
+                // }
+                SongManager.playNext();
             }
         });
         updateTimer();
@@ -406,7 +406,7 @@ function initialize() {
                 requestAnimationFrame(_debugModeLoop);
             }
             setInterval(() => {
-                Debug.updateCSS();
+                Tools.updateCSS();
             }, 1000);
             // Debug.refreshOnChange(["src/toxen.css", "data/settings.json"]);
         }
@@ -423,7 +423,7 @@ function initialize() {
             document.querySelector("#redColorBlock").firstElementChild.innerText = red.toString();
             document.querySelector("#greenColorBlock").firstElementChild.innerText = green.toString();
             document.querySelector("#blueColorBlock").firstElementChild.innerText = blue.toString();
-            document.querySelector("#colorPicker").value = Debug.rgbToHex(red, green, blue);
+            document.querySelector("#colorPicker").value = Tools.rgbToHex(red, green, blue);
         })();
         // Load modules
         ToxenModule.initialize();

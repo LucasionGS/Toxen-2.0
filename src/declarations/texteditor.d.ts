@@ -96,7 +96,7 @@ export declare class TextEditor {
     suggestions: string[];
     getWord(): Word;
     suggest(): string;
-    allSuggestions(): string[];
+    allSuggestions(getAll?: boolean): string[];
     /**
      * If `string`, `TAB` action is cancelled and will autocomplete suggestion.
      *

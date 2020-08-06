@@ -238,7 +238,7 @@ export class Toxen {
    */
   static set title(value: string) {
     document.getElementById("toxen-title-text").innerHTML = value;
-    let plain = Debug.decodeHTML(value);
+    let plain = Tools.decodeHTML(value);
     document.title = plain;
   }
   
@@ -375,7 +375,7 @@ export class Toxen {
       }
       if (isNaN(SongManager.player.duration) || !discordReady) {
         attemptCount++;
-        await Debug.wait(100);
+        await Tools.wait(100);
       }
       else {
         let options: import("discord-rpc").Presence = {
@@ -391,8 +391,8 @@ export class Toxen {
           + (`${ScriptEditor.window != null ? "Editing "
           : song.isVideo ? "Watching "
           : "Listening to "}`)
-          + `${Debug.decodeHTML(song.parseName())}`;
-          if (song.details.source) options["state"] = `\nFrom ${Debug.decodeHTML(song.details.source)}`;
+          + `${Tools.decodeHTML(song.parseName())}`;
+          if (song.details.source) options["state"] = `\nFrom ${Tools.decodeHTML(song.details.source)}`;
         }
         discordClient.setActivity(options);
         break;
@@ -543,7 +543,7 @@ export class Toxen {
   static extraStyle: HTMLLinkElement;
 
   static setStyleSource(src: string) {
-    Toxen.extraStyle.href = src + (src ? "?" + Debug.generateRandomString(3) : "");
+    Toxen.extraStyle.href = src + (src ? "?" + Tools.generateRandomString(3) : "");
   }
   
   /**
@@ -1687,7 +1687,7 @@ export class Song {
       .saveToFile(tmpPath)
       .on("start", () => {
         p.headerText = "Trimming Song";
-        p.setContent("Starting FFMPEG...");
+        p.setContent("Starting trimming process...");
         p.clearButtons();
       })
       .on("progress", (progress) => {
@@ -1710,7 +1710,7 @@ export class Song {
           }
           
           fs.rename(tmpPath, sp, () => {
-            this.hash = Debug.generateRandomString(3);
+            this.hash = Tools.generateRandomString(3);
             this.play();
           });
         });
@@ -2333,12 +2333,12 @@ export class Song {
         checkbox.checked = checked;
         const label = document.createElement("label");
         label.innerText = playlist;
-        let rndId = "checkbox_" + Debug.generateRandomString();
+        let rndId = "checkbox_" + Tools.generateRandomString();
         checkbox.id = rndId;
 
         checkbox.addEventListener("click", () => {
           playlists[playlist] = checkbox.checked;
-          let newPlaylist = [];
+          let newPlaylist: string[] = [];
           for (const _playlist in playlists) {
             if (Object.prototype.hasOwnProperty.call(playlists, _playlist)) {
               const _value = playlists[_playlist];
@@ -2552,6 +2552,69 @@ export class SongManager {
     }
   }
 
+  static multiManagePlaylists(songs = SongManager.getSelectedSongs()) {
+    let list = document.createElement("div");
+    list.style.display = "block";
+    list.style.width = "95%";
+    list.style.margin = "auto";
+    let playlists: {[playlist: string]: boolean} = {}
+    Settings.current.playlists.map(p => {
+      playlists[p] = false;
+    });
+    let count = 0;
+    for (const playlist in playlists) {
+      if (Object.prototype.hasOwnProperty.call(playlists, playlist)) {
+        count++;
+        const checked = playlists[playlist];
+        const div = document.createElement("div");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = checked;
+        const label = document.createElement("label");
+        label.innerText = playlist;
+        let rndId = "checkbox_" + Tools.generateRandomString();
+        checkbox.id = rndId;
+
+        checkbox.addEventListener("click", () => {
+          playlists[playlist] = checkbox.checked;
+          let newPlaylists: string[] = [];
+          for (const _playlist in playlists) {
+            if (Object.prototype.hasOwnProperty.call(playlists, _playlist)) {
+              const _value = playlists[_playlist];
+              if (_value) {
+                newPlaylists.push(_playlist);
+              }
+            }
+          }
+          songs.forEach(s => {
+            s.details.playlists = newPlaylists
+            s.saveDetails();
+          })
+
+          SongManager.refreshList();
+        });
+
+        div.appendChild(checkbox);
+        label.setAttribute("for", rndId);
+        div.appendChild(label);
+        div.appendChild(document.createElement("br"));
+        list.appendChild(div);
+      }
+    }
+
+    if (count == 0) {
+      new Prompt("No playlists", "Create a playlist in the settings panel and then you can add the songs to them!").addButtons("Close", "fancybutton", true);
+      return;
+    }
+
+    let p = new Prompt("Manage Playlists",
+    [
+      `Manage ${songs.length} songs`,
+      list
+    ]);
+    
+    p.addButtons(["Close"], "fancybutton", true);
+  }
 
   /**
    * If `Settings.onlyVisible` is `true`, returns only the physically visible songs in the song list.
@@ -4995,7 +5058,7 @@ export class Storyboard {
   }
   
   static setAnalyserFftSize(size: AnalyserFftSizeIndex) {
-    Storyboard.analyser.fftSize = Debug.clamp(size, 32, 32768);
+    Storyboard.analyser.fftSize = Tools.clamp(size, 32, 32768);
     Storyboard.bufferLength = Storyboard.analyser.frequencyBinCount / 2;
     Storyboard.dataArray = new Uint8Array(Storyboard.bufferLength);
   }
@@ -5125,7 +5188,7 @@ ${s.text}`;
         "id": index++,
         "startTime": +$1,
         "endTime": (+$1) + (+$2),
-        "text": Debug.decodeHTML($3)
+        "text": Tools.decodeHTML($3)
       });
       return $0;
     });
@@ -5692,7 +5755,7 @@ export class ToxenScriptManager {
       }
       else {
         try {
-          let rgb = args[0].toLowerCase() == "default" ? Settings.current.visualizerColor : Debug.cssColorToRgb(args[0]);
+          let rgb = args[0].toLowerCase() == "default" ? Settings.current.visualizerColor : Tools.cssColorToRgb(args[0]);
           args[0] = rgb.red;
           args[1] = rgb.green;
           args[2] = rgb.blue;
@@ -5717,7 +5780,7 @@ export class ToxenScriptManager {
       }
       else {
         try {
-          let rgb = args[0].toLowerCase() == "default" ? Settings.current.visualizerColor : Debug.cssColorToRgb(args[0]);
+          let rgb = args[0].toLowerCase() == "default" ? Settings.current.visualizerColor : Tools.cssColorToRgb(args[0]);
           args[0] = rgb.red;
           args[1] = rgb.green;
           args[2] = rgb.blue;
@@ -5820,7 +5883,7 @@ export class ToxenScriptManager {
       }
       else {
         try {
-          let rgb = args[1].toLowerCase() == "default" ? Settings.current.visualizerColor : Debug.cssColorToRgb(args[1]);
+          let rgb = args[1].toLowerCase() == "default" ? Settings.current.visualizerColor : Tools.cssColorToRgb(args[1]);
           args[4] = args[2];
           args[1] = rgb.red;
           args[2] = rgb.green;
@@ -5851,7 +5914,7 @@ export class ToxenScriptManager {
       }
       else {
         try {
-          let rgb = args[1].toLowerCase() == "default" ? Settings.current.visualizerColor : Debug.cssColorToRgb(args[1]);
+          let rgb = args[1].toLowerCase() == "default" ? Settings.current.visualizerColor : Tools.cssColorToRgb(args[1]);
           args[4] = args[2];
           args[1] = rgb.red;
           args[2] = rgb.green;
@@ -6164,17 +6227,17 @@ class ToxenEvent {
   type: string;
 }
 
-export class Debug {
+export class Tools {
   static updateCSS() {
     let links = document.querySelectorAll("link");
     for (let i = 0; i < links.length; i++) {
       const link = links[i];
       if (/\.css(\?.*)?$/g.test(link.href)) {
         if (link.href.includes("?")) {
-          link.href = link.href.replace(/(?<=.+)\?.*/g, "?" + Debug.generateRandomString());
+          link.href = link.href.replace(/(?<=.+)\?.*/g, "?" + Tools.generateRandomString());
         }
         else {
-          link.href += "?" + Debug.generateRandomString();
+          link.href += "?" + Tools.generateRandomString();
         }
       }
     }
@@ -6195,7 +6258,7 @@ export class Debug {
     const len = chars.length;
     let string = "";
     for (let i = 0; i < length; i++) {
-      const char = chars[Debug.randomInt(len)];
+      const char = chars[Tools.randomInt(len)];
       string += char;
     }
     return string;
@@ -6213,7 +6276,7 @@ export class Debug {
   }
   
   static rgbToHex(red, green, blue) {
-    return "#" + Debug.componentToHex(red) + Debug.componentToHex(green) + Debug.componentToHex(blue);
+    return "#" + Tools.componentToHex(red) + Tools.componentToHex(green) + Tools.componentToHex(blue);
   }
 
   static hexToRgb(hex: string) {
@@ -6238,7 +6301,7 @@ export class Debug {
   }
 
   static cssColorToRgb(str: string){
-    return Debug.hexToRgb(Debug.cssColorToHex(str) as string);
+    return Tools.hexToRgb(Tools.cssColorToHex(str) as string);
   }
 
   /**
@@ -6322,6 +6385,106 @@ export class Debug {
     }
     if (html.length == 1) return html[0];
     return html;
+  }
+
+  /**
+   * @param object
+   * @param text Preformatted string or function that outputs a string.
+   * @param HTMLSupport Whether or not to allow HTML to be parsed or use as raw.
+   */
+  static hoverMenu(object: HTMLElement, text: string | ((div: HTMLDivElement) => string), HTMLSupport: boolean) {
+    const div = document.createElement("div");
+    const pre = document.createElement("pre");
+    div.appendChild(pre);
+
+    div.style.position = "absolute";
+    div.style.pointerEvents = "none";
+    div.style.backgroundColor = "#2b2b2b";
+    div.style.border = "#1b1b1b solid 1px";
+    div.style.borderRadius = "5px";
+    div.style.opacity = "0.9";
+    div.style.fontWeight = "bold";
+    div.style.zIndex = "10000";
+
+    div.className = "__hoverOverMenuPopUp";
+
+    if (typeof text == "function") {
+      text = text(div);
+    }
+
+    if (HTMLSupport === true) {
+      pre.innerHTML = text;
+    }
+    else {
+      pre.innerText = text;
+    }
+
+    object.addEventListener("mouseenter", function(e) {
+      // div.style.left = e.clientX+"px";
+      // div.style.top = e.clientY+"px";
+      div.style.left = object.getBoundingClientRect().right+"px";
+      div.style.top = object.getBoundingClientRect().top+"px";
+      document.body.appendChild(div);
+    });
+
+    object.addEventListener("mouseleave", function(e) {
+      try {
+        div.parentElement.removeChild(div);
+      } catch { }
+    });
+  }
+
+  /**
+   * @param json JSON Object.
+   */
+  static hoverMenuJSON(object: HTMLElement, json: any) {
+    Tools.hoverMenu(object, function(div) {
+      const style = document.createElement("style");
+      style.innerText =
+      `pre {outline: 1px solid #ccc; padding: 5px; margin: 5px; }
+      .string { color: green; }
+      .number { color: darkorange; }
+      .boolean { color: blue; }
+      .null { color: magenta; }
+      .key { color: red; }`;
+
+      div.appendChild(style);
+
+      return Tools.syntaxHighlight(json);
+    }, true);
+  }
+
+  static closeAllHoverMenus() {
+    let a = document.querySelectorAll(".__hoverOverMenuPopUp");
+    for (let i = 0; i < a.length; i++) {
+      a[i].parentElement.removeChild(a[i]);
+    }
+  }
+
+  /**
+   * Highlight a JSON string.
+   * @param json Can be either a already converted string JSON or an object.
+   */
+  static syntaxHighlight(json: any): string {
+    if (typeof json == "object") {
+      json = JSON.stringify(json, null, 2);
+    }
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+      var cls = 'number';
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) {
+          cls = 'key';
+        } else {
+          cls = 'string';
+        }
+      } else if (/true|false/.test(match)) {
+        cls = 'boolean';
+      } else if (/null/.test(match)) {
+        cls = 'null';
+      }
+      return '<span class="' + cls + '">' + match + '</span>';
+    });
   }
 }
 
@@ -7064,7 +7227,7 @@ export var toxenModule = (Core: typeof import("../../declarations/toxenCore")) =
     let panel: HTMLDivElement = document.getElementById("moduleActivation") as HTMLDivElement;
     panel.innerHTML = "";
     modules.forEach(m => {
-      let randName = `module_${m.moduleName}_` + Debug.generateRandomString(3);
+      let randName = `module_${m.moduleName}_` + Tools.generateRandomString(3);
       let div = document.createElement("div");
       let input = document.createElement("input");
       input.type = "checkbox";

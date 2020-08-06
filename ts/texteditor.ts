@@ -15,7 +15,7 @@ export class TextEditor {
 
     this.textarea = textarea;
 
-    (textarea as HTMLInputElement).addEventListener("keydown", ( /** @type {KeyboardEvent} */e) => {
+    (textarea as HTMLInputElement).addEventListener("keydown", (e: KeyboardEvent) => {
       const {
         key,
         ctrlKey,
@@ -32,12 +32,13 @@ export class TextEditor {
         this.setCursor(cursor.start, cursor.end);
       }
       
-      if (key == "Tab" && typeof (this.currentSuggestion = this.suggest()) == "string") {
+      if ((key == "Tab" && typeof (this.currentSuggestion = this.suggest()) == "string") || ctrlKey && key == " ") {
         e.preventDefault();
         e.stopPropagation();
         let self = this;
-
-        let as = self.allSuggestions();
+        console.log(key, word);
+        
+        let as = self.allSuggestions(!word.word);
         if (as.length > 0) {
           let sl = new SelectList(as.map(s => {
             return {
@@ -485,7 +486,9 @@ export class TextEditor {
     return null;
   }
   
-  allSuggestions() {
+  allSuggestions(getAll = false) {
+    if (getAll == true) return this.suggestions;
+    
     let {
       word,
       start,

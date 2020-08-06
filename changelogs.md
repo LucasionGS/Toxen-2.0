@@ -67,6 +67,7 @@ Features and changes that has already been made to Toxen.
 - ToxenScript
   - Added full auto suggestions for available functions.
 - Removed Toxen only looping through songs that was visible in the search list even with "Only visible" enabled.
+- Added a progress indication on the taskbar icon the Toxen when doing something that takes a longer time, like downloading and trimming.
 
 ## 202008042032
 - Replaced the background dim slider with the new custom slider.

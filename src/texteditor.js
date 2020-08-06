@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TextEditor = void 0;
 const toxenCore_1 = require("./toxenCore");
 class TextEditor {
     /**
@@ -29,7 +28,7 @@ class TextEditor {
             throw "textarea needs to be declared";
         }
         this.textarea = textarea;
-        textarea.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
+        textarea.addEventListener("keydown", (e) => {
             const { key, ctrlKey, altKey, shiftKey } = e;
             let cursor = this.getCursor();
             let word = this.getWord();
@@ -38,11 +37,12 @@ class TextEditor {
                 this.textarea.focus();
                 this.setCursor(cursor.start, cursor.end);
             }
-            if (key == "Tab" && typeof (this.currentSuggestion = this.suggest()) == "string") {
+            if ((key == "Tab" && typeof (this.currentSuggestion = this.suggest()) == "string") || ctrlKey && key == " ") {
                 e.preventDefault();
                 e.stopPropagation();
                 let self = this;
-                let as = self.allSuggestions();
+                console.log(key, word);
+                let as = self.allSuggestions(!word.word);
                 if (as.length > 0) {
                     let sl = new toxenCore_1.SelectList(as.map(s => {
                         return {
@@ -438,7 +438,9 @@ class TextEditor {
         }
         return null;
     }
-    allSuggestions() {
+    allSuggestions(getAll = false) {
+        if (getAll == true)
+            return this.suggestions;
         let { word, start, end } = this.getWord();
         if (word == "") {
             return null;
