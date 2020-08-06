@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -1497,12 +1498,13 @@ class Song {
                 .saveToFile(tmpPath)
                 .on("start", () => {
                 p.headerText = "Trimming Song";
+                p.setInteractive(false);
                 p.setContent("Starting trimming process...");
                 p.clearButtons();
             })
                 .on("progress", (progress) => {
                 let prog = ToxenScriptManager.timeStampToSeconds(progress.timemark) / se;
-                p.setContent(`Trimming song...<br>${(prog * 100).toFixed(2)}%`);
+                p.setContent(`${this.parseName()}\nTrimming song...<br>${(prog * 100).toFixed(2)}%`);
                 browserWindow.setProgressBar(prog);
             })
                 .on("end", () => {
@@ -1874,13 +1876,58 @@ class Song {
             return;
         }
         if (this.background) {
-            fs.unlinkSync(this.getFullPath("background"));
+            try {
+                fs.unlinkSync(this.getFullPath("background"));
+            }
+            catch (_c) {
+                console.warn("No previous background file... ignoring");
+            }
         }
         let newPath = this.getFullPath("path") + "/" + filePath.replace(/\\+/g, "/").split("/").pop();
         fs.copyFileSync(filePath, newPath);
         this.background = this.path + "/" + path.relative(this.getFullPath("path"), newPath);
         Storyboard.setBackground(this.getFullPath("background"));
         this.refreshElement();
+        SongManager.saveToFile();
+    }
+    setStoryboard(filePath) {
+        if (!fs.existsSync(filePath)) {
+            console.error("File path doesn't exist:", filePath);
+            return;
+        }
+        if (this.txnScript) {
+            try {
+                fs.unlinkSync(this.getFullPath("txnScript"));
+            }
+            catch (_c) {
+                console.warn("No previous txnScript file... ignoring");
+            }
+        }
+        let newPath = this.getFullPath("path") + "/" + filePath.replace(/\\+/g, "/").split("/").pop();
+        fs.copyFileSync(filePath, newPath);
+        this.txnScript = this.path + "/" + path.relative(this.getFullPath("path"), newPath);
+        this.refreshElement();
+        ToxenScriptManager.loadCurrentScript();
+        SongManager.saveToFile();
+    }
+    setSubtitles(filePath) {
+        if (!fs.existsSync(filePath)) {
+            console.error("File path doesn't exist:", filePath);
+            return;
+        }
+        if (this.subtitlePath) {
+            try {
+                fs.unlinkSync(this.getFullPath("subtitlePath"));
+            }
+            catch (_c) {
+                console.warn("No previous subtitlePath file... ignoring");
+            }
+        }
+        let newPath = this.getFullPath("path") + "/" + filePath.replace(/\\+/g, "/").split("/").pop();
+        fs.copyFileSync(filePath, newPath);
+        this.subtitlePath = this.path + "/" + path.relative(this.getFullPath("path"), newPath);
+        this.refreshElement();
+        Subtitles.renderSubtitles(this.getFullPath("subtitlePath"));
         SongManager.saveToFile();
     }
     /**
@@ -3586,14 +3633,8 @@ class SongManager {
             if (pathObject.filePaths.length == 0) {
                 return;
             }
-            if (song.txnScript) {
-                fs.unlinkSync(song.getFullPath("txnScript"));
-            }
-            let newPath = song.getFullPath("path") + "/" + pathObject.filePaths[0].replace(/\\+/g, "/").split("/").pop();
-            fs.copyFileSync(pathObject.filePaths[0], newPath);
-            song.txnScript = song.path + "/" + path.relative(song.getFullPath("path"), newPath);
-            ToxenScriptManager.loadCurrentScript();
-            SongManager.saveToFile();
+            let selectedPath = pathObject.filePaths[0];
+            song.setStoryboard(selectedPath);
         }
     }
     static selectDefaultBackground() {
@@ -4492,6 +4533,11 @@ Storyboard.visualizerStyle = 0;
 Storyboard.visualizerDirection = 0;
 Storyboard.visualizerQuantity = 5;
 /**
+ * The offset value for the song.
+ * Default is 0;
+ */
+Storyboard.timingPoint = 0;
+/**
  * Background dim value.
  */
 Storyboard.backgroundDim = 0;
@@ -4690,13 +4736,69 @@ class StoryboardObject {
      * @param y Starting Y Position
      * @param fill Either a HEX color or an image URL. If it starts with a poundsign (`#`), it's used as HEX, URL otherwise.
      */
-    constructor(name, x, y, fill) {
+    constructor(name, fill = "#fff", type = "square") {
+        /**
+         * X Position.
+         */
+        this.width = 128;
+        /**
+         * Y Position.
+         */
+        this.height = 128;
+        this.type = "square";
+        this.opacity = 1;
         this.name = name;
-        this.x = x;
-        this.y = y;
-        this.fill = fill;
+        this.x = null;
+        this.y = null;
+        this.setFill(fill);
+    }
+    static drawObjects(ctx) {
+        for (const name in StoryboardObject.objects) {
+            if (Object.prototype.hasOwnProperty.call(StoryboardObject.objects, name)) {
+                const obj = StoryboardObject.objects[name];
+                obj.draw(ctx);
+            }
+        }
+    }
+    /**
+     * @param value If it starts with a poundsign (`#`), it's used as HEX, Image URL otherwise.
+     */
+    setFill(value, newWidth = null, newHeight = null) {
+        if (value.startsWith("#")) {
+            if (this.type == "image")
+                this.type = "square";
+            this.fill = value;
+        }
+        else {
+            this.type = "image";
+            let img = document.createElement("img");
+            img.src = path.resolve(SongManager.getCurrentlyPlayingSong().getFullPath("path"), value);
+            img.addEventListener("load", e => {
+                this.fill = img;
+                if (newWidth === null)
+                    this.width = img.naturalWidth;
+                if (newHeight === null)
+                    this.height = img.naturalHeight;
+            });
+        }
+    }
+    draw(ctx) {
+        switch (typeof this.fill) {
+            case "undefined":
+                return;
+            case "string":
+                ctx.fillStyle = this.fill;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                return;
+            case "object":
+                ctx.drawImage(this.fill, this.x, this.y, this.width, this.height);
+                return;
+            default:
+                break;
+        }
     }
 }
+exports.StoryboardObject = StoryboardObject;
 StoryboardObject.objects = {};
 /**
  * This is temporary plz.
@@ -4732,9 +4834,11 @@ class ToxenScriptManager {
                 }
             }
             // Resetting to the default values on reset.
+            StoryboardObject.objects = {};
             Storyboard.setAnalyserFftLevel(Settings.current.visualizerQuantity);
             Storyboard.backgroundDim = Settings.current.backgroundDim;
             Storyboard.visualizerDirection = 0;
+            Storyboard.timingPoint = 0;
             Storyboard.visualizerStyle = Settings.current.visualizerStyle;
             Storyboard.setIntensity(Settings.current.visualizerIntensity);
             Storyboard.rgb(Settings.current.visualizerColor.red, Settings.current.visualizerColor.green, Settings.current.visualizerColor.blue);
@@ -4798,7 +4902,7 @@ class ToxenScriptManager {
                 data = fs.readFileSync(scriptFile, "utf8").split("\n");
             }
             for (let i = 0; i < data.length; i++) {
-                const line = data[i].trim().replace(/(#|\/\/).*/g, "");
+                const line = data[i].trim().replace(/(^\s*#|\/\/).*/g, "");
                 if (typeof line == "string" && line != "") {
                     let fb = lineParser(line);
                     if (fb == undefined)
@@ -5122,7 +5226,7 @@ class ToxenScriptManager {
                 }
             },
             "comment": {
-                "expression": /(#|\/\/).*/g,
+                "expression": /(^\s*#|\/\/).*/gm,
                 "function": function ($0) {
                     let d = document.createElement("div");
                     d.innerHTML = $0;
@@ -5498,6 +5602,24 @@ ToxenScriptManager.eventFunctions = {
     log: function () {
         console.log([...arguments[0]]);
     },
+    object_movebetween: function ([name, x, y, x2, y2], event) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (x == "current")
+            x = obj.x + "";
+        if (x2 == "current")
+            x2 = obj.x + "";
+        if (y == "current")
+            y = obj.y + "";
+        if (y2 == "current")
+            y2 = obj.y + "";
+        let percent = SongManager.player.currentTime / event.endPoint;
+        let distanceX = +x + ((+x2 - +x) * percent);
+        let distanceY = +y + ((+y2 - +y) * percent);
+        obj.x = distanceX;
+        obj.y = distanceY;
+    },
     // :Functions
     /**
      * Connect to a hue bridge.
@@ -5536,9 +5658,15 @@ ToxenScriptManager.eventFunctions = {
     ":log": function () {
         console.log([...arguments[0]]);
     },
-    ":createobject": function ([name], event) {
-        // let o = new StoryboardObject();
-        // StoryboardObject.objects[name] = o;
+    ":timingpoint": function ([timing], event) {
+        if (Tools.isNumber(timing)) {
+            +timing;
+        }
+    },
+    ":createobject": function ([name, fill = "#fff"], event) {
+        // if (typeof name != "string")
+        let o = new StoryboardObject(name, fill);
+        StoryboardObject.objects[name] = o;
     }
 };
 /**
@@ -5578,6 +5706,10 @@ class Tools {
             }
         }
     }
+    static isNumber(value) {
+        return !isNaN(value);
+    }
+    ;
     static refreshOnChange(exceptions = []) {
         fs.watch("./", {
             recursive: true
@@ -6191,9 +6323,9 @@ class ScriptEditor {
             SongManager.saveToFile();
         }
         if (!fs.existsSync(song.getFullPath("txnScript"))) {
-            fs.writeFileSync(song.getFullPath("txnScript"), "# Start writting your storyboard code here!\n" +
-                "# Go to https://toxen.net/toxenscript\n" +
-                "# for documentation on ToxenScript\n\n");
+            fs.writeFileSync(song.getFullPath("txnScript"), "// Start writting your storyboard code here!\n" +
+                "// Go to https://toxen.net/toxenscript\n" +
+                "// for documentation on ToxenScript\n\n");
         }
         if (ScriptEditor.window == null) {
             ScriptEditor.window = ScriptEditor.makeWindow();

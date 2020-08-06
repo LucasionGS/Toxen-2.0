@@ -47,27 +47,34 @@ Features I want to implement (This will be updated as I get more ideas and remem
   - An info page with all shortcuts (God damn it then I need to remember them all >_>)
 
 - Known bugs to fix
-  - Fix the close button being blocked off when the `Pulse` effect is activated. This only effects songs that use `Pulse` or `BPMPulse` and only during the specific time they are in use.
+  - None in mind right now, please notify me if you find something!
 
 # Toxen Change Logs
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
-- Added automatically checking for updates every 30 minutes.
-- Updates to YouTube Downloader
+- General
+  - Added automatically checking for updates every 30 minutes.
+  - Optimized subtitle rendering to be frame based instead of ms based, since trying to render mid frame is pointless.
+  - Added optional automatic trimming of subtitles when trimming a song.
+  - While in fullscreen, a small, faded notice with the song artist and title will appear in the top for 2 seconds and disappear automatically.
+  - Implemented history feature! Going back and forth now remembers which song you had playing previously and goes forward to the same one you went backwards from.
+  - Added an animation on the popups when they enter and exit.
+  - Automatically hiding the UI when going fullscreen with `F11` if the mouse stays still when toggling.
+  - Removed Toxen only looping through songs that was visible in the search list even with "Only visible" enabled.
+  - Added a progress indication on the taskbar icon the Toxen when doing something that takes a longer time, like downloading and trimming.
+  - Added support for dragging and dropping both `txn` files (Storyboard scripts) and `srt` files (Subtitle file)
+
+- YouTube Downloader
   - Added automatically filling out YouTube artist and title details when inserting a URL. They can still be manually edited before pressing download.
   - Added tinting to the `artist` field, indicating with a light green tint if you already have a song from the same artist. This makes it easier to tell if you have spelled it correctly with the correct caps and such if you already have the artist in your library.
-  - Added an animation on the popups when they enter and exit.
   - Optional subtitle download when downloading audio/videos.
-- Optimized subtitle rendering to be frame based instead of ms based, since trying to render mid frame is pointless.
-- Added optional automatic trimming of subtitles when trimming a song.
-- While in fullscreen, a small, faded notice with the song artist and title will appear in the top for 2 seconds and disappear automatically.
-- Implemented history feature! Going back and forth now remembers which song you had playing previously and goes forward to the same one you went backwards from.
-- Automatically hiding the UI when going fullscreen with `F11` if the mouse stays still when toggling.
+
 - ToxenScript
-  - Added full auto suggestions for available functions.
-- Removed Toxen only looping through songs that was visible in the search list even with "Only visible" enabled.
-- Added a progress indication on the taskbar icon the Toxen when doing something that takes a longer time, like downloading and trimming.
+  - Added full auto suggestions for available functions. Press tab while typing a word to get suggestions on what to complete it to. You can also press `CTRL + Enter` to get the suggestion field to show suggestions even without typing something first.
+  - Added support for HEX values to be used as a color in scripting.
+  - Added Dynamic objects! (Experimental)
+
 
 ## 202008042032
 - Replaced the background dim slider with the new custom slider.

@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const ToxenCore = require("./toxenCore");
-const { Toxen, Settings, Song, SongManager, Storyboard, ToxenScriptManager, Tools, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, SongGroup, toxenMenus, toxenHeaderMenu, showTutorial, } = ToxenCore;
+const { Toxen, Settings, Song, SongManager, Storyboard, StoryboardObject, ToxenScriptManager, Tools, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, SongGroup, toxenMenus, toxenHeaderMenu, showTutorial, } = ToxenCore;
 const path = require("path");
 const rimraf = require("rimraf");
 const __toxenVersion = require("./version.json");
@@ -391,8 +391,16 @@ function initialize() {
                 else if (Toxen.imageExtensions.find(f => file.path.endsWith("." + f))) {
                     SongManager.getCurrentlyPlayingSong().setBackground(file.path);
                 }
+                else if (file.path.endsWith(".txn")) {
+                    SongManager.getCurrentlyPlayingSong().setStoryboard(file.path);
+                }
+                else if (file.path.endsWith(".srt")) {
+                    SongManager.getCurrentlyPlayingSong().setSubtitles(file.path);
+                }
                 else {
-                    new Prompt(`Invalid file`, `${file.name} is not a valid file. Please only drop in one of the following:<br>${Toxen.imageExtensions.map(v => v).concat(Toxen.mediaExtensions).join(", ")}`)
+                    new Prompt(`Invalid file`, `${file.name} is not a valid file. Please only drop in one of the following:<br>${Toxen.imageExtensions.map(v => v)
+                        .concat(Toxen.mediaExtensions, "txn", "srt")
+                        .join(", ")}`)
                         .addButtons("Close", "fancybutton", true);
                     break;
                 }
@@ -450,7 +458,7 @@ var avg = 0;
 var avgSec = 0;
 var dim = 0;
 /**
- * Run once to activate the visualizer.
+ * Run once to activate the visualizer and storyboard elements.
  */
 function initializeVisualizer() {
     dim = Storyboard.backgroundDim;
@@ -470,6 +478,9 @@ function initializeVisualizer() {
         ctx.clearRect(0, 0, WIDTH, HEIGHT);
         var x = 0;
         if (settings.storyboard) {
+            // Storyboard Objects
+            StoryboardObject.drawObjects(ctx);
+            // Background dimming
             dim = +dim;
             if (avg > 65) {
                 if (dim > Storyboard.backgroundDim - (+avg - (Storyboard.backgroundDim / 2))) {

@@ -638,6 +638,8 @@ export declare class Song {
     displayInfo(): void;
     saveDetails(): boolean;
     setBackground(filePath: string): void;
+    setStoryboard(filePath: string): void;
+    setSubtitles(filePath: string): void;
     /**
      * Get the parent group if it belongs to one. Returns `null` if not grouped.
      */
@@ -852,6 +854,11 @@ export declare class Storyboard {
     static visualizerDirection: number;
     static visualizerQuantity: number;
     /**
+     * The offset value for the song.
+     * Default is 0;
+     */
+    static timingPoint: number;
+    /**
      * Background dim value.
      */
     static backgroundDim: number;
@@ -895,6 +902,54 @@ export declare class Storyboard {
     static bufferLength: number;
     static dataArray: Uint8Array;
     static _fadingEnabled: boolean | number | NodeJS.Timeout;
+}
+/**
+ * ToxenScript: Storyboard Object
+ */
+export declare class StoryboardObject {
+    static objects: {
+        [name: string]: StoryboardObject;
+    };
+    static drawObjects(ctx: CanvasRenderingContext2D): void;
+    /**
+     * Create a new Storyboard object.
+     * @param name Identifier of this object
+     * @param x Starting X Position
+     * @param y Starting Y Position
+     * @param fill Either a HEX color or an image URL. If it starts with a poundsign (`#`), it's used as HEX, URL otherwise.
+     */
+    constructor(name: string, fill?: string, type?: "square" | "circle" | "image");
+    /**
+     * Identifier of this object.
+     */
+    name: string;
+    /**
+     * X Position.
+     */
+    x: number;
+    /**
+     * Y Position.
+     */
+    y: number;
+    /**
+     * Either a HEX color or an Image Element.
+     */
+    fill: string | HTMLImageElement;
+    /**
+     * X Position.
+     */
+    width: number;
+    /**
+     * Y Position.
+     */
+    height: number;
+    type: "square" | "circle" | "image";
+    opacity: number;
+    /**
+     * @param value If it starts with a poundsign (`#`), it's used as HEX, Image URL otherwise.
+     */
+    setFill(value: string, newWidth?: number, newHeight?: number): void;
+    draw(ctx: CanvasRenderingContext2D): void;
 }
 /**
  * Toxen Script Manager
@@ -980,11 +1035,12 @@ declare class ToxenEvent {
 }
 export declare class Tools {
     static updateCSS(): void;
+    static isNumber(value: any): boolean;
     static refreshOnChange(exceptions?: string[]): void;
     static generateRandomString(length?: number): string;
     static randomInt(max: number, min?: number): number;
     static componentToHex(c: number): string;
-    static rgbToHex(red: any, green: any, blue: any): string;
+    static rgbToHex(red: number, green: number, blue: number): string;
     static hexToRgb(hex: string): {
         red: number;
         green: number;
