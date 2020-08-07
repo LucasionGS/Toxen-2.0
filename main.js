@@ -61,7 +61,11 @@ function createWindow () {
   try {
     win.setIcon("./icon.ico");
   } catch (error) {
-    console.error("No icon accessible");
+    try {
+      win.setIcon("./icon.png"); // For non-windows icon support.
+    } catch (error) {
+      console.error("No icon accessible");
+    }
   }
 
   win.once('ready-to-show', () => {

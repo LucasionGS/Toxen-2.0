@@ -1427,6 +1427,7 @@ export declare class SelectList<SelectItemValueType = any> extends EventEmitter 
 }
 export declare class PanelManager {
     static initialize(): void;
+    static defaults(): void;
     static songPanelButton: HTMLDivElement;
     static settingsPanelButton: HTMLDivElement;
 }

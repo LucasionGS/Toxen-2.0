@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -1236,6 +1237,12 @@ class Settings {
             document.querySelector("#songmenusidebar").classList.replace("right", "left");
             document.querySelector("#settingsmenusidebar").classList.replace("left", "right");
         }
+        setTimeout(() => {
+            Toxen.emit("settingspanelopen");
+            Toxen.emit("songpanelopen");
+            Toxen.emit("settingspanelclose");
+            Toxen.emit("songpanelclose");
+        }, 10);
         this.saveToFile();
         return this.songMenuToRight;
     }
@@ -5668,9 +5675,21 @@ ToxenScriptManager.eventFunctions = {
         let obj = StoryboardObject.objects[name];
         if (!obj)
             return;
-        if (!Tools.isNumber(x))
+        if (x == "left")
+            x = 0 + "";
+        else if (x == "center")
+            x = (obj.width / 2) + "";
+        else if (x == "right")
+            x = obj.width + "";
+        else if (!Tools.isNumber(x))
             x = obj.pivotX + "";
-        if (!Tools.isNumber(y))
+        if (y == "top")
+            y = 0 + "";
+        else if (y == "center")
+            y = (obj.height / 2) + "";
+        else if (y == "bottom")
+            y = obj.height + "";
+        else if (!Tools.isNumber(y))
             y = obj.pivotY + "";
         obj.pivotX = +x;
         obj.pivotY = +y;
@@ -5679,13 +5698,37 @@ ToxenScriptManager.eventFunctions = {
         let obj = StoryboardObject.objects[name];
         if (!obj)
             return;
-        if (x == "current")
+        if (x == "left")
+            x = 0 + "";
+        else if (x == "center")
+            x = (obj.width / 2) + "";
+        else if (x == "right")
+            x = obj.width + "";
+        else if (!Tools.isNumber(x))
             x = obj.pivotX + "";
-        if (x2 == "current")
-            x2 = obj.pivotX + "";
-        if (y == "current")
+        if (y == "top")
+            y = 0 + "";
+        else if (y == "center")
+            y = (obj.height / 2) + "";
+        else if (y == "bottom")
+            y = obj.height + "";
+        else if (!Tools.isNumber(y))
             y = obj.pivotY + "";
-        if (y2 == "current")
+        if (x2 == "left")
+            x2 = 0 + "";
+        else if (x2 == "center")
+            x2 = (obj.width / 2) + "";
+        else if (x2 == "right")
+            x2 = obj.width + "";
+        else if (!Tools.isNumber(x2))
+            x2 = obj.pivotX + "";
+        if (y2 == "top")
+            y2 = 0 + "";
+        else if (y2 == "center")
+            y2 = (obj.height / 2) + "";
+        else if (y2 == "bottom")
+            y2 = obj.height + "";
+        else if (!Tools.isNumber(y2))
             y2 = obj.pivotY + "";
         let percent = event.percent;
         let distanceX = +x + ((+x2 - +x) * percent);
@@ -7094,54 +7137,23 @@ class PanelManager {
         });
         // Listen for events
         Toxen.on("songpanelopen", () => {
-            if (Settings.current.songMenuToRight) {
-                PanelManager.songPanelButton.style.bottom = "-128px";
-                PanelManager.songPanelButton.style.right = "-128px";
-                PanelManager.songPanelButton.style.opacity = "0";
-            }
-            else {
-                PanelManager.songPanelButton.style.bottom = "-128px";
-                PanelManager.songPanelButton.style.left = "-128px";
-                PanelManager.songPanelButton.style.opacity = "0";
-            }
+            PanelManager.defaults();
         });
         Toxen.on("songpanelclose", () => {
-            if (Settings.current.songMenuToRight) {
-                PanelManager.songPanelButton.style.bottom = "-18px";
-                PanelManager.songPanelButton.style.right = "-18px";
-                PanelManager.songPanelButton.style.opacity = "1";
-            }
-            else {
-                PanelManager.songPanelButton.style.bottom = "-18px";
-                PanelManager.songPanelButton.style.left = "-18px";
-                PanelManager.songPanelButton.style.opacity = "1";
-            }
+            PanelManager.defaults();
         });
         Toxen.on("settingspanelopen", () => {
-            if (Settings.current.songMenuToRight) {
-                PanelManager.settingsPanelButton.style.bottom = "-128px";
-                PanelManager.settingsPanelButton.style.left = "-128px";
-                PanelManager.settingsPanelButton.style.opacity = "0";
-            }
-            else {
-                PanelManager.settingsPanelButton.style.bottom = "-128px";
-                PanelManager.settingsPanelButton.style.right = "-128px";
-                PanelManager.settingsPanelButton.style.opacity = "0";
-            }
+            PanelManager.defaults();
         });
         Toxen.on("settingspanelclose", () => {
-            if (Settings.current.songMenuToRight) {
-                PanelManager.settingsPanelButton.style.bottom = "-18px";
-                PanelManager.settingsPanelButton.style.left = "-18px";
-                PanelManager.settingsPanelButton.style.opacity = "1";
-            }
-            else {
-                PanelManager.settingsPanelButton.style.bottom = "-18px";
-                PanelManager.settingsPanelButton.style.right = "-18px";
-                PanelManager.settingsPanelButton.style.opacity = "1";
-            }
+            PanelManager.defaults();
         });
         // Defaults
+        PanelManager.defaults();
+    }
+    static defaults() {
+        let songmenusidebar = document.querySelector("#songmenusidebar");
+        let settingsmenusidebar = document.querySelector("#settingsmenusidebar");
         if (songmenusidebar.hasAttribute("open")) {
             if (Settings.current.songMenuToRight) {
                 PanelManager.songPanelButton.style.bottom = "-128px";
