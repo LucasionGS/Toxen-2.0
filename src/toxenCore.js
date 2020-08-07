@@ -1490,7 +1490,7 @@ class Song {
             let se = ToxenScriptManager.timeStampToSeconds(end.value) - ss;
             // Trimming subtitles
             let srt = null;
-            if (this.subtitlePath) {
+            if (trimSubsChecked && this.subtitlePath) {
                 let subs = yield Subtitles.parseSrt(this.getFullPath("subtitlePath"));
                 for (let i = 0; i < subs.length; i++) {
                     const sub = subs[i];

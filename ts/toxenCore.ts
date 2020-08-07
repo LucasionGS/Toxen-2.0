@@ -1679,7 +1679,7 @@ export class Song {
       
       // Trimming subtitles
       let srt: string = null;
-      if (this.subtitlePath) {
+      if (trimSubsChecked && this.subtitlePath) {
         let subs = await Subtitles.parseSrt(this.getFullPath("subtitlePath"));
         for (let i = 0; i < subs.length; i++) {
           const sub = subs[i];
