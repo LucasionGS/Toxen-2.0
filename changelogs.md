@@ -73,7 +73,11 @@ Features and changes that has already been made to Toxen.
 - ToxenScript
   - Added full auto suggestions for available functions. Press tab while typing a word to get suggestions on what to complete it to. You can also press `CTRL + Enter` to get the suggestion field to show suggestions even without typing something first.
   - Added support for HEX values to be used as a color in scripting.
+  - Added support for a timing point duration!
+    - You can now also use a `+` in timing points. Using a plus makes the second parameter into the duration of the event. The event will execute from `startPoint` until `startPoint` + `endPoint`. This means if you write [`15 + 5`], the event will begin at `15` and end at `20`
   - Added Dynamic objects! (Experimental)
+    - You can add a dynamic object by using the `:CreateObject` function. Give it 2 parameters, a `name` to refer to later, and `fill`, which is what the object should look like. This can be either a HEX color (Use a poundsign (`#`) as the first symbol in the string to indicate a HEX color) or write in a path to an image. This path should be relative to the song's folder, just like the `background` function does.
+    - A bunch of commands which will be documented in detail in the future. Hopefully very soon:tm:
 
 
 ## 202008042032

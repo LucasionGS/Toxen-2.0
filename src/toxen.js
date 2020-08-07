@@ -193,6 +193,7 @@ function initialize() {
             if (settings.repeat) {
                 SongManager.player.currentTime = 0;
                 SongManager.player.play();
+                ToxenScriptManager.loadCurrentScript();
                 return;
             }
             else {
@@ -315,8 +316,12 @@ function initialize() {
         });
         window.addEventListener("resize", (e) => {
             let c = document.querySelector("#storyboard");
-            c.width = window.innerWidth;
-            c.height = browserWindow.isFullScreen() ? window.innerHeight : window.innerHeight - 32;
+            setTimeout(() => {
+                c.width = window.innerWidth;
+                c.height = browserWindow.isFullScreen() ? window.innerHeight : window.innerHeight - 32;
+                StoryboardObject.widthRatio = c.width / StoryboardObject.widthDefault;
+                StoryboardObject.heightRatio = c.height / StoryboardObject.heightDefault;
+            }, 10);
         });
         // Confine window and panels.
         window.addEventListener("scroll", () => {
@@ -465,6 +470,8 @@ function initializeVisualizer() {
     var canvas = document.querySelector("#storyboard");
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight - 32;
+    StoryboardObject.widthRatio = canvas.width / StoryboardObject.widthDefault;
+    StoryboardObject.heightRatio = canvas.height / StoryboardObject.heightDefault;
     var ctx = canvas.getContext("2d");
     Storyboard.setAnalyserFftSize(512);
     function renderFrame() {

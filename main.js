@@ -11,7 +11,7 @@ const { dirname } = require('path');
 // const process = require('process');
 // const fs = require('fs');
 const winWidth = 1280;
-const winHeight = 800;
+const winHeight = 720;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 /**
@@ -47,7 +47,7 @@ function createWindow () {
   win = new BrowserWindow({
     title: "Toxen",
     minWidth: 800,
-    minHeight: 600,
+    minHeight: 480,
     width: winWidth,
     height: winHeight,
     frame: false,

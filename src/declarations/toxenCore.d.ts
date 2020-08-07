@@ -910,6 +910,10 @@ export declare class StoryboardObject {
     static objects: {
         [name: string]: StoryboardObject;
     };
+    static widthDefault: number;
+    static heightDefault: number;
+    static widthRatio: number;
+    static heightRatio: number;
     static drawObjects(ctx: CanvasRenderingContext2D): void;
     /**
      * Create a new Storyboard object.
@@ -944,7 +948,13 @@ export declare class StoryboardObject {
      */
     height: number;
     type: "square" | "circle" | "image";
+    /**
+     * A number between `0` and `1`. `1` being fully visible.
+     */
     opacity: number;
+    rotation: number;
+    pivotX: number;
+    pivotY: number;
     /**
      * @param value If it starts with a poundsign (`#`), it's used as HEX, Image URL otherwise.
      */
@@ -1032,6 +1042,12 @@ declare class ToxenEvent {
     fn: Function;
     hasRun: boolean;
     type: string;
+    /**
+     * A floating point number representing the current percentage this event is between it's starting point and it's end point.
+     *
+     * 100% would return `1`, 50% would return `0.5`, and so on.
+     */
+    get percent(): number;
 }
 export declare class Tools {
     static updateCSS(): void;

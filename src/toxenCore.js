@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -297,7 +296,7 @@ class Toxen {
                     let options = {
                         "details": `${ScriptEditor.window != null ? "Editing a storyboard" : song.isVideo ? "Watching a video" : "Listening to a song"}`,
                         "largeImageKey": Settings.current.lightThemeBase ? "toxenlight" : "toxen",
-                        "largeImageText": "Toxen Vers. " + Toxen.version
+                        "largeImageText": app.isPackaged ? "Toxen Vers. " + Toxen.version : "Toxen Developer Mode"
                     };
                     if (Settings.current.discordPresenceShowDetails) {
                         // options["startTimestamp"] = Date.now(); // For Time left
@@ -3305,7 +3304,6 @@ class SongManager {
                 song.background = song.path + "/maxresdefault.jpg";
                 song.details.artist = artist === "" ? null : artist;
                 song.details.title = title;
-                song.details.source = "YouTube";
                 song.details.sourceLink = url;
                 if (subsURL)
                     song.subtitlePath = song.path + "/"
@@ -4746,17 +4744,35 @@ class StoryboardObject {
          */
         this.height = 128;
         this.type = "square";
+        /**
+         * A number between `0` and `1`. `1` being fully visible.
+         */
         this.opacity = 1;
+        this.rotation = 0;
+        this.pivotX = 0;
+        this.pivotY = 0;
         this.name = name;
-        this.x = null;
-        this.y = null;
+        this.x = 0;
+        this.y = 0;
         this.setFill(fill);
     }
     static drawObjects(ctx) {
         for (const name in StoryboardObject.objects) {
             if (Object.prototype.hasOwnProperty.call(StoryboardObject.objects, name)) {
                 const obj = StoryboardObject.objects[name];
+                ctx.globalAlpha = obj.opacity;
+                let rotBy = obj.rotation * Math.PI / 180;
+                let pivotX = (obj.x + obj.pivotX) * StoryboardObject.widthRatio;
+                let pivotY = (obj.y + obj.pivotY) * StoryboardObject.heightRatio;
+                // console.log(pivotX, pivotY);
+                // console.log(obj.x * StoryboardObject.widthRatio, obj.y * StoryboardObject.heightRatio);
+                ctx.translate(pivotX - obj.pivotX * StoryboardObject.widthRatio, pivotY - obj.pivotY * StoryboardObject.heightRatio);
+                ctx.rotate(rotBy);
+                ctx.translate(0 - pivotX, 0 - pivotY);
                 obj.draw(ctx);
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                // ctx.rotate(-rotBy);
+                ctx.globalAlpha = 1;
             }
         }
     }
@@ -4765,7 +4781,7 @@ class StoryboardObject {
      */
     setFill(value, newWidth = null, newHeight = null) {
         if (value.startsWith("#")) {
-            if (this.type == "image")
+            if (this.type != "square" && this.type != "circle")
                 this.type = "square";
             this.fill = value;
         }
@@ -4788,10 +4804,28 @@ class StoryboardObject {
                 return;
             case "string":
                 ctx.fillStyle = this.fill;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
+                if (this.type == "square") {
+                    ctx.fillRect(this.x * StoryboardObject.widthRatio, 
+                    // 0,
+                    this.y * StoryboardObject.heightRatio, 
+                    // 0,
+                    this.width * StoryboardObject.widthRatio, this.height * StoryboardObject.heightRatio);
+                }
+                else if (this.type == "circle") {
+                    ctx.beginPath();
+                    ctx.ellipse((this.x - (this.width / 2)) * StoryboardObject.widthRatio, (this.y - (this.height / 2)) * StoryboardObject.heightRatio, this.width / 2, this.height / 2, 0, 0, 0);
+                    // ctx.stroke();
+                    ctx.fill();
+                    this.width * StoryboardObject.widthRatio,
+                        this.height * StoryboardObject.heightRatio;
+                }
                 return;
             case "object":
-                ctx.drawImage(this.fill, this.x, this.y, this.width, this.height);
+                ctx.drawImage(this.fill, this.x * StoryboardObject.widthRatio, 
+                // 0,
+                this.y * StoryboardObject.heightRatio, 
+                // 0,
+                this.width * StoryboardObject.widthRatio, this.height * StoryboardObject.heightRatio);
                 return;
             default:
                 break;
@@ -4800,6 +4834,10 @@ class StoryboardObject {
 }
 exports.StoryboardObject = StoryboardObject;
 StoryboardObject.objects = {};
+StoryboardObject.widthDefault = 1920;
+StoryboardObject.heightDefault = 1080;
+StoryboardObject.widthRatio = 1;
+StoryboardObject.heightRatio = 1;
 /**
  * This is temporary plz.
  */
@@ -4939,7 +4977,8 @@ class ToxenScriptManager {
             function lineParser(line) {
                 try { // Massive trycatch for any error.
                     let maxPerSecond = 0;
-                    const checkVariable = /(?<=^\s*)(\$\w+)\s*(?:=>?|:|\()\s*((?:"(?:.*?(?<!\\))"|(?:\d+)))/g;
+                    // const checkVariable = /(?<=^\s*)(\$\w+)\s*(?:=>?|:|\()\s*((?:"(?:.*?(?<!\\))"|(?:\d+)))/g;
+                    const checkVariable = /(?<=^\s*)(\$\w+)\s*(?:=>?|:|\()\s*((?:"(?:.*?(?<!\\))"|(?:-?\d*(?:\.?\d+))))/g;
                     if (checkVariable.test(line)) {
                         line.replace(checkVariable, function (item, $1, $2) {
                             if ($2.startsWith("\"") && $2.endsWith("\"")) {
@@ -4966,7 +5005,7 @@ class ToxenScriptManager {
                     // Replace variables
                     line = ToxenScriptManager.applyVariables(line);
                     const checkMaxPerSecond = /^\b(once|twice|thrice|quad)\b/g;
-                    const checkMaxPerSecondAlt = /^\b(\d+)\/(\d+)\b/g;
+                    const checkMaxPerSecondAlt = /^\b(\d*(?:\.?\d+))\/(\d*(?:\.?\d+))\b/g;
                     if (checkMaxPerSecond.test(line)) {
                         line.replace(checkMaxPerSecond, function (item) {
                             switch (item) {
@@ -4986,6 +5025,7 @@ class ToxenScriptManager {
                     else if (checkMaxPerSecondAlt.test(line)) {
                         var returnError = "";
                         line.replace(checkMaxPerSecondAlt, function (item, num1, num2) {
+                            console.log(item, num1, num2);
                             if (+num1 > 0 && +num2 > 0)
                                 maxPerSecond = 1 / (+num1 / +num2);
                             else
@@ -4998,17 +5038,18 @@ class ToxenScriptManager {
                     // Check if non-time function
                     const checkFunction = /^\s*:(\S*?)\s*(=>?|:|\()s*.*/g;
                     if (checkFunction.test(line)) {
-                        line = "[0 - 1]" + line;
+                        // line = "[0 - 1]" + line;
+                        line = "[always]" + line;
                     }
                     // Check if no only start
-                    const checkTime = /(?<=\[)[^-]*(?=\])/g;
+                    const checkTime = /(?<=\[)[^+-]*(?=\])/g;
                     if (checkTime.test(line)) {
                         line = line.replace(checkTime, "$& - $");
                     }
                     // Regexes
-                    const timeReg = /(?<=\[).+\s*-\s*\S+(?=\])/g;
-                    const typeReg = /(?<=\[.+\s*-\s*\S+\]\s*)\S*(?=\s*(=>?|:|\())/g;
-                    const argReg = /(?<=\[.+\s*-\s*\S+\]\s*\S*\s*(=>?|:|\()\s*).*/g;
+                    const timeReg = /(?<=\[).+\s*(?:-|\+)\s*\S+(?=\])/g;
+                    const typeReg = /(?<=\[.+\s*(?:-|\+)\s*\S+\]\s*)\S*(?=\s*(=>?|:|\())/g;
+                    const argReg = /(?<=\[.+\s*(?:-|\+)\s*\S+\]\s*\S*\s*(=>?|:|\()\s*).*/g;
                     // Variables
                     var startPoint = 0;
                     var endPoint = 0;
@@ -5022,9 +5063,21 @@ class ToxenScriptManager {
                         endPoint = ToxenScriptManager.defaultVariables["$end"]();
                     }
                     else {
-                        const tP = timeRegResult.split("-");
-                        startPoint = tP[0];
-                        endPoint = tP[1];
+                        if (timeRegResult.includes("-")) {
+                            const tP = timeRegResult.split("-");
+                            startPoint = tP[0];
+                            endPoint = tP[1];
+                        }
+                        else if (timeRegResult.includes("+")) {
+                            const tP = timeRegResult.split("+");
+                            startPoint = ToxenScriptManager.timeStampToSeconds(tP[0]);
+                            endPoint = startPoint + ToxenScriptManager.timeStampToSeconds(tP[1]);
+                        }
+                        else {
+                            const tP = timeRegResult;
+                            startPoint = tP;
+                            endPoint = "$";
+                        }
                     }
                     if (startPoint != "$") {
                         startPoint = ToxenScriptManager.timeStampToSeconds(startPoint);
@@ -5075,7 +5128,7 @@ class ToxenScriptManager {
                     }
                     function parseArgumentsFromString(as) {
                         var argList = [];
-                        argList = as.match(/(?:"(.*?)(?<!\\)"|\d+)/g);
+                        argList = as.match(/(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+))/g);
                         // argList.shift();
                         return argList.map(v => v.replace("\\\"", "\"").replace(/^"(.*)"$/g, function ($0, $1) {
                             return $1;
@@ -5099,17 +5152,17 @@ class ToxenScriptManager {
                         for (let i = 0; i < beatCount; i++) {
                             let st = +(startPoint + (i * (mspb / 1000))).toFixed(3);
                             let et = +(startPoint + ((i + 1) * (mspb / 1000))).toFixed(3);
-                            let cmd = `[${st} - ${et}] Pulse => "${intensity}"`;
+                            let cmd = `2/1 [${st} - ${et}] Pulse => "${intensity}"`;
                             lineParser(cmd);
                         }
                         return {
                             "success": true
                         };
                     }
-                    if (type == "pulse") {
-                        // Convert to pulses
-                        maxPerSecond = 0.25;
-                    }
+                    // if (type == "pulse") {
+                    //   // Convert to pulses
+                    //   maxPerSecond = 0.25;
+                    // }
                     ToxenScriptManager.events.push(new ToxenEvent(startPoint, endPoint, fn));
                     let currentEvent = ToxenScriptManager.events[ToxenScriptManager.events.length - 1];
                     fn = function () {
@@ -5173,7 +5226,7 @@ class ToxenScriptManager {
     static syntaxHighlightToxenScript(code, validEventNames = ToxenScriptManager.getEventNames()) {
         const regex = {
             "value": {
-                "expression": /(?<!\[[^\]]*)(?:"(.*?)(?<!\\)"|\d+)(?!\])/g,
+                "expression": /(?<!\[[^\]]*)(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+))(?!\])/g,
                 "function": function ($0, $1) {
                     // if (/^\d+$/g.test($1)) {
                     if (!isNaN(+$0)) {
@@ -5187,9 +5240,9 @@ class ToxenScriptManager {
                 // Use https://regexr.com for it to make any kind of sense.
                 // Here's an explanation... It matches either:
                 // 1 Timestamp or variable, 2 Timestamps or variables or mixed TS and vars, the word "always"
-                "expression": /(?<=\[\s*)(?:((?:\d+:)*(?:\d+)(?:\.\d+)*|\$\w*|always)\s*(?:-\s*((?:\d+:)*(?:\d+)(?:\.\d+)*|\$\w*))*)(?=\s*\])/g,
+                "expression": /(?<=\[\s*)(?:((?:\d+:)*(?:\d+)(?:\.\d+)*|\$\w*|always)\s*(?:(?:-|\+)\s*((?:\d+:)*(?:\d+)(?:\.\d+)*|\$\w*))*)(?=\s*\])/g,
                 "function": function ($0, $1, $2) {
-                    if ($2 && ToxenScriptManager.timeStampToSeconds($1) > ToxenScriptManager.timeStampToSeconds($2)) {
+                    if ($2 && !$0.includes("+") && ToxenScriptManager.timeStampToSeconds($1) > ToxenScriptManager.timeStampToSeconds($2)) {
                         return `<span class=toxenscript_timinginvalid>${$0}</span>`;
                     }
                     return `<span class=toxenscript_timing>${$0}</span>`;
@@ -5208,7 +5261,7 @@ class ToxenScriptManager {
                 }
             },
             "limiter": {
-                "expression": /(?<=\s*)(once|twice|thrice|quad|(\d+)\/(\d+))/gm,
+                "expression": /(?<=\s*)(once|twice|thrice|quad|(\d*(?:\.?\d+))\/(\d*(?:\.?\d+)))/gm,
                 "function": function ($0) {
                     return `<span class=toxenscript_limiter>${$0}</span>`;
                 }
@@ -5476,6 +5529,14 @@ ToxenScriptManager.eventFunctions = {
             Storyboard.backgroundDim = +dim;
         }
     },
+    backgrounddim_transition: function ([dim, dim2], event) {
+        if (dim == "current")
+            dim = Storyboard.backgroundDim + "";
+        if (dim2 == "current")
+            dim2 = Storyboard.backgroundDim + "";
+        let distanceDim = +dim + ((+dim2 - +dim) * event.percent);
+        Storyboard.backgroundDim = distanceDim;
+    },
     visualizerquantity: function ([count]) {
         if (!isNaN(+count) && Storyboard.analyser.fftSize != Math.pow(2, +count + 4)) {
             Storyboard.setAnalyserFftLevel(+count);
@@ -5602,7 +5663,58 @@ ToxenScriptManager.eventFunctions = {
     log: function () {
         console.log([...arguments[0]]);
     },
-    object_movebetween: function ([name, x, y, x2, y2], event) {
+    // Object manipulation.
+    object_pivot: function ([name, x, y]) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (!Tools.isNumber(x))
+            x = obj.pivotX + "";
+        if (!Tools.isNumber(y))
+            y = obj.pivotY + "";
+        obj.pivotX = +x;
+        obj.pivotY = +y;
+    },
+    object_pivot_transition: function ([name, x, y, x2, y2], event) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (x == "current")
+            x = obj.pivotX + "";
+        if (x2 == "current")
+            x2 = obj.pivotX + "";
+        if (y == "current")
+            y = obj.pivotY + "";
+        if (y2 == "current")
+            y2 = obj.pivotY + "";
+        let percent = event.percent;
+        let distanceX = +x + ((+x2 - +x) * percent);
+        let distanceY = +y + ((+y2 - +y) * percent);
+        obj.pivotX = distanceX;
+        obj.pivotY = distanceY;
+    },
+    object_fill: function ([name, fill, type]) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (typeof type != "undefined")
+            obj.type = type;
+        obj.setFill(fill);
+    },
+    object_move: function ([name, x, y]) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (x == "current")
+            x = obj.x + "";
+        if (y == "current")
+            y = obj.y + "";
+        if (obj.x != +x)
+            obj.x = +x;
+        if (obj.y != +y)
+            obj.y = +y;
+    },
+    object_move_transition: function ([name, x, y, x2, y2], event) {
         let obj = StoryboardObject.objects[name];
         if (!obj)
             return;
@@ -5614,11 +5726,80 @@ ToxenScriptManager.eventFunctions = {
             y = obj.y + "";
         if (y2 == "current")
             y2 = obj.y + "";
-        let percent = SongManager.player.currentTime / event.endPoint;
+        let percent = event.percent;
         let distanceX = +x + ((+x2 - +x) * percent);
         let distanceY = +y + ((+y2 - +y) * percent);
         obj.x = distanceX;
         obj.y = distanceY;
+    },
+    object_size: function ([name, w, h]) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (!Tools.isNumber(w))
+            w = obj.width + "";
+        if (!Tools.isNumber(h))
+            h = obj.height + "";
+        obj.width = +w;
+        obj.height = +h;
+    },
+    object_size_transition: function ([name, w, h, w2, h2], event) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (w == "current")
+            w = obj.width + "";
+        if (w2 == "current")
+            w2 = obj.width + "";
+        if (h == "current")
+            h = obj.height + "";
+        if (h2 == "current")
+            h2 = obj.height + "";
+        let percent = event.percent;
+        let distanceW = +w + ((+w2 - +w) * percent);
+        let distanceH = +h + ((+h2 - +h) * percent);
+        obj.width = distanceW;
+        obj.height = distanceH;
+    },
+    object_opacity: function ([name, o]) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (!Tools.isNumber(o))
+            o = obj.opacity + "";
+        obj.opacity = +o;
+    },
+    object_opacity_transition: function ([name, o, o2], event) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (o == "current")
+            o = obj.opacity + "";
+        if (o2 == "current")
+            o2 = obj.opacity + "";
+        let percent = event.percent;
+        let distanceO = +o + ((+o2 - +o) * percent);
+        obj.opacity = distanceO;
+    },
+    object_rotate: function ([name, r]) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (!Tools.isNumber(r))
+            r = obj.rotation + "";
+        obj.rotation = +r;
+    },
+    object_rotate_transition: function ([name, r, r2], event) {
+        let obj = StoryboardObject.objects[name];
+        if (!obj)
+            return;
+        if (r == "current")
+            r = obj.rotation + "";
+        if (r2 == "current")
+            r2 = obj.rotation + "";
+        let percent = event.percent;
+        let distanceR = +r + ((+r2 - +r) * percent);
+        obj.rotation = distanceR;
     },
     // :Functions
     /**
@@ -5663,9 +5844,11 @@ ToxenScriptManager.eventFunctions = {
             +timing;
         }
     },
-    ":createobject": function ([name, fill = "#fff"], event) {
+    ":createobject": function ([name, fill = "#fff", type], event) {
         // if (typeof name != "string")
         let o = new StoryboardObject(name, fill);
+        if (typeof type != "undefined")
+            o.type = type;
         StoryboardObject.objects[name] = o;
     }
 };
@@ -5689,6 +5872,14 @@ class ToxenEvent {
         this.startPoint = startPoint;
         this.endPoint = endPoint;
         this.fn = fn;
+    }
+    /**
+     * A floating point number representing the current percentage this event is between it's starting point and it's end point.
+     *
+     * 100% would return `1`, 50% would return `0.5`, and so on.
+     */
+    get percent() {
+        return Math.max(0, (SongManager.player.currentTime - this.startPoint) / (this.endPoint - this.startPoint));
     }
 }
 class Tools {
