@@ -53,6 +53,8 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+
+## 202008070313
 - General
   - Added automatically checking for updates every 30 minutes.
   - Optimized subtitle rendering to be frame based instead of ms based, since trying to render mid frame is pointless.
