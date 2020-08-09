@@ -1172,6 +1172,7 @@ export declare class Prompt {
     headerElement: HTMLHeadingElement;
     get headerText(): string;
     set headerText(value: string);
+    moveable: boolean;
     contentElement: HTMLDivElement;
     buttonsElement: HTMLDivElement;
     /**

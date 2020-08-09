@@ -64,7 +64,6 @@ body {
   height: 30px;
   width: calc(100% - 4px); /*Compensate for body 1px border*/
   background: var(--bgcolor);
-  /* background: linear-gradient(0deg, var(--bgcolor) 50%, var(--panelcolor) 100%); */
   color: var(--bgcolor);
   color: var(--txtcolor);
   z-index: 100000;

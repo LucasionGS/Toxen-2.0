@@ -1430,8 +1430,8 @@ class Song {
         end.value = ToxenScriptManager.convertSecondsToDigitalClock(this.details.songLength ? this.details.songLength : 60);
         let trimSubs = document.createElement("input");
         trimSubs.type = "checkbox";
+        trimSubs.id = "trimsubtitlescheckbox";
         trimSubs.value = ToxenScriptManager.convertSecondsToDigitalClock(this.details.songLength ? this.details.songLength : 60);
-        trimSubs.placeholder = "Seconds or timestamp (HH:MM:SS)";
         let setCurStart = document.createElement("button");
         setCurStart.classList.add("fancybutton");
         setCurStart.innerText = "Use current time";
@@ -1457,15 +1457,21 @@ class Song {
             }
         }
         let p = new Prompt("Trim song", [
-            "You're about to trim \"" + this.parseName() + "\"<br><sup style='color: red'>This is going to make physical changes to your original file.</sup>",
+            "You're about to trim \"" + this.parseName() + "\"<br><strong style='color: red'>This is going to make physical changes to your original file. This cannot be undone once finished.</strong>",
             "When should the song start?",
             start,
             setCurStart,
             "When should it end?",
             end,
             setCurEnd,
-            "Trim any subtitles to fit as well?",
+            document.createElement("br"),
             trimSubs,
+            (function () {
+                let label = document.createElement("label");
+                label.innerText = "Trim any subtitles to fit as well?";
+                label.setAttribute("for", "trimsubtitlescheckbox");
+                return label;
+            })()
         ]);
         let [trim, close] = p.addButtons(["Trim", "Close"], "fancybutton", true);
         start.addEventListener("input", () => {
@@ -3182,6 +3188,8 @@ class SongManager {
                     if (err)
                         return console.error(err);
                     console.log(info);
+                    ytInputArtist.value = info.media.artist ? info.media.artist : info.title.split(/-|~/).length > 1 ? info.title.split(/-|~/)[0].trim() : info.author.name;
+                    ytInputTitle.value = info.media.song ? info.media.song : info.title.split(/-|~/).length > 1 ? info.title.split(/-|~/).filter((v, i) => i > 0).join("-").trim() : info.title;
                     let artists = SongManager.getAllArtists();
                     if (artists.includes(ytInputArtist.value.trim())) {
                         ytInputArtist.style.color = "lightgreen";
@@ -3189,8 +3197,6 @@ class SongManager {
                     else {
                         ytInputArtist.style.color = "white";
                     }
-                    ytInputArtist.value = info.media.artist ? info.media.artist : info.title.split(/-|~/).length > 1 ? info.title.split(/-|~/)[0].trim() : info.author.name;
-                    ytInputTitle.value = info.media.song ? info.media.song : info.title.split(/-|~/).length > 1 ? info.title.split(/-|~/).filter((v, i) => i > 0).join("-").trim() : info.title;
                     if (info.player_response.captions) {
                         ytInputSubs.innerHTML = "";
                         let opt = document.createElement("option");
@@ -6419,6 +6425,7 @@ class Prompt {
     constructor(title = null, description = null) {
         this.main = null;
         this.headerElement = null;
+        this.moveable = true;
         this.contentElement = null;
         this.buttonsElement = null;
         /**
@@ -6432,6 +6439,56 @@ class Prompt {
         };
         this.main = document.createElement("div");
         this.main.classList.add("promptmain");
+        // Add moveable header
+        let header = document.createElement("div");
+        header.style.backgroundColor = "#1b1b1b";
+        header.style.color = "#1b1b1b";
+        header.style.height = "16px";
+        header.style.width = "100%";
+        header.style.cursor = "pointer";
+        header.style.paddingLeft = "32px";
+        header.style.paddingRight = "32px";
+        header.style.transform = "translateX(-32px)";
+        header.style.userSelect = "none";
+        header.draggable = false;
+        this.main.appendChild(header);
+        let _clicking = false;
+        let offset = {
+            x: 0,
+            y: 0
+        };
+        header.addEventListener("mousedown", e => {
+            if (!_clicking) {
+                e.preventDefault();
+                _clicking = true;
+                offset.x = e.offsetX;
+                offset.y = e.offsetY;
+            }
+        });
+        window.addEventListener("mousemove", e => {
+            if (_clicking) {
+                e.preventDefault();
+                let x = e.x - offset.x;
+                let y = e.y - offset.y;
+                this.main.style.transform = "translateX(0)";
+                this.main.style.transition = "none";
+                let box = this.main.getBoundingClientRect();
+                let top = 32;
+                if (x < 0)
+                    x = 0;
+                if (x + box.width > window.innerWidth)
+                    x = window.innerWidth - box.width;
+                if (y < top)
+                    y = top;
+                if (y + box.height > window.innerHeight)
+                    y = window.innerHeight - box.height;
+                this.main.style.left = `${x}px`;
+                this.main.style.top = `${y}px`;
+            }
+        });
+        window.addEventListener("mouseup", () => {
+            _clicking = false;
+        });
         this.headerElement = document.createElement("h1");
         this.contentElement = document.createElement("div");
         this.buttonsElement = document.createElement("div");
@@ -6462,6 +6519,7 @@ class Prompt {
         this.main.style.backgroundColor = "#2b2b2b";
         this.main.style.paddingLeft = "32px";
         this.main.style.paddingRight = "32px";
+        this.main.style.boxSizing = "border-box";
         this.main.style.zIndex = "10000";
         this.main.style.transition = "all 0.2s ease-in-out";
         this.main.style.maxWidth = "95vw";
@@ -6471,7 +6529,7 @@ class Prompt {
         this.main.prompt = this;
         setTimeout(() => {
             this.main.style.top = "42px";
-        }, 10);
+        }, 5);
         // Promise based
         this.promise = new Promise((res, rej) => {
             this._res = res;
@@ -6644,6 +6702,7 @@ class Prompt {
     close(ms = 0) {
         if (typeof ms == "number" && ms > 0) {
             setTimeout(() => {
+                this.main.style.transition = "all 0.2s ease-in-out";
                 this.main.style.top = -10 - this.main.clientHeight + "px";
                 setTimeout(() => {
                     if (typeof this.main == "object" && this.main.parentElement) {
@@ -6653,6 +6712,7 @@ class Prompt {
             }, ms);
         }
         else {
+            this.main.style.transition = "all 0.2s ease-in-out";
             this.main.style.top = -10 - this.main.clientHeight + "px";
             setTimeout(() => {
                 if (typeof this.main == "object" && this.main.parentElement) {

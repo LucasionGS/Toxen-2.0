@@ -42,6 +42,7 @@ Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
 General
+- Added a drag feature to popup prompts in the very top of the prompt. Click and drag the popup around anywhere on the screen.
 
 ToxenScript
 - Added new storyboard functions such as `VisualizerColor_transition` and `VisualizerIntensity_transition`.
