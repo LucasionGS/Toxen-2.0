@@ -1,18 +1,6 @@
 # Toxen Next
 Features I want to implement (This will be updated as I get more ideas and remember to write them down)  
 (Post-release) means it's a feature I will work on after the official release and will be added as future updates.
-- Defineable actions that are callable in ToxenScript. (Post-release)
-  - An idea could be something like this
-  ```js
-  :ActionStart("redblue")
-  // Times inside actions will be relative to the execution time instead of the song.
-  [0] VisualizerColor("red")
-  [1] VisualizerColor("blue");
-  :ActionEnd();
-
-  // Usage
-  1/1 [5-8] Action("redblue") // It will repeat from 5 seconds to 8 seconds, repeating the action in "redblue" every 1/1th of a second (each second)
-  ```
 - Custom Themes
 - Graphical Storyboard Editor Interface (Post-release)
 - Built-in Graphical SRT(subtitle) creator (Post-release)
@@ -53,7 +41,27 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+General
 
+ToxenScript
+- Added new storyboard functions such as `VisualizerColor_transition` and `VisualizerIntensity_transition`.
+- When sizing an object using `object_size` or `object_size_transition`, you can now write values like `100%` to get 100% of either the width or height of the screen, depending on which parameter it's given to.
+- Added custom `actions`! You can now define a custom sequence of functions to execute at any given time. `Actions` repeat themselves if the timing point has a larger gap than the first and last timing point inside the `Action`.
+```js
+:ActionStart("rainbow") // This tells Toxen that this is the beginning of a new Action. It'll store all timing functions between here and the next :ActionEnd()
+  // Times inside actions will be relative to the execution time instead of the song.
+  // This sequence will in 6 seconds cycle through a standard color wheel and transition between them on the visualizer.
+  [0] visualizercolor_transition("blue", "aqua")
+  [1] visualizercolor_transition("aqua", "lime")
+  [2] visualizercolor_transition("lime", "yellow")
+  [3] visualizercolor_transition("yellow", "red")
+  [4] visualizercolor_transition("red", "fuchsia")
+  [5 + 1] visualizercolor_transition("fuchsia", "blue")
+:ActionEnd() // This tells Toxen that this is the ending of the current Action.
+
+// Usage
+[5-16] Action("rainbow") // It will repeat from 5 seconds to 16 seconds, repeating the action in "rainbow" each time it finishes
+```
 ## 202008070313
 - General
   - Added automatically checking for updates every 30 minutes.

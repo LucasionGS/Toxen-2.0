@@ -251,7 +251,7 @@
         Display audio visualizer.
       </sup>
       <br>
-      <input type="checkbox" name="sbtoggle" id="storyboardToggle" onclick="settings.storyboard = this.checked; settings.saveToFile();">
+      <input type="checkbox" name="sbtoggle" id="storyboardToggle" onclick="settings.storyboard = this.checked; ToxenScriptManager.loadCurrentScript(); settings.saveToFile();">
       <label for="storyboardToggle">Storyboard</label>
       <sup>
         Display ToxenScript storyboards.<br>

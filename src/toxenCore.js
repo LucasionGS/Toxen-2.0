@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -46,6 +45,8 @@ class Toxen {
         setInterval(() => {
             Update.check(Toxen.version);
         }, 1800000);
+        Toxen.on("updated", () => {
+        });
         let songmenusidebar = document.querySelector("#songmenusidebar");
         let settingsmenusidebar = document.querySelector("#settingsmenusidebar");
         // Emit events
@@ -603,6 +604,20 @@ switch (process.platform) {
         toArray() {
             return [...this];
         }
+        /**
+         * Iterates through each element and uses the callback to return a boolean value.
+         *
+         * Returns `true` if every callback returns `true`, and returns `false` if **any** callback returns `false`.
+         */
+        equals(callbackfn) {
+            for (let i = 0; i < this.length; i++) {
+                const item = this[i];
+                if (!callbackfn(item, i, this))
+                    return false;
+            }
+            return true;
+        }
+        ;
     }
     Toxen.TArray = TArray;
     class InteractiveProgressBar extends events_1.EventEmitter {
@@ -4763,24 +4778,37 @@ class StoryboardObject {
         this.y = 0;
         this.setFill(fill);
     }
+    static getObject(name) {
+        let o = StoryboardObject.objects.find(o => o.name === name);
+        if (o) {
+            return o.object;
+        }
+        return null;
+    }
+    static getObjectIndex(name) {
+        let index = StoryboardObject.objects.findIndex(o => o.name === name);
+        return index;
+    }
+    static get ratio() {
+        return StoryboardObject.widthRatio < StoryboardObject.heightRatio ? StoryboardObject.widthRatio : StoryboardObject.heightRatio;
+    }
     static drawObjects(ctx) {
-        for (const name in StoryboardObject.objects) {
-            if (Object.prototype.hasOwnProperty.call(StoryboardObject.objects, name)) {
-                const obj = StoryboardObject.objects[name];
-                ctx.globalAlpha = obj.opacity;
-                let rotBy = obj.rotation * Math.PI / 180;
-                let pivotX = (obj.x + obj.pivotX) * StoryboardObject.widthRatio;
-                let pivotY = (obj.y + obj.pivotY) * StoryboardObject.heightRatio;
-                // console.log(pivotX, pivotY);
-                // console.log(obj.x * StoryboardObject.widthRatio, obj.y * StoryboardObject.heightRatio);
-                ctx.translate(pivotX - obj.pivotX * StoryboardObject.widthRatio, pivotY - obj.pivotY * StoryboardObject.heightRatio);
-                ctx.rotate(rotBy);
-                ctx.translate(0 - pivotX, 0 - pivotY);
-                obj.draw(ctx);
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-                // ctx.rotate(-rotBy);
-                ctx.globalAlpha = 1;
-            }
+        for (let i = 0; i < StoryboardObject.objects.length; i++) {
+            const obj = StoryboardObject.objects[i].object;
+            // const obj = StoryboardObject.getObject(name);
+            ctx.globalAlpha = obj.opacity;
+            let rotBy = obj.rotation * Math.PI / 180;
+            let pivotX = (obj.x * StoryboardObject.widthRatio) + (obj.pivotX * StoryboardObject.ratio);
+            let pivotY = (obj.y * StoryboardObject.heightRatio) + (obj.pivotY * StoryboardObject.ratio);
+            // console.log(pivotX, pivotY);
+            // console.log(obj.x * StoryboardObject.widthRatio, obj.y * StoryboardObject.heightRatio);
+            ctx.translate(pivotX - obj.pivotX * StoryboardObject.ratio, pivotY - obj.pivotY * StoryboardObject.ratio);
+            ctx.rotate(rotBy);
+            ctx.translate(0 - pivotX, 0 - pivotY);
+            obj.draw(ctx);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            // ctx.rotate(-rotBy);
+            ctx.globalAlpha = 1;
         }
     }
     /**
@@ -4788,6 +4816,20 @@ class StoryboardObject {
      */
     setFill(value, newWidth = null, newHeight = null) {
         if (value.startsWith("#")) {
+            let withPound = Tools.cssColorToHex(value);
+            let withoutPound = Tools.cssColorToHex(value.substring(1));
+            if (withoutPound == withPound) {
+                value = withoutPound;
+            }
+            else {
+                if (withoutPound == "#000000") {
+                    value = withPound;
+                }
+                else {
+                    value = withoutPound;
+                }
+            }
+            console.log(withPound, withoutPound);
             if (this.type != "square" && this.type != "circle")
                 this.type = "square";
             this.fill = value;
@@ -4816,15 +4858,15 @@ class StoryboardObject {
                     // 0,
                     this.y * StoryboardObject.heightRatio, 
                     // 0,
-                    this.width * StoryboardObject.widthRatio, this.height * StoryboardObject.heightRatio);
+                    this.width * StoryboardObject.ratio, this.height * StoryboardObject.ratio);
                 }
                 else if (this.type == "circle") {
                     ctx.beginPath();
-                    ctx.ellipse((this.x - (this.width / 2)) * StoryboardObject.widthRatio, (this.y - (this.height / 2)) * StoryboardObject.heightRatio, this.width / 2, this.height / 2, 0, 0, 0);
+                    ctx.ellipse((this.x * StoryboardObject.widthRatio) + ((this.width * StoryboardObject.ratio) / 2), (this.y * StoryboardObject.heightRatio) + ((this.height * StoryboardObject.ratio) / 2), (this.width * StoryboardObject.ratio) / 2, (this.height * StoryboardObject.ratio) / 2, 0, 0, 2 * Math.PI);
                     // ctx.stroke();
                     ctx.fill();
-                    this.width * StoryboardObject.widthRatio,
-                        this.height * StoryboardObject.heightRatio;
+                    // this.width * StoryboardObject.widthRatio,
+                    // this.height * StoryboardObject.heightRatio
                 }
                 return;
             case "object":
@@ -4832,15 +4874,27 @@ class StoryboardObject {
                 // 0,
                 this.y * StoryboardObject.heightRatio, 
                 // 0,
-                this.width * StoryboardObject.widthRatio, this.height * StoryboardObject.heightRatio);
+                this.width * StoryboardObject.ratio, this.height * StoryboardObject.ratio);
                 return;
             default:
                 break;
         }
     }
+    /**
+     * Convert a string that is formatted as a percentage (The `%` can be included in the end of the string) to a pixel number value
+     */
+    static widthPercent(w) {
+        return (((+w.substring(0, w.length - (w.endsWith("%") ? 1 : 0)) / 100) * StoryboardObject.widthDefault) * StoryboardObject.widthRatio / StoryboardObject.ratio);
+    }
+    /**
+     * Convert a string that is formatted as a percentage (The `%` can be included in the end of the string) to a pixel number value
+     */
+    static heightPercent(h) {
+        return (((+h.substring(0, h.length - (h.endsWith("%") ? 1 : 0)) / 100) * StoryboardObject.heightDefault) * StoryboardObject.heightRatio / StoryboardObject.ratio);
+    }
 }
 exports.StoryboardObject = StoryboardObject;
-StoryboardObject.objects = {};
+StoryboardObject.objects = [];
 StoryboardObject.widthDefault = 1920;
 StoryboardObject.heightDefault = 1080;
 StoryboardObject.widthRatio = 1;
@@ -4855,7 +4909,7 @@ window.addEventListener("load", () => {
     // }, 1000);
 });
 /**
- * Toxen Script Manager
+ * ToxenScript Manager
  *
  * Controls and manages Toxen's storyboard scripting.
  * All event types are stored in `eventFunctions` as an object.
@@ -4868,6 +4922,7 @@ class ToxenScriptManager {
         return __awaiter(this, void 0, void 0, function* () {
             Prompt.close("toxenscripterrormessage"); // Remove the last error, if any
             ToxenScriptManager.events = [];
+            ToxenScriptManager.actions = [];
             ToxenScriptManager.variables = {};
             for (const key in ToxenScriptManager.defaultVariables) {
                 if (ToxenScriptManager.defaultVariables.hasOwnProperty(key)) {
@@ -4879,7 +4934,7 @@ class ToxenScriptManager {
                 }
             }
             // Resetting to the default values on reset.
-            StoryboardObject.objects = {};
+            StoryboardObject.objects = [];
             Storyboard.setAnalyserFftLevel(Settings.current.visualizerQuantity);
             Storyboard.backgroundDim = Settings.current.backgroundDim;
             Storyboard.visualizerDirection = 0;
@@ -5032,7 +5087,6 @@ class ToxenScriptManager {
                     else if (checkMaxPerSecondAlt.test(line)) {
                         var returnError = "";
                         line.replace(checkMaxPerSecondAlt, function (item, num1, num2) {
-                            console.log(item, num1, num2);
                             if (+num1 > 0 && +num2 > 0)
                                 maxPerSecond = 1 / (+num1 / +num2);
                             else
@@ -5049,7 +5103,11 @@ class ToxenScriptManager {
                         line = "[always]" + line;
                     }
                     // Check if no only start
+                    const checkTimeEmpty = /(?<=\[)\s*(?=\])/g;
                     const checkTime = /(?<=\[)[^+-]*(?=\])/g;
+                    if (checkTimeEmpty.test(line)) {
+                        line = line.replace(checkTime, "always");
+                    }
                     if (checkTime.test(line)) {
                         line = line.replace(checkTime, "$& - $");
                     }
@@ -5090,22 +5148,37 @@ class ToxenScriptManager {
                         startPoint = ToxenScriptManager.timeStampToSeconds(startPoint);
                     }
                     else {
-                        startPoint = ToxenScriptManager.events[ToxenScriptManager.events.length - 1] ? ToxenScriptManager.events[ToxenScriptManager.events.length - 1].startPoint : 0;
+                        if (ToxenScriptManager._curAction)
+                            startPoint = ToxenScriptManager._curAction.events[ToxenScriptManager._curAction.events.length - 1] ? ToxenScriptManager._curAction.events[ToxenScriptManager._curAction.events.length - 1].endPoint : 0;
+                        else
+                            startPoint = ToxenScriptManager.events[ToxenScriptManager.events.length - 1] ? ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint : 0;
                     }
                     if (endPoint != "$") {
                         endPoint = ToxenScriptManager.timeStampToSeconds(endPoint);
                     }
-                    // else {
-                    //   endPoint = "$";
-                    // }
+                    else {
+                        // endPoint = ToxenScriptManager.variables["$end"]
+                    }
                     let backwards = 1;
                     let curEvent;
-                    while ((curEvent = ToxenScriptManager.events[ToxenScriptManager.events.length - backwards])) {
-                        if (curEvent.endPoint == "$" && curEvent.startPoint < startPoint) {
-                            curEvent.endPoint = startPoint;
-                            break;
+                    if (ToxenScriptManager._curAction) {
+                        while (ToxenScriptManager._curAction.events.length - backwards >= 0 && (curEvent = ToxenScriptManager._curAction.events[ToxenScriptManager._curAction.events.length - backwards])) {
+                            if (curEvent.endPoint == "$" && curEvent.startPoint < startPoint) {
+                                console.log(`Changed ${curEvent.endPoint} to ${startPoint}`);
+                                curEvent.endPoint = startPoint;
+                                break;
+                            }
+                            backwards++;
                         }
-                        backwards++;
+                    }
+                    else {
+                        while ((curEvent = ToxenScriptManager.events[ToxenScriptManager.events.length - backwards])) {
+                            if (curEvent.endPoint == "$" && curEvent.startPoint < startPoint) {
+                                curEvent.endPoint = startPoint;
+                                break;
+                            }
+                            backwards++;
+                        }
                     }
                     // if (ToxenScriptManager.events[ToxenScriptManager.events.length - 1] && ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint == "$") {
                     //   ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint = startPoint;
@@ -5127,7 +5200,7 @@ class ToxenScriptManager {
                     }
                     let _matches = line.match(argReg);
                     if (_matches == null) {
-                        _matches = [];
+                        _matches = [""];
                     }
                     var argString = _matches[0];
                     if (typeof argString != "string") {
@@ -5135,9 +5208,11 @@ class ToxenScriptManager {
                     }
                     function parseArgumentsFromString(as) {
                         var argList = [];
-                        argList = as.match(/(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+))/g);
+                        argList = as.match(/(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+%?))/g);
+                        if (argList == null)
+                            return [];
                         // argList.shift();
-                        return argList.map(v => v.replace("\\\"", "\"").replace(/^"(.*)"$/g, function ($0, $1) {
+                        return argList.map(v => v.replace("\\\"", "\"").replace(/^"(.*)"$/g, function (_, $1) {
                             return $1;
                         }));
                     }
@@ -5149,7 +5224,7 @@ class ToxenScriptManager {
                     if (type == "bpmpulse") {
                         // BPM calculation
                         if (args[1] == undefined) {
-                            args[1] = 1;
+                            args[1] = "1";
                         }
                         let bpm = +args[0], intensity = +args[1];
                         let bps = bpm / 60;
@@ -5166,44 +5241,102 @@ class ToxenScriptManager {
                             "success": true
                         };
                     }
-                    // if (type == "pulse") {
-                    //   // Convert to pulses
-                    //   maxPerSecond = 0.25;
-                    // }
-                    ToxenScriptManager.events.push(new ToxenEvent(startPoint, endPoint, fn));
-                    let currentEvent = ToxenScriptManager.events[ToxenScriptManager.events.length - 1];
-                    fn = function () {
-                        if (maxPerSecond > 0 && !type.startsWith(":") && currentEvent.hasRun == false) {
+                    if (type == ":actionstart") {
+                        ToxenScriptManager._curAction = {
+                            name: args[0],
+                            startPoint: null,
+                            endPoint: null,
+                            events: []
+                        };
+                        return {
+                            "success": true
+                        };
+                    }
+                    if (type == ":actionend") {
+                        if (ToxenScriptManager._curAction)
+                            ToxenScriptManager.actions.push(ToxenScriptManager._curAction);
+                        ToxenScriptManager._curAction = null;
+                        return {
+                            "success": true
+                        };
+                    }
+                    if (type == "action") {
+                        let action = ToxenScriptManager.actions.find(a => a.name === args[0]);
+                        if (action) {
+                            if (endPoint == null || startPoint == null || action.endPoint == null || action.startPoint == null)
+                                return "Some values were null. Internal Error.";
+                            if (action.endPoint <= action.startPoint)
+                                return "endPoint is lower or equal to startPoint in an Action. Internal Error.";
+                            if (endPoint <= startPoint)
+                                return "endPoint is lower or equal to startPoint. Syntax Error.";
+                            let eventDuration = endPoint - startPoint;
+                            let dur = action.endPoint - action.startPoint;
+                            let repeatTimes = 0;
+                            while (eventDuration > dur) {
+                                repeatTimes++;
+                                eventDuration -= dur;
+                            }
+                            repeatTimes++;
+                            for (let i = 0; i < repeatTimes; i++) {
+                                for (let i2 = 0; i2 < action.events.length; i2++) {
+                                    const event = action.events[i2];
+                                    let te = new ToxenEvent(event.startPoint + startPoint + (dur * i), event.endPoint + startPoint + (dur * i), event.fn);
+                                    te.type = event.type;
+                                    ToxenScriptManager.events.push(te);
+                                }
+                            }
+                        }
+                        else {
+                            return `Cannot find event "${args[0]}"`;
+                        }
+                        return {
+                            "success": true
+                        };
+                    }
+                    let currentEvent = new ToxenEvent(startPoint, endPoint, function () {
+                        if (maxPerSecond > 0 && !type.startsWith(":") && this.hasRun == false) {
                             try {
-                                ToxenScriptManager.eventFunctions[type](args, currentEvent);
+                                ToxenScriptManager.eventFunctions[type](args, this);
                             }
                             catch (error) {
-                                console.error(error, type, args, currentEvent);
+                                console.error(error, type, args, this);
                             }
                             setTimeout(() => {
-                                currentEvent.hasRun = false;
+                                this.hasRun = false;
                             }, (1000 / maxPerSecond));
                         }
                         else if (maxPerSecond == 0 && !type.startsWith(":")) {
                             try {
-                                ToxenScriptManager.eventFunctions[type](args, currentEvent);
+                                ToxenScriptManager.eventFunctions[type](args, this);
                             }
                             catch (error) {
-                                console.error(error, type, args, currentEvent);
+                                console.error(error, type, args, this);
                             }
                         }
-                        else if (type.startsWith(":") && currentEvent.hasRun == false) {
+                        else if (type.startsWith(":") && this.hasRun == false) {
                             try {
-                                ToxenScriptManager.eventFunctions[type](args, currentEvent);
+                                ToxenScriptManager.eventFunctions[type](args, this);
                             }
                             catch (error) {
-                                console.error(error, type, args, currentEvent);
+                                console.error(error, type, args, this);
                             }
                         }
-                        currentEvent.hasRun = true;
-                    };
-                    currentEvent.fn = fn;
+                        this.hasRun = true;
+                    });
                     currentEvent.type = type;
+                    if (ToxenScriptManager._curAction != null && !type.startsWith(":")) {
+                        if (ToxenScriptManager._curAction.startPoint == null)
+                            ToxenScriptManager._curAction.startPoint = currentEvent.startPoint;
+                        if (ToxenScriptManager._curAction.endPoint == null || ToxenScriptManager._curAction.endPoint < currentEvent.endPoint)
+                            ToxenScriptManager._curAction.endPoint = currentEvent.endPoint;
+                        if (ToxenScriptManager._curAction.endPoint < ToxenScriptManager._curAction.startPoint || isNaN(ToxenScriptManager._curAction.endPoint))
+                            ToxenScriptManager._curAction.endPoint = ToxenScriptManager._curAction.startPoint;
+                        ToxenScriptManager._curAction.events.push(currentEvent);
+                        return {
+                            "success": true
+                        };
+                    }
+                    ToxenScriptManager.events.push(currentEvent);
                     if (typeof ToxenScriptManager.eventFunctions[type] == undefined) {
                         return `Type "${type.toLowerCase()}" is not valid.`;
                     }
@@ -5233,10 +5366,10 @@ class ToxenScriptManager {
     static syntaxHighlightToxenScript(code, validEventNames = ToxenScriptManager.getEventNames()) {
         const regex = {
             "value": {
-                "expression": /(?<!\[[^\]]*)(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+))(?!\])/g,
+                "expression": /(?<!\[[^\]]*)(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+%?))(?!\])/g,
                 "function": function ($0, $1) {
                     // if (/^\d+$/g.test($1)) {
-                    if (!isNaN(+$0)) {
+                    if (!isNaN(+$0) || /^-?\d*(?:\.?\d+%)$/g.test($0)) {
                         return `<span class=toxenscript_number>${$0}</span>`;
                     }
                     return `<span class=toxenscript_string>${$0}</span>`;
@@ -5425,6 +5558,7 @@ exports.ToxenScriptManager = ToxenScriptManager;
 ToxenScriptManager.currentScriptFile = "";
 ToxenScriptManager.isRunning = false;
 /**
+ * Alterable variables.
  */
 ToxenScriptManager.variables = {};
 /**
@@ -5486,6 +5620,55 @@ ToxenScriptManager.eventFunctions = {
         Storyboard.rgb(+args[0], +args[1], +args[2]);
     },
     /**
+     * Change the color of the visualizer in a custom transition between times
+     * @param args Arguments
+     */
+    visualizercolor_transition: function ([hex1, hex2], event) {
+        ;
+        let rgb1 = {
+            red: 0,
+            green: 0,
+            blue: 0
+        };
+        let rgb2 = {
+            red: 0,
+            green: 0,
+            blue: 0
+        };
+        let rgbC = {
+            red: 0,
+            green: 0,
+            blue: 0
+        };
+        try {
+            rgb1 = hex1.toLowerCase() == "default" ? Settings.current.visualizerColor : Tools.cssColorToRgb(hex1);
+        }
+        catch (error) {
+            rgb1.red = Settings.current.visualizerColor.red;
+            rgb1.green = Settings.current.visualizerColor.green;
+            rgb1.blue = Settings.current.visualizerColor.blue;
+            console.warn(error);
+        }
+        try {
+            rgb2 = hex2.toLowerCase() == "default" ? Settings.current.visualizerColor : Tools.cssColorToRgb(hex2);
+        }
+        catch (error) {
+            rgb2.red = Settings.current.visualizerColor.red;
+            rgb2.green = Settings.current.visualizerColor.green;
+            rgb2.blue = Settings.current.visualizerColor.blue;
+            console.warn(error);
+        }
+        rgbC.red = +rgb1.red + ((+rgb2.red - +rgb1.red) * event.percent);
+        rgbC.green = +rgb1.green + ((+rgb2.green - +rgb1.green) * event.percent);
+        rgbC.blue = +rgb1.blue + ((+rgb2.blue - +rgb1.blue) * event.percent);
+        if (Storyboard.red != rgbC.red)
+            Storyboard.red = rgbC.red;
+        if (Storyboard.green != rgbC.green)
+            Storyboard.green = rgbC.green;
+        if (Storyboard.blue != rgbC.blue)
+            Storyboard.blue = rgbC.blue;
+    },
+    /**
      * Change the color of the visualizer instantly without transition.
      * @param args Arguments
      */
@@ -5531,16 +5714,22 @@ ToxenScriptManager.eventFunctions = {
             Storyboard.setIntensity(+args[0]);
         }
     },
+    visualizerintensity_transition: function ([intensity, intensity2], event) {
+        let dist = +intensity + ((+intensity2 - +intensity) * event.percent);
+        Storyboard.visualizerIntensity = dist;
+    },
     backgrounddim: function ([dim]) {
+        if (dim == "default")
+            dim = Settings.current.backgroundDim + "";
         if (!isNaN(+dim) && Storyboard.backgroundDim != +dim) {
             Storyboard.backgroundDim = +dim;
         }
     },
     backgrounddim_transition: function ([dim, dim2], event) {
-        if (dim == "current")
-            dim = Storyboard.backgroundDim + "";
-        if (dim2 == "current")
-            dim2 = Storyboard.backgroundDim + "";
+        if (dim == "default")
+            dim = Settings.current.backgroundDim + "";
+        if (dim2 == "default")
+            dim2 = Settings.current.backgroundDim + "";
         let distanceDim = +dim + ((+dim2 - +dim) * event.percent);
         Storyboard.backgroundDim = distanceDim;
     },
@@ -5670,9 +5859,14 @@ ToxenScriptManager.eventFunctions = {
     log: function () {
         console.log([...arguments[0]]);
     },
+    /**
+     * Execute an action
+     */
+    action: function ([name], event) {
+    },
     // Object manipulation.
     object_pivot: function ([name, x, y]) {
-        let obj = StoryboardObject.objects[name];
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
         if (x == "left")
@@ -5695,7 +5889,7 @@ ToxenScriptManager.eventFunctions = {
         obj.pivotY = +y;
     },
     object_pivot_transition: function ([name, x, y, x2, y2], event) {
-        let obj = StoryboardObject.objects[name];
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
         if (x == "left")
@@ -5736,21 +5930,39 @@ ToxenScriptManager.eventFunctions = {
         obj.pivotX = distanceX;
         obj.pivotY = distanceY;
     },
-    object_fill: function ([name, fill, type]) {
-        let obj = StoryboardObject.objects[name];
+    object_fill: function ([name, fill]) {
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
-        if (typeof type != "undefined")
-            obj.type = type;
+        if (fill != "current")
+            obj.fill = fill;
         obj.setFill(fill);
     },
-    object_move: function ([name, x, y]) {
-        let obj = StoryboardObject.objects[name];
+    object_type: function ([name, type]) {
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
-        if (x == "current")
+        obj.type = type;
+    },
+    object_move: function ([name, x, y]) {
+        let obj = StoryboardObject.getObject(name);
+        if (!obj)
+            return;
+        if (x == "left")
+            x = 0 + "";
+        else if (x == "center")
+            x = ((StoryboardObject.widthDefault) / 2) + "";
+        else if (x == "right")
+            x = (StoryboardObject.widthDefault) + "";
+        else if (!Tools.isNumber(x))
             x = obj.x + "";
-        if (y == "current")
+        if (y == "top")
+            y = 0 + "";
+        else if (y == "center")
+            y = ((StoryboardObject.heightDefault) / 2) + "";
+        else if (y == "bottom")
+            y = (StoryboardObject.heightDefault) + "";
+        else if (!Tools.isNumber(y))
             y = obj.y + "";
         if (obj.x != +x)
             obj.x = +x;
@@ -5758,16 +5970,40 @@ ToxenScriptManager.eventFunctions = {
             obj.y = +y;
     },
     object_move_transition: function ([name, x, y, x2, y2], event) {
-        let obj = StoryboardObject.objects[name];
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
-        if (x == "current")
+        if (x == "left")
+            x = 0 + "";
+        else if (x == "center")
+            x = ((StoryboardObject.widthDefault) / 2) + "";
+        else if (x == "right")
+            x = (StoryboardObject.widthDefault) + "";
+        else if (!Tools.isNumber(x))
             x = obj.x + "";
-        if (x2 == "current")
-            x2 = obj.x + "";
-        if (y == "current")
+        if (y == "top")
+            y = 0 + "";
+        else if (y == "center")
+            y = ((StoryboardObject.heightDefault) / 2) + "";
+        else if (y == "bottom")
+            y = (StoryboardObject.heightDefault) + "";
+        else if (!Tools.isNumber(y))
             y = obj.y + "";
-        if (y2 == "current")
+        if (x2 == "left")
+            x2 = 0 + "";
+        else if (x2 == "center")
+            x2 = ((StoryboardObject.widthDefault) / 2) + "";
+        else if (x2 == "right")
+            x2 = (StoryboardObject.widthDefault) + "";
+        else if (!Tools.isNumber(x2))
+            x2 = obj.x + "";
+        if (y2 == "top")
+            y2 = 0 + "";
+        else if (y2 == "center")
+            y2 = ((StoryboardObject.heightDefault) / 2) + "";
+        else if (y2 == "bottom")
+            y2 = (StoryboardObject.heightDefault) + "";
+        else if (!Tools.isNumber(y2))
             y2 = obj.y + "";
         let percent = event.percent;
         let distanceX = +x + ((+x2 - +x) * percent);
@@ -5776,27 +6012,39 @@ ToxenScriptManager.eventFunctions = {
         obj.y = distanceY;
     },
     object_size: function ([name, w, h]) {
-        let obj = StoryboardObject.objects[name];
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
-        if (!Tools.isNumber(w))
+        if (w.endsWith("%"))
+            w = StoryboardObject.widthPercent(w) + "";
+        else if (!Tools.isNumber(w))
             w = obj.width + "";
-        if (!Tools.isNumber(h))
+        if (h.endsWith("%"))
+            h = StoryboardObject.heightPercent(h) + "";
+        else if (!Tools.isNumber(h))
             h = obj.height + "";
         obj.width = +w;
         obj.height = +h;
     },
     object_size_transition: function ([name, w, h, w2, h2], event) {
-        let obj = StoryboardObject.objects[name];
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
-        if (w == "current")
+        if (w.endsWith("%"))
+            w = StoryboardObject.widthPercent(w) + "";
+        else if (!Tools.isNumber(w))
             w = obj.width + "";
-        if (w2 == "current")
-            w2 = obj.width + "";
-        if (h == "current")
+        if (h.endsWith("%"))
+            h = StoryboardObject.heightPercent(h) + "";
+        else if (!Tools.isNumber(h))
             h = obj.height + "";
-        if (h2 == "current")
+        if (w2.endsWith("%"))
+            w2 = StoryboardObject.widthPercent(w2) + "";
+        else if (!Tools.isNumber(w2))
+            w2 = obj.width + "";
+        if (h2.endsWith("%"))
+            h2 = StoryboardObject.heightPercent(h2) + "";
+        else if (!Tools.isNumber(h2))
             h2 = obj.height + "";
         let percent = event.percent;
         let distanceW = +w + ((+w2 - +w) * percent);
@@ -5805,7 +6053,7 @@ ToxenScriptManager.eventFunctions = {
         obj.height = distanceH;
     },
     object_opacity: function ([name, o]) {
-        let obj = StoryboardObject.objects[name];
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
         if (!Tools.isNumber(o))
@@ -5813,7 +6061,7 @@ ToxenScriptManager.eventFunctions = {
         obj.opacity = +o;
     },
     object_opacity_transition: function ([name, o, o2], event) {
-        let obj = StoryboardObject.objects[name];
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
         if (o == "current")
@@ -5825,7 +6073,7 @@ ToxenScriptManager.eventFunctions = {
         obj.opacity = distanceO;
     },
     object_rotate: function ([name, r]) {
-        let obj = StoryboardObject.objects[name];
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
         if (!Tools.isNumber(r))
@@ -5833,7 +6081,7 @@ ToxenScriptManager.eventFunctions = {
         obj.rotation = +r;
     },
     object_rotate_transition: function ([name, r, r2], event) {
-        let obj = StoryboardObject.objects[name];
+        let obj = StoryboardObject.getObject(name);
         if (!obj)
             return;
         if (r == "current")
@@ -5884,7 +6132,7 @@ ToxenScriptManager.eventFunctions = {
     },
     ":timingpoint": function ([timing], event) {
         if (Tools.isNumber(timing)) {
-            +timing;
+            Storyboard.timingPoint = +timing;
         }
     },
     ":createobject": function ([name, fill = "#fff", type], event) {
@@ -5892,9 +6140,26 @@ ToxenScriptManager.eventFunctions = {
         let o = new StoryboardObject(name, fill);
         if (typeof type != "undefined")
             o.type = type;
-        StoryboardObject.objects[name] = o;
-    }
+        StoryboardObject.objects.push({
+            "name": name,
+            "object": o
+        });
+    },
+    /**
+     * Start creation of an action.
+     */
+    ":actionstart": function ([name]) {
+        // Placeholder
+    },
+    /**
+     * End creation of an action.
+     */
+    ":actionend": function ([name]) {
+        // Placeholder
+    },
 };
+ToxenScriptManager._curAction = null;
+ToxenScriptManager.actions = [];
 /**
  * Function Types for ToxenScript
  */

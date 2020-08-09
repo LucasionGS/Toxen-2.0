@@ -56,6 +56,10 @@ export class Toxen {
     setInterval(() => {
       Update.check(Toxen.version);
     }, 1800000);
+
+    Toxen.on("updated", () => {
+
+    });
     
     let songmenusidebar: HTMLDivElement = document.querySelector("#songmenusidebar");
     let settingsmenusidebar: HTMLDivElement = document.querySelector("#settingsmenusidebar");
@@ -510,6 +514,7 @@ export class Toxen {
   static on(event: "settingspanelclose", callback: () => void): void;
   static on(event: "inactive", callback: () => void): void;
   static on(event: "active", callback: () => void): void;
+  static on(event: "updated", callback: () => void): void;
   static on(event: "toggleshuffle", callback: (toggle: boolean) => void): void;
   static on(event: "togglerepeat", callback: (toggle: boolean) => void): void;
   static on(event: string, callback: (...args) => void) {
@@ -529,6 +534,7 @@ export class Toxen {
   static emit(event: "settingspanelclose"): void;
   static emit(event: "inactive"): void;
   static emit(event: "active"): void;
+  static emit(event: "updated"): void;
   static emit(event: "toggleshuffle", toggle: boolean): void;
   static emit(event: "togglerepeat", toggle: boolean): void;
   static emit(event: string, ...args: any[]) {
@@ -755,6 +761,19 @@ export namespace Toxen {
     toArray() {
       return [...this];
     }
+
+    /**
+     * Iterates through each element and uses the callback to return a boolean value.
+     * 
+     * Returns `true` if every callback returns `true`, and returns `false` if **any** callback returns `false`.
+     */
+    equals(callbackfn: (value: ArrayType, index: number, array: TArray<ArrayType>) => boolean) {
+      for (let i = 0; i < this.length; i++) {
+        const item = this[i];
+        if (!callbackfn(item, i, this)) return false;
+      }
+      return true;
+    };
   }
   export interface InteractiveProgressBar {
     on(event: "click", listener: (value: number) => void): this;
@@ -5317,35 +5336,48 @@ class Pulse {
  * ToxenScript: Storyboard Object
  */
 export class StoryboardObject {
-  static objects: {[name: string]: StoryboardObject} = {}
+  static objects: {name: string; object: StoryboardObject}[] = [];
+  static getObject(name: string): StoryboardObject {
+    let o = StoryboardObject.objects.find(o => o.name === name);
+    if (o) {
+      return o.object;
+    }
+    return null;
+  }
+  static getObjectIndex(name: string) {
+    let index = StoryboardObject.objects.findIndex(o => o.name === name);
+    return index;
+  }
 
   static widthDefault: number = 1920;
   static heightDefault: number = 1080;
 
   static widthRatio: number = 1;
   static heightRatio: number = 1;
+  static get ratio() {
+    return StoryboardObject.widthRatio < StoryboardObject.heightRatio ? StoryboardObject.widthRatio : StoryboardObject.heightRatio;
+  }
 
   static drawObjects(ctx: CanvasRenderingContext2D) {
-    for (const name in StoryboardObject.objects) {
-      if (Object.prototype.hasOwnProperty.call(StoryboardObject.objects, name)) {
-        const obj = StoryboardObject.objects[name];
-        ctx.globalAlpha = obj.opacity;
-        let rotBy = obj.rotation * Math.PI / 180;
-        let pivotX = (obj.x + obj.pivotX) * StoryboardObject.widthRatio;
-        let pivotY = (obj.y + obj.pivotY) * StoryboardObject.heightRatio;
-        // console.log(pivotX, pivotY);
-        // console.log(obj.x * StoryboardObject.widthRatio, obj.y * StoryboardObject.heightRatio);
-        
-        ctx.translate(pivotX - obj.pivotX * StoryboardObject.widthRatio, pivotY - obj.pivotY * StoryboardObject.heightRatio);
-        ctx.rotate(rotBy);
-        ctx.translate(0-pivotX, 0-pivotY);
-        
-        obj.draw(ctx);
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        // ctx.rotate(-rotBy);
-        
-        ctx.globalAlpha = 1;
-      }
+    for (let i = 0; i < StoryboardObject.objects.length; i++) {
+      const obj = StoryboardObject.objects[i].object;
+      // const obj = StoryboardObject.getObject(name);
+      ctx.globalAlpha = obj.opacity;
+      let rotBy = obj.rotation * Math.PI / 180;
+      let pivotX = (obj.x * StoryboardObject.widthRatio) + (obj.pivotX * StoryboardObject.ratio);
+      let pivotY = (obj.y * StoryboardObject.heightRatio) + (obj.pivotY * StoryboardObject.ratio);
+      // console.log(pivotX, pivotY);
+      // console.log(obj.x * StoryboardObject.widthRatio, obj.y * StoryboardObject.heightRatio);
+      
+      ctx.translate(pivotX - obj.pivotX * StoryboardObject.ratio, pivotY - obj.pivotY * StoryboardObject.ratio);
+      ctx.rotate(rotBy);
+      ctx.translate(0-pivotX, 0-pivotY);
+      
+      obj.draw(ctx);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      // ctx.rotate(-rotBy);
+      
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -5405,6 +5437,21 @@ export class StoryboardObject {
    */
   setFill(value: string, newWidth: number = null, newHeight: number = null) {
     if (value.startsWith("#")) {
+      let withPound = Tools.cssColorToHex(value);
+      let withoutPound = Tools.cssColorToHex(value.substring(1));
+
+      if (withoutPound == withPound) {
+        value = withoutPound;
+      }
+      else {
+        if (withoutPound == "#000000") {
+          value = withPound;
+        }
+        else {
+          value = withoutPound;
+        }
+      }
+      console.log(withPound, withoutPound);
       if (this.type != "square" && this.type != "circle") this.type = "square"
       this.fill = value;
     }
@@ -5432,25 +5479,25 @@ export class StoryboardObject {
             // 0,
             this.y * StoryboardObject.heightRatio,
             // 0,
-            this.width * StoryboardObject.widthRatio,
-            this.height * StoryboardObject.heightRatio
+            this.width * StoryboardObject.ratio,
+            this.height * StoryboardObject.ratio
           );
         }
         else if (this.type == "circle") {
           ctx.beginPath();
           ctx.ellipse(
-            (this.x - (this.width/2)) * StoryboardObject.widthRatio,
-            (this.y - (this.height/2)) * StoryboardObject.heightRatio,
-            this.width/2,
-            this.height/2,
+            (this.x * StoryboardObject.widthRatio) + ((this.width * StoryboardObject.ratio) /2),
+            (this.y * StoryboardObject.heightRatio) + ((this.height * StoryboardObject.ratio) /2),
+            (this.width * StoryboardObject.ratio) / 2,
+            (this.height * StoryboardObject.ratio) / 2,
             0,
             0,
-            0
+            2 * Math.PI
           );
           // ctx.stroke();
           ctx.fill();
-          this.width * StoryboardObject.widthRatio,
-          this.height * StoryboardObject.heightRatio
+          // this.width * StoryboardObject.widthRatio,
+          // this.height * StoryboardObject.heightRatio
         }
         return;
       case "object":
@@ -5460,13 +5507,26 @@ export class StoryboardObject {
           // 0,
           this.y * StoryboardObject.heightRatio,
           // 0,
-          this.width * StoryboardObject.widthRatio,
-          this.height * StoryboardObject.heightRatio
+          this.width * StoryboardObject.ratio,
+          this.height * StoryboardObject.ratio
         );
         return;
       default:
         break;
     }
+  }
+
+  /**
+   * Convert a string that is formatted as a percentage (The `%` can be included in the end of the string) to a pixel number value
+   */
+  static widthPercent(w: string) {
+    return (((+w.substring(0, w.length - (w.endsWith("%") ? 1 : 0)) / 100) * StoryboardObject.widthDefault) * StoryboardObject.widthRatio / StoryboardObject.ratio);
+  }
+  /**
+   * Convert a string that is formatted as a percentage (The `%` can be included in the end of the string) to a pixel number value
+   */
+  static heightPercent(h: string) {
+    return (((+h.substring(0, h.length - (h.endsWith("%") ? 1 : 0)) / 100) * StoryboardObject.heightDefault) * StoryboardObject.heightRatio / StoryboardObject.ratio);
   }
 }
 
@@ -5482,7 +5542,7 @@ window.addEventListener("load", () => {
 });
 
 /**
- * Toxen Script Manager
+ * ToxenScript Manager
  * 
  * Controls and manages Toxen's storyboard scripting.  
  * All event types are stored in `eventFunctions` as an object.
@@ -5497,6 +5557,7 @@ export class ToxenScriptManager {
   static async loadCurrentScript() {
     Prompt.close("toxenscripterrormessage"); // Remove the last error, if any
     ToxenScriptManager.events = [];
+    ToxenScriptManager.actions = [];
     ToxenScriptManager.variables = {};
     for (const key in ToxenScriptManager.defaultVariables) {
       if (ToxenScriptManager.defaultVariables.hasOwnProperty(key)) {
@@ -5509,7 +5570,7 @@ export class ToxenScriptManager {
     }
 
     // Resetting to the default values on reset.
-    StoryboardObject.objects = {};
+    StoryboardObject.objects = [];
     Storyboard.setAnalyserFftLevel(Settings.current.visualizerQuantity);
     Storyboard.backgroundDim = Settings.current.backgroundDim;
     Storyboard.visualizerDirection = 0;
@@ -5532,10 +5593,9 @@ export class ToxenScriptManager {
   }
 
   /**
+   * Alterable variables.
    */
-  static variables: {[$name: string]: string} = {
-    
-  }
+  static variables: {[$name: string]: string} = {}
 
   /**
    * Default variable set.
@@ -5699,7 +5759,6 @@ export class ToxenScriptManager {
         else if (checkMaxPerSecondAlt.test(line)) {
           var returnError = "";
           line.replace(checkMaxPerSecondAlt, function(item, num1, num2) {
-            console.log(item, num1, num2);
             if (+num1 > 0 && +num2 > 0) maxPerSecond = 1 / (+num1 / +num2);
             else returnError = "Limiter prefix cannot include a 0.";
             return "";
@@ -5716,7 +5775,11 @@ export class ToxenScriptManager {
         }
 
         // Check if no only start
+        const checkTimeEmpty = /(?<=\[)\s*(?=\])/g;
         const checkTime = /(?<=\[)[^+-]*(?=\])/g;
+        if (checkTimeEmpty.test(line)) {
+          line = line.replace(checkTime, "always");
+        }
         if (checkTime.test(line)) {
           line = line.replace(checkTime, "$& - $");
         }
@@ -5728,7 +5791,7 @@ export class ToxenScriptManager {
         // Variables
         var startPoint: any = 0;
         var endPoint: any = 0;
-        var args: any[] = [];
+        var args: string[] = [];
         var fn: (args: string[]) => void;
 
         // Parsing...
@@ -5761,23 +5824,37 @@ export class ToxenScriptManager {
           startPoint = ToxenScriptManager.timeStampToSeconds(startPoint);
         }
         else {
-          startPoint = ToxenScriptManager.events[ToxenScriptManager.events.length - 1] ? ToxenScriptManager.events[ToxenScriptManager.events.length - 1].startPoint : 0;
+          if (ToxenScriptManager._curAction) startPoint = ToxenScriptManager._curAction.events[ToxenScriptManager._curAction.events.length - 1] ? ToxenScriptManager._curAction.events[ToxenScriptManager._curAction.events.length - 1].endPoint : 0;
+          else startPoint = ToxenScriptManager.events[ToxenScriptManager.events.length - 1] ? ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint : 0;
         }
         if (endPoint != "$") {
           endPoint = ToxenScriptManager.timeStampToSeconds(endPoint);
         }
-        // else {
-        //   endPoint = "$";
-        // }
+        else {
+          // endPoint = ToxenScriptManager.variables["$end"]
+        }
 
         let backwards = 1;
         let curEvent: ToxenEvent;
-        while ((curEvent = ToxenScriptManager.events[ToxenScriptManager.events.length - backwards])) {
-          if (curEvent.endPoint as any as string == "$" && curEvent.startPoint < startPoint) {
-            curEvent.endPoint = startPoint;
-            break;
+        if (ToxenScriptManager._curAction) {
+          while (ToxenScriptManager._curAction.events.length - backwards >= 0 && (curEvent = ToxenScriptManager._curAction.events[ToxenScriptManager._curAction.events.length - backwards])) {
+            if (curEvent.endPoint as any as string == "$" && curEvent.startPoint < startPoint) {
+              console.log(`Changed ${curEvent.endPoint} to ${startPoint}`);
+              curEvent.endPoint = startPoint;
+              
+              break;
+            }
+            backwards++;
           }
-          backwards++;
+        }
+        else {
+          while ((curEvent = ToxenScriptManager.events[ToxenScriptManager.events.length - backwards])) {
+            if (curEvent.endPoint as any as string == "$" && curEvent.startPoint < startPoint) {
+              curEvent.endPoint = startPoint;
+              break;
+            }
+            backwards++;
+          }
         }
 
         // if (ToxenScriptManager.events[ToxenScriptManager.events.length - 1] && ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint == "$") {
@@ -5805,7 +5882,7 @@ export class ToxenScriptManager {
 
         let _matches = line.match(argReg);
         if (_matches == null) {
-          _matches = [];
+          _matches = [""];
         }
         var argString = _matches[0];
 
@@ -5814,22 +5891,22 @@ export class ToxenScriptManager {
         }
         function parseArgumentsFromString(as: string) {
           var argList: string[] = [];
-          argList = as.match(/(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+))/g);
+          argList = as.match(/(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+%?))/g);
+          if (argList == null) return [];
           // argList.shift();
-          return argList.map(v => v.replace("\\\"", "\"").replace(/^"(.*)"$/g, function($0, $1) {
+          return argList.map(v => v.replace("\\\"", "\"").replace(/^"(.*)"$/g, function(_, $1) {
             return $1;
           }));
         }
 
         if (typeof argString == "string") args = parseArgumentsFromString(argString.trim());
         else args = [];
-        
 
         // Special treatments
         if (type == "bpmpulse") {
           // BPM calculation
           if (args[1] == undefined) {
-            args[1] = 1;
+            args[1] = "1";
           }
           let bpm = +args[0], intensity = +args[1];
 
@@ -5849,43 +5926,101 @@ export class ToxenScriptManager {
             "success": true
           };
         }
-        // if (type == "pulse") {
-        //   // Convert to pulses
-        //   maxPerSecond = 0.25;
-        // }
+        if (type == ":actionstart") {
+          ToxenScriptManager._curAction = {
+            name: args[0],
+            startPoint: null,
+            endPoint: null,
+            events: []
+          };
+          
+          return {
+            "success": true
+          };
+        }
+        if (type == ":actionend") {
+          if (ToxenScriptManager._curAction) ToxenScriptManager.actions.push(ToxenScriptManager._curAction);
+          ToxenScriptManager._curAction = null;
 
-        ToxenScriptManager.events.push(new ToxenEvent(startPoint, endPoint, fn));
-        let currentEvent = ToxenScriptManager.events[ToxenScriptManager.events.length - 1];
-        fn = function () {
-          if (maxPerSecond > 0 && !type.startsWith(":") && currentEvent.hasRun == false) {
+          return {
+            "success": true
+          };
+        }
+
+        if (type == "action") {
+          let action = ToxenScriptManager.actions.find(a => a.name === args[0]);
+          if (action) {
+            if (endPoint == null || startPoint == null || action.endPoint == null || action.startPoint == null) return "Some values were null. Internal Error.";
+            if (action.endPoint <= action.startPoint) return "endPoint is lower or equal to startPoint in an Action. Internal Error.";
+            if (endPoint <= startPoint) return "endPoint is lower or equal to startPoint. Syntax Error.";
+            let eventDuration = endPoint - startPoint;
+            let dur = action.endPoint - action.startPoint;
+            let repeatTimes = 0;
+
+
+            while (eventDuration > dur) {
+              repeatTimes++;
+              eventDuration -= dur;
+            }
+            repeatTimes++;
+
+            for (let i = 0; i < repeatTimes; i++) {
+              for (let i2 = 0; i2 < action.events.length; i2++) {
+                const event = action.events[i2];
+                let te = new ToxenEvent(event.startPoint + startPoint + (dur * i), event.endPoint + startPoint + (dur * i), event.fn);
+                te.type = event.type;
+                ToxenScriptManager.events.push(te);
+              }
+            }
+          }
+          else {
+            return `Cannot find event "${args[0]}"`;
+          }
+          
+          return {
+            "success": true
+          };
+        }
+
+        let currentEvent = new ToxenEvent(startPoint, endPoint, function () {
+          if (maxPerSecond > 0 && !type.startsWith(":") && this.hasRun == false) {
             try {
-              ToxenScriptManager.eventFunctions[type](args, currentEvent);
+              ToxenScriptManager.eventFunctions[type](args, this);
             } catch (error) {
-              console.error(error, type, args, currentEvent);
+              console.error(error, type, args, this);
             }
             setTimeout(() => {
-              currentEvent.hasRun = false;
+              this.hasRun = false;
             }, (1000 / maxPerSecond));
           }
           else if (maxPerSecond == 0 && !type.startsWith(":")) {
             try {
-              ToxenScriptManager.eventFunctions[type](args, currentEvent);
+              ToxenScriptManager.eventFunctions[type](args, this);
             } catch (error) {
-              console.error(error, type, args, currentEvent);
+              console.error(error, type, args, this);
             }
           }
-          else if (type.startsWith(":") && currentEvent.hasRun == false) {
+          else if (type.startsWith(":") && this.hasRun == false) {
             try {
-              ToxenScriptManager.eventFunctions[type](args, currentEvent);
+              ToxenScriptManager.eventFunctions[type](args, this);
             } catch (error) {
-              console.error(error, type, args, currentEvent);
+              console.error(error, type, args, this);
             }
           }
-          currentEvent.hasRun = true;
-        };
-
-        currentEvent.fn = fn;
+          this.hasRun = true;
+        });
         currentEvent.type = type;
+        
+        if (ToxenScriptManager._curAction != null && !type.startsWith(":")) {
+          if (ToxenScriptManager._curAction.startPoint == null) ToxenScriptManager._curAction.startPoint = currentEvent.startPoint;
+          if (ToxenScriptManager._curAction.endPoint == null || ToxenScriptManager._curAction.endPoint < currentEvent.endPoint) ToxenScriptManager._curAction.endPoint = currentEvent.endPoint;
+          if (ToxenScriptManager._curAction.endPoint < ToxenScriptManager._curAction.startPoint || isNaN(ToxenScriptManager._curAction.endPoint)) ToxenScriptManager._curAction.endPoint = ToxenScriptManager._curAction.startPoint;
+          ToxenScriptManager._curAction.events.push(currentEvent);
+          return {
+            "success": true
+          };
+        }
+        ToxenScriptManager.events.push(currentEvent);
 
         if (typeof ToxenScriptManager.eventFunctions[type] == undefined) {
           return `Type "${type.toLowerCase()}" is not valid.`;
@@ -5950,6 +6085,56 @@ export class ToxenScriptManager {
       Storyboard.rgb(+args[0], +args[1], +args[2]);
     },
     /**
+     * Change the color of the visualizer in a custom transition between times
+     * @param args Arguments
+     */
+    visualizercolor_transition: function ([hex1, hex2], event) {
+      interface RGB {
+        red: number;
+        green: number;
+        blue: number;
+      };
+      let rgb1: RGB = {
+        red: 0,
+        green: 0,
+        blue: 0
+      };
+      let rgb2: RGB = {
+        red: 0,
+        green: 0,
+        blue: 0
+      };
+      let rgbC: RGB = {
+        red: 0,
+        green: 0,
+        blue: 0
+      };
+
+      try {
+        rgb1 = hex1.toLowerCase() == "default" ? Settings.current.visualizerColor : Tools.cssColorToRgb(hex1);
+      } catch (error) {
+        rgb1.red = Settings.current.visualizerColor.red;
+        rgb1.green = Settings.current.visualizerColor.green;
+        rgb1.blue = Settings.current.visualizerColor.blue;
+        console.warn(error);
+      }
+      try {
+        rgb2 = hex2.toLowerCase() == "default" ? Settings.current.visualizerColor : Tools.cssColorToRgb(hex2);
+      } catch (error) {
+        rgb2.red = Settings.current.visualizerColor.red;
+        rgb2.green = Settings.current.visualizerColor.green;
+        rgb2.blue = Settings.current.visualizerColor.blue;
+        console.warn(error);
+      }
+      rgbC.red = +rgb1.red + ((+rgb2.red - +rgb1.red) * event.percent);
+      rgbC.green = +rgb1.green + ((+rgb2.green - +rgb1.green) * event.percent);
+      rgbC.blue = +rgb1.blue + ((+rgb2.blue - +rgb1.blue) * event.percent);
+
+      if (Storyboard.red != rgbC.red) Storyboard.red = rgbC.red;
+      if (Storyboard.green != rgbC.green) Storyboard.green = rgbC.green;
+      if (Storyboard.blue != rgbC.blue) Storyboard.blue = rgbC.blue;
+    },
+    /**
      * Change the color of the visualizer instantly without transition.
      * @param args Arguments
      */
@@ -5994,14 +6179,19 @@ export class ToxenScriptManager {
         Storyboard.setIntensity(+args[0]);
       }
     },
+    visualizerintensity_transition: function ([intensity, intensity2], event) {
+      let dist = +intensity + ((+intensity2 - +intensity) * event.percent);
+      Storyboard.visualizerIntensity = dist;
+    },
     backgrounddim: function ([dim]) {
+      if (dim == "default") dim = Settings.current.backgroundDim + "";
       if (!isNaN(+dim) && Storyboard.backgroundDim != +dim) {
         Storyboard.backgroundDim = +dim;
       }
     },
     backgrounddim_transition: function ([dim, dim2], event) { 
-      if (dim == "current") dim = Storyboard.backgroundDim + "";
-      if (dim2 == "current") dim2 = Storyboard.backgroundDim + "";
+      if (dim == "default") dim = Settings.current.backgroundDim + "";
+      if (dim2 == "default") dim2 = Settings.current.backgroundDim + "";
       
       let distanceDim = +dim + ((+dim2 - +dim) * event.percent);
       Storyboard.backgroundDim = distanceDim;
@@ -6136,9 +6326,15 @@ export class ToxenScriptManager {
     log: function() {
       console.log([...arguments[0]]);
     },
+    /**
+     * Execute an action
+     */
+    action: function([name], event) {
+
+    },
     // Object manipulation.
     object_pivot: function([name, x, y]) {
-      let obj = StoryboardObject.objects[name];
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
 
       if (x == "left") x = 0 + "";
@@ -6154,7 +6350,7 @@ export class ToxenScriptManager {
       obj.pivotY = +y;
     },
     object_pivot_transition: function([name, x, y, x2, y2], event) {
-      let obj = StoryboardObject.objects[name];
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
       
       if (x == "left") x = 0 + "";
@@ -6183,29 +6379,57 @@ export class ToxenScriptManager {
       obj.pivotX = distanceX;
       obj.pivotY = distanceY;
     },
-    object_fill: function([name, fill, type]) {
-      let obj = StoryboardObject.objects[name];
+    object_fill: function([name, fill]) {
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
-      
-      if (typeof type != "undefined") obj.type = type as "square" | "circle" | "image";
+      if (fill != "current") obj.fill = fill;
       obj.setFill(fill);
     },
-    object_move: function([name, x, y]) {
-      let obj = StoryboardObject.objects[name];
+    object_type: function([name, type]) {
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
-      if (x == "current") x = obj.x + "";
-      if (y == "current") y = obj.y + "";
+      obj.type = type as "square" | "circle" | "image";
+    },
+    object_move: function([name, x, y]) {
+      let obj = StoryboardObject.getObject(name);
+      if (!obj) return;
+
+      if (x == "left") x = 0 + "";
+      else if (x == "center") x = ((StoryboardObject.widthDefault)/2) + "";
+      else if (x == "right") x = (StoryboardObject.widthDefault) + "";
+      else if (!Tools.isNumber(x)) x = obj.x + "";
+
+      if (y == "top") y = 0 + "";
+      else if (y == "center") y = ((StoryboardObject.heightDefault)/2) + "";
+      else if (y == "bottom") y = (StoryboardObject.heightDefault) + "";
+      else if (!Tools.isNumber(y)) y = obj.y + "";
       
       if (obj.x != +x) obj.x = +x;
       if (obj.y != +y) obj.y = +y;
     },
     object_move_transition: function([name, x, y, x2, y2], event) {
-      let obj = StoryboardObject.objects[name];
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
-      if (x == "current") x = obj.x + "";
-      if (x2 == "current") x2 = obj.x + "";
-      if (y == "current") y = obj.y + "";
-      if (y2 == "current") y2 = obj.y + "";
+
+      if (x == "left") x = 0 + "";
+      else if (x == "center") x = ((StoryboardObject.widthDefault)/2) + "";
+      else if (x == "right") x = (StoryboardObject.widthDefault) + "";
+      else if (!Tools.isNumber(x)) x = obj.x + "";
+      
+      if (y == "top") y = 0 + "";
+      else if (y == "center") y = ((StoryboardObject.heightDefault)/2) + "";
+      else if (y == "bottom") y = (StoryboardObject.heightDefault) + "";
+      else if (!Tools.isNumber(y)) y = obj.y + "";
+      
+      if (x2 == "left") x2 = 0 + "";
+      else if (x2 == "center") x2 = ((StoryboardObject.widthDefault)/2) + "";
+      else if (x2 == "right") x2 = (StoryboardObject.widthDefault) + "";
+      else if (!Tools.isNumber(x2)) x2 = obj.x + "";
+
+      if (y2 == "top") y2 = 0 + "";
+      else if (y2 == "center") y2 = ((StoryboardObject.heightDefault)/2) + "";
+      else if (y2 == "bottom") y2 = (StoryboardObject.heightDefault) + "";
+      else if (!Tools.isNumber(y2)) y2 = obj.y + "";
       
       let percent = event.percent;
       let distanceX = +x + ((+x2 - +x) * percent);
@@ -6214,21 +6438,31 @@ export class ToxenScriptManager {
       obj.y = distanceY;
     },
     object_size: function([name, w, h]) {
-      let obj = StoryboardObject.objects[name];
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
-      if (!Tools.isNumber(w)) w = obj.width + "";
-      if (!Tools.isNumber(h)) h = obj.height + "";
+      if (w.endsWith("%")) w = StoryboardObject.widthPercent(w) + "";
+      else if (!Tools.isNumber(w)) w = obj.width + "";
+
+      if (h.endsWith("%")) h = StoryboardObject.heightPercent(h) + "";
+      else if (!Tools.isNumber(h)) h = obj.height + "";
       obj.width = +w;
       obj.height = +h;
     },
     object_size_transition: function([name, w, h, w2, h2], event) {
-      let obj = StoryboardObject.objects[name];
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
-      if (w == "current") w = obj.width + "";
-      if (w2 == "current") w2 = obj.width + "";
-      if (h == "current") h = obj.height + "";
-      if (h2 == "current") h2 = obj.height + "";
+      if (w.endsWith("%")) w = StoryboardObject.widthPercent(w) + "";
+      else if (!Tools.isNumber(w)) w = obj.width + "";
+
+      if (h.endsWith("%")) h = StoryboardObject.heightPercent(h) + "";
+      else if (!Tools.isNumber(h)) h = obj.height + "";
+
+      if (w2.endsWith("%")) w2 = StoryboardObject.widthPercent(w2) + "";
+      else if (!Tools.isNumber(w2)) w2 = obj.width + "";
       
+      if (h2.endsWith("%")) h2 = StoryboardObject.heightPercent(h2) + "";
+      else if (!Tools.isNumber(h2)) h2 = obj.height + "";
+
       let percent = event.percent;
       let distanceW = +w + ((+w2 - +w) * percent);
       let distanceH = +h + ((+h2 - +h) * percent);
@@ -6236,13 +6470,13 @@ export class ToxenScriptManager {
       obj.height = distanceH;
     },
     object_opacity: function([name, o]) {
-      let obj = StoryboardObject.objects[name];
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
       if (!Tools.isNumber(o)) o = obj.opacity + "";
       obj.opacity = +o;
     },
     object_opacity_transition: function([name, o, o2], event) {
-      let obj = StoryboardObject.objects[name];
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
       if (o == "current") o = obj.opacity + "";
       if (o2 == "current") o2 = obj.opacity + "";
@@ -6252,13 +6486,13 @@ export class ToxenScriptManager {
       obj.opacity = distanceO;
     },
     object_rotate: function([name, r]) {
-      let obj = StoryboardObject.objects[name];
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
       if (!Tools.isNumber(r)) r = obj.rotation + "";
       obj.rotation = +r;
     },
     object_rotate_transition: function([name, r, r2], event) {
-      let obj = StoryboardObject.objects[name];
+      let obj = StoryboardObject.getObject(name);
       if (!obj) return;
       if (r == "current") r = obj.rotation + "";
       if (r2 == "current") r2 = obj.rotation + "";
@@ -6305,16 +6539,40 @@ export class ToxenScriptManager {
     },
     ":timingpoint": function([timing], event) {
       if (Tools.isNumber(timing)) {
-         +timing
+         Storyboard.timingPoint = +timing;
       }
     },
     ":createobject": function([name, fill = "#fff", type], event) {
       // if (typeof name != "string")
       let o = new StoryboardObject(name, fill);
       if (typeof type != "undefined") o.type = type as "square" | "circle" | "image";
-      StoryboardObject.objects[name] = o;
-    }
-  }
+      StoryboardObject.objects.push({
+        "name": name,
+        "object": o
+      });
+    },
+    /**
+     * Start creation of an action.
+     */
+    ":actionstart": function([name]) {
+      // Placeholder
+    },
+    /**
+     * End creation of an action.
+     */
+    ":actionend": function([name]) {
+      // Placeholder
+    },
+  };
+
+  static _curAction: {
+    name: string,
+    startPoint: number,
+    endPoint: number,
+    events: ToxenEvent[]
+  } = null;
+
+  static actions: (typeof ToxenScriptManager._curAction)[] = [];
 
   /**
    * Function Types for ToxenScript
@@ -6330,10 +6588,10 @@ export class ToxenScriptManager {
   static syntaxHighlightToxenScript(code: string, validEventNames = ToxenScriptManager.getEventNames()) {
     const regex: {[key: string]: {"expression": RegExp, "function": ($0: string, ...$n: string[]) => string}} = {
       "value": {
-        "expression": /(?<!\[[^\]]*)(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+))(?!\])/g,
+        "expression": /(?<!\[[^\]]*)(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+%?))(?!\])/g,
         "function": function($0, $1) {
           // if (/^\d+$/g.test($1)) {
-          if (!isNaN(+$0)) {
+          if (!isNaN(+$0) || /^-?\d*(?:\.?\d+%)$/g.test($0)) {
             return `<span class=toxenscript_number>${$0}</span>`;
           }
           return `<span class=toxenscript_string>${$0}</span>`;
@@ -6539,7 +6797,7 @@ class ToxenEvent {
    * @param endPoint Ending point in seconds.
    * @param fn Function to run at this interval.
    */
-  constructor(startPoint: number, endPoint: number, fn: (args: any[]) => void) {
+  constructor(startPoint: number, endPoint: number, fn: (this: ToxenEvent, args: any[]) => void) {
     this.startPoint = startPoint;
     this.endPoint = endPoint;
     this.fn = fn;
@@ -6547,7 +6805,7 @@ class ToxenEvent {
 
   startPoint: number;
   endPoint: number;
-  fn: Function;
+  fn: (this: ToxenEvent, args?: any[]) => void;
   hasRun = false;
   type: string;
 

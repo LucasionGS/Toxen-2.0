@@ -122,6 +122,9 @@ function initialize() {
         stats.load();
         stats.startSaveTimer();
         if ((!debugMode && settings.version != Toxen.version) || debugMode) {
+            setTimeout(() => {
+                Toxen.emit("updated");
+            }, 1000);
             settings.version = Toxen.version;
             let declarationDir = path.resolve(debugMode ? "./src/declarations/" : "./resources/app/src/declarations/");
             let declarationTarget = Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\declarations" : process.env.HOME + "/.toxendata/data/declarations";
@@ -319,6 +322,8 @@ function initialize() {
             setTimeout(() => {
                 c.width = window.innerWidth;
                 c.height = browserWindow.isFullScreen() ? window.innerHeight : window.innerHeight - 32;
+                c.style.width = c.width + "px";
+                c.style.height = c.height + "px";
                 StoryboardObject.widthRatio = c.width / StoryboardObject.widthDefault;
                 StoryboardObject.heightRatio = c.height / StoryboardObject.heightDefault;
             }, 10);
@@ -507,7 +512,7 @@ function initializeVisualizer() {
             }
         }
         else {
-            dim = Storyboard.backgroundDim;
+            dim = Settings.current.backgroundDim;
         }
         Storyboard.analyser.getByteFrequencyData(Storyboard.dataArray);
         dim = Math.max(dim, 0);

@@ -114,6 +114,7 @@ export declare class Toxen {
     static on(event: "settingspanelclose", callback: () => void): void;
     static on(event: "inactive", callback: () => void): void;
     static on(event: "active", callback: () => void): void;
+    static on(event: "updated", callback: () => void): void;
     static on(event: "toggleshuffle", callback: (toggle: boolean) => void): void;
     static on(event: "togglerepeat", callback: (toggle: boolean) => void): void;
     /**
@@ -129,6 +130,7 @@ export declare class Toxen {
     static emit(event: "settingspanelclose"): void;
     static emit(event: "inactive"): void;
     static emit(event: "active"): void;
+    static emit(event: "updated"): void;
     static emit(event: "toggleshuffle", toggle: boolean): void;
     static emit(event: "togglerepeat", toggle: boolean): void;
     static extraStyle: HTMLLinkElement;
@@ -219,6 +221,12 @@ export declare namespace Toxen {
          * Return a regular array.
          */
         toArray(): ArrayType[];
+        /**
+         * Iterates through each element and uses the callback to return a boolean value.
+         *
+         * Returns `true` if every callback returns `true`, and returns `false` if **any** callback returns `false`.
+         */
+        equals(callbackfn: (value: ArrayType, index: number, array: TArray<ArrayType>) => boolean): boolean;
     }
     export interface InteractiveProgressBar {
         on(event: "click", listener: (value: number) => void): this;
@@ -908,12 +916,16 @@ export declare class Storyboard {
  */
 export declare class StoryboardObject {
     static objects: {
-        [name: string]: StoryboardObject;
-    };
+        name: string;
+        object: StoryboardObject;
+    }[];
+    static getObject(name: string): StoryboardObject;
+    static getObjectIndex(name: string): number;
     static widthDefault: number;
     static heightDefault: number;
     static widthRatio: number;
     static heightRatio: number;
+    static get ratio(): number;
     static drawObjects(ctx: CanvasRenderingContext2D): void;
     /**
      * Create a new Storyboard object.
@@ -960,9 +972,17 @@ export declare class StoryboardObject {
      */
     setFill(value: string, newWidth?: number, newHeight?: number): void;
     draw(ctx: CanvasRenderingContext2D): void;
+    /**
+     * Convert a string that is formatted as a percentage (The `%` can be included in the end of the string) to a pixel number value
+     */
+    static widthPercent(w: string): number;
+    /**
+     * Convert a string that is formatted as a percentage (The `%` can be included in the end of the string) to a pixel number value
+     */
+    static heightPercent(h: string): number;
 }
 /**
- * Toxen Script Manager
+ * ToxenScript Manager
  *
  * Controls and manages Toxen's storyboard scripting.
  * All event types are stored in `eventFunctions` as an object.
@@ -975,6 +995,7 @@ export declare class ToxenScriptManager {
      */
     static loadCurrentScript(): Promise<void>;
     /**
+     * Alterable variables.
      */
     static variables: {
         [$name: string]: string;
@@ -1001,6 +1022,13 @@ export declare class ToxenScriptManager {
     static eventFunctions: {
         [eventName: string]: (args: string[], event: ToxenEvent) => void;
     };
+    static _curAction: {
+        name: string;
+        startPoint: number;
+        endPoint: number;
+        events: ToxenEvent[];
+    };
+    static actions: (typeof ToxenScriptManager._curAction)[];
     /**
      * Function Types for ToxenScript
      */
@@ -1036,10 +1064,10 @@ declare class ToxenEvent {
      * @param endPoint Ending point in seconds.
      * @param fn Function to run at this interval.
      */
-    constructor(startPoint: number, endPoint: number, fn: (args: any[]) => void);
+    constructor(startPoint: number, endPoint: number, fn: (this: ToxenEvent, args: any[]) => void);
     startPoint: number;
     endPoint: number;
-    fn: Function;
+    fn: (this: ToxenEvent, args?: any[]) => void;
     hasRun: boolean;
     type: string;
     /**

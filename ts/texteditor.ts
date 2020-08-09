@@ -36,10 +36,15 @@ export class TextEditor {
         e.preventDefault();
         e.stopPropagation();
         let self = this;
-        console.log(key, word);
         
         let as = self.allSuggestions(!word.word);
-        if (as.length > 0) {
+        if (as.length == 1) {
+          self.textarea.focus();
+          self.insert(as[0], word.start, word.end);
+          self.emit("finish", as[0]);
+          self.currentSuggestion = null;
+        }
+        else if (as.length > 0) {
           let sl = new SelectList(as.map(s => {
             return {
               text: s,
