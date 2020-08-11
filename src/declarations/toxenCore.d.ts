@@ -697,6 +697,12 @@ export declare class SongManager {
          */
         clearAndPrompt(): void;
     };
+    /**
+     * The playback speed the song is playing at. Default is `1`
+     */
+    static get playbackRate(): number;
+    static set playbackRate(v: number);
+    static resetPlaybackRate(): void;
     static multiManagePlaylists(songs?: Song[]): void;
     /**
      * If `Settings.onlyVisible` is `true`, returns only the physically visible songs in the song list.

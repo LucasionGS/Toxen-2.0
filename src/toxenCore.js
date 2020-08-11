@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -34,7 +35,10 @@ const commandExists = require("command-exists");
 const rpc = require("discord-rpc");
 // Discord RPC
 var discordClient;
-const clientId = '647178364511191061';
+/**
+ * Toxen Discord Client ID
+ */
+const discordClientId = '647178364511191061';
 let discordReady = false;
 /**
  * General Toxen functionality.
@@ -65,24 +69,25 @@ class Toxen {
             Toxen.emit("settingspanelclose");
         });
         let inactivityTimer = 0;
+        let inactivityLimit = 3;
         setInterval(() => {
             // To prevent making more intervals, add 1 second to the statistics if the song is unpaused.
             if (!SongManager.player.paused)
                 Statistics.current.secondsPlayed++;
-            if (inactivityTimer < 5)
+            if (inactivityTimer < inactivityLimit)
                 inactivityTimer++;
-            else if (inactivityTimer == 5)
+            else if (inactivityTimer == inactivityLimit)
                 Toxen.emit("inactive");
         }, 1000);
         document.body.addEventListener("mousemove", e => {
-            if (inactivityTimer == 5) {
+            if (inactivityTimer == inactivityLimit) {
                 Toxen.emit("active");
             }
             if (inactivityTimer > 0)
                 inactivityTimer = 0;
         });
         document.body.addEventListener("click", e => {
-            if (inactivityTimer == 5) {
+            if (inactivityTimer == inactivityLimit) {
                 Toxen.emit("active");
             }
             if (inactivityTimer > 0)
@@ -98,7 +103,7 @@ class Toxen {
             }
         });
         Toxen.on("inactive", () => {
-            inactivityTimer = 5;
+            inactivityTimer = inactivityLimit;
             document.body.style.cursor = "none";
             let btns = document.querySelectorAll(".hideoninactive");
             for (let i = 0; i < btns.length; i++) {
@@ -272,7 +277,7 @@ class Toxen {
                 discordReady = true;
                 Toxen.updateDiscordPresence();
             });
-            return discordClient.login({ clientId }).then(a => a).catch(reason => {
+            return discordClient.login({ clientId: discordClientId }).then(a => a).catch(reason => {
                 console.error(reason);
             });
         });
@@ -2213,6 +2218,18 @@ class Song {
 }
 exports.Song = Song;
 class SongManager {
+    /**
+     * The playback speed the song is playing at. Default is `1`
+     */
+    static get playbackRate() {
+        return SongManager.player.playbackRate;
+    }
+    static set playbackRate(v) {
+        SongManager.player.playbackRate = v;
+    }
+    static resetPlaybackRate() {
+        SongManager.playbackRate = 1;
+    }
     static multiManagePlaylists(songs = SongManager.getSelectedSongs()) {
         let list = document.createElement("div");
         list.style.display = "block";
