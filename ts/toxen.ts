@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import { TextEditor } from "./texteditor";
+import { SelectBox } from "./toxenStyle";
 import * as ToxenCore from "./toxenCore";
 const {
   Toxen,
@@ -55,15 +56,15 @@ window.addEventListener("load", () => {
 });
 
 // Progress bar
-Toxen.interactiveProgressBar = new Toxen.InteractiveProgressBar("48%", 16);
+Toxen.interactiveProgressBar = new Toxen.ProgressBar("48%", 16);
 Toxen.interactiveProgressBar.element.id = "progressbar";
 Toxen.interactiveProgressBar.element.classList.add("hideoninactive");
 // Progress bar events
-Toxen.interactiveProgressBar.on("click", value => {
+Toxen.interactiveProgressBar.on("click", (_, value) => {
   SongManager.moveToTime(value);
   Toxen.updateDiscordPresence();
 })
-.on("drag", value => {
+.on("drag", (_, value) => {
   SongManager.moveToTime(value);
 })
 .on("release", () => {
@@ -89,51 +90,7 @@ async function initialize() {
     Toxen.discordConnect();
   }
 
-  //#region Custom sliders/Progress bars
-  document.body.appendChild(Toxen.interactiveProgressBar.element); // Insert the progress bar
-
-  { // Block scope
-    let audioAdjuster = new Toxen.InteractiveProgressBar(128, 12); // Create the volume bar
-    audioAdjuster.max = 100;
-    audioAdjuster.element.id = "audioadjusterbar";
-    document.getElementById("audioadjuster").appendChild(audioAdjuster.element); // Insert the volume bar
-    audioAdjuster.on("click", value => {
-      Settings.current.setVolume(value);
-      Settings.current.saveToFile();
-    })
-    .on("drag", value => {
-      Settings.current.setVolume(value);
-    })
-    .on("release", value => {
-      Settings.current.setVolume(value);
-      Settings.current.saveToFile();
-    });
-
-    let bd = new Toxen.InteractiveProgressBar("100%", 20);
-    // bd.vertical = true;
-    document.getElementById("backgrounddiminteractivebarcontainer").appendChild(bd.element);
-    bd.value = settings.backgroundDim;
-    bd.on("click", value => {
-      _chnBd(value);
-      settings.saveToFile();
-    })
-    .on("drag", value => {
-      _chnBd(value);
-    })
-    .on("release", value => {
-      _chnBd(value);
-      settings.saveToFile();
-    });
-
-    let _chnBd = function(value: number) {
-      settings.backgroundDim = value;
-      Storyboard.backgroundDim = settings.backgroundDim;
-      bd.color.red = 255 - (255 * (settings.backgroundDim / 100))
-      bd.color.green = 255 - (255 * (settings.backgroundDim / 100))
-      bd.color.blue = 255 - (255 * (settings.backgroundDim / 100))
-    }
-  }
-  //#endregion
+  addCustommInputs();
   
   if (settings.showTutorialOnStart) { showTutorial(); }
   stats.load();
@@ -469,9 +426,9 @@ async function initialize() {
       requestAnimationFrame(_debugModeLoop);
     }
     
-    setInterval(() => {
-      Tools.updateCSS();
-    }, 1000);
+    // setInterval(() => {
+    //   Tools.updateCSS();
+    // }, 1000);
 
     // Debug.refreshOnChange(["src/toxen.css", "data/settings.json"]);
   }
@@ -516,6 +473,304 @@ async function initialize() {
   SongManager.playRandom();
 }
 
+function addCustommInputs() {
+  //#region Custom sliders/Progress bars
+  document.body.appendChild(Toxen.interactiveProgressBar.element); // Insert the progress bar
+
+  { // Block scope
+    let audioAdjuster = new Toxen.ProgressBar(128, 12); // Create the volume bar
+    audioAdjuster.max = 100;
+    audioAdjuster.element.id = "audioadjusterbar";
+    document.getElementById("audioadjuster").appendChild(audioAdjuster.element); // Insert the volume bar
+    audioAdjuster.on("click", (_, value) => {
+      Settings.current.setVolume(value);
+      Settings.current.saveToFile();
+    })
+    .on("drag", (_, value) => {
+      Settings.current.setVolume(value);
+    })
+    .on("release", (_, value) => {
+      Settings.current.setVolume(value);
+      Settings.current.saveToFile();
+    });
+
+    let bd = new Toxen.ProgressBar("100%", 20);
+    // bd.vertical = true;
+    document.getElementById("backgrounddiminteractivebarcontainer").appendChild(bd.element);
+    bd.value = settings.backgroundDim;
+    bd.on("click", (_, value) => {
+      _chnBd(value);
+      settings.saveToFile();
+    })
+    .on("drag", (_, value) => {
+      _chnBd(value);
+    })
+    .on("release", (_, value) => {
+      _chnBd(value);
+      settings.saveToFile();
+    });
+
+    let _chnBd = function(value: number) {
+      settings.backgroundDim = value;
+      Storyboard.backgroundDim = settings.backgroundDim;
+      bd.color.red = 255 - (255 * (settings.backgroundDim / 100))
+      bd.color.green = 255 - (255 * (settings.backgroundDim / 100))
+      bd.color.blue = 255 - (255 * (settings.backgroundDim / 100))
+    }
+  }
+  //#endregion
+
+  // Grouping radio buttons
+  let grouping = new SelectBox.SelectBoxGroup([{
+    "text": "No grouping",
+    "value": 0,
+    click() {
+      settings.songGrouping = this.value;
+      settings.saveToFile();
+      SongManager.refreshList();
+    }
+  },
+  {
+    "text": "By Artist",
+    "value": 1,
+    click() {
+      settings.songGrouping = this.value;
+      settings.saveToFile();
+      SongManager.refreshList();
+    }
+  },
+  {
+    "text": "By Album",
+    "value": 2,
+    click() {
+      settings.songGrouping = this.value;
+      settings.saveToFile();
+      SongManager.refreshList();
+    }
+  },
+  {
+    "text": "By Source",
+    "value": 3,
+    click() {
+      settings.songGrouping = this.value;
+      settings.saveToFile();
+      SongManager.refreshList();
+    }
+  },
+  {
+    "text": "By Language",
+    "value": 4,
+    click() {
+      settings.songGrouping = this.value;
+      settings.saveToFile();
+      SongManager.refreshList();
+    }
+  },
+  {
+    "text": "By Genre",
+    "value": 5,
+    click() {
+      settings.songGrouping = this.value;
+      settings.saveToFile();
+      SongManager.refreshList();
+    }
+  },
+  {
+    "text": "By Year",
+    "value": 6,
+    click() {
+      settings.songGrouping = this.value;
+      settings.saveToFile();
+      SongManager.refreshList();
+    }
+  },
+  {
+    "text": "By Custom Group",
+    "value": 7,
+    click() {
+      settings.songGrouping = this.value;
+      settings.saveToFile();
+      SongManager.refreshList();
+    }
+  },
+  {
+    "text": "Alphabetically (Artist)",
+    "value": 8,
+    click() {
+      settings.songGrouping = this.value;
+      settings.saveToFile();
+      SongManager.refreshList();
+    }
+  },
+  {
+    "text": "Alphabetically (Title)",
+    "value": 9,
+    click() {
+      settings.songGrouping = this.value;
+      settings.saveToFile();
+      SongManager.refreshList();
+    }
+  }], "radio");
+
+  grouping.appendTo("#songgroupingcontainer");
+  grouping.boxes[settings.songGrouping].checked = true;
+
+  // Visualizer style radio buttons
+  let visualizerstyle = new SelectBox.SelectBoxGroup([
+    {
+      text: "Bottom",
+      value: 0,
+      click() {
+        settings.visualizerStyle = Storyboard.visualizerStyle = this.value;
+        settings.saveToFile();
+      }
+    },
+    {
+      text: "Top",
+      value: 1,
+      click() {
+        settings.visualizerStyle = Storyboard.visualizerStyle = this.value;
+        settings.saveToFile();
+      }
+    },
+    {
+      text: "Top and bottom (Identical)",
+      value: 2,
+      click() {
+        settings.visualizerStyle = Storyboard.visualizerStyle = this.value;
+        settings.saveToFile();
+      }
+    },
+    {
+      text: "Center",
+      value: 3,
+      click() {
+        settings.visualizerStyle = Storyboard.visualizerStyle = this.value;
+        settings.saveToFile();
+      }
+    },
+    {
+      text: "Top and bottom (Alternating)",
+      value: 4,
+      click() {
+        settings.visualizerStyle = Storyboard.visualizerStyle = this.value;
+        settings.saveToFile();
+      }
+    }
+  ], "radio");
+  
+  visualizerstyle.appendTo("#visualizerstylecontainer");
+  visualizerstyle.boxes[settings.visualizerStyle].checked = true;
+  
+  // Visualizer Toggle
+  let visualizer = new SelectBox.SelectBox("Visualizer");
+  visualizer.on("change", () => {
+    settings.visualizer = visualizer.checked;
+    settings.saveToFile();
+  });
+  visualizer.appendTo("#visualizercontainer");
+  visualizer.checked = settings.visualizer;
+  
+  // Storyboard Toggle
+  let storyboard = new SelectBox.SelectBox("Storyboard");
+  storyboard.on("change", () => {
+    settings.storyboard = storyboard.checked;
+    settings.saveToFile();
+  });
+  storyboard.appendTo("#storyboardcontainer");
+  storyboard.checked = settings.storyboard;
+  
+  // Video Toggle
+  let video = new SelectBox.SelectBox("Display Video");
+  video.on("change", () => {
+    settings.toggleVideo(video.checked);
+    settings.saveToFile();
+  });
+  video.appendTo("#videotogglecontainer");
+  video.checked = settings.video;
+ 
+  // ButtonActivationByHover Toggle
+  let buttonactivationbyhovercontainer = new SelectBox.SelectBox("Button Activation By Hover");
+  buttonactivationbyhovercontainer.on("change", () => {
+    settings.buttonActivationByHover = buttonactivationbyhovercontainer.checked;
+    settings.saveToFile();
+  });
+  buttonactivationbyhovercontainer.appendTo("#buttonactivationbyhovercontainer");
+  buttonactivationbyhovercontainer.checked = settings.buttonActivationByHover;
+  
+  // Visualizer style radio buttons
+  let thumbnails = new SelectBox.SelectBoxGroup([
+    {
+      text: "No Images",
+      value: 0,
+      click() {
+        settings.thumbnails = this.value;
+        SongManager.refreshList();
+        settings.saveToFile();
+      }
+    },
+    {
+      text: "Thumbnails",
+      value: 1,
+      click() {
+        settings.thumbnails = this.value;
+        SongManager.refreshList();
+        settings.saveToFile();
+      }
+    },
+    {
+      text: "Background Images",
+      value: 2,
+      click() {
+        settings.thumbnails = this.value;
+        SongManager.refreshList();
+        settings.saveToFile();
+      }
+    },
+    {
+      text: "Background Images (Small & Repeating)",
+      value: 3,
+      click() {
+        settings.thumbnails = this.value;
+        SongManager.refreshList();
+        settings.saveToFile();
+      }
+    },
+  ], "radio");
+
+  thumbnails.appendTo("#thumbnailscontainer");
+  thumbnails.boxes[settings.thumbnails].checked = true;
+ 
+  // discordPresence Toggle
+  let discordpresencecontainer = new SelectBox.SelectBox("Discord Presence");
+  discordpresencecontainer.appendTo("#discordpresencecontainer");
+  discordpresencecontainer.on("change", () => {
+    settings.discordPresence = discordpresencecontainer.checked;
+    settings.toggleDiscordPresence(discordpresencecontainer.checked);
+    settings.saveToFile();
+  })
+  discordpresencecontainer.checked = settings.discordPresence;
+  
+  // discordPresenceShowDetails Toggle
+  let discordpresenceshowdetailscontainer = new SelectBox.SelectBox("Discord Presence: Show Details");
+  discordpresenceshowdetailscontainer.appendTo("#discordpresenceshowdetailscontainer");
+  discordpresenceshowdetailscontainer.on("change", () => {
+    settings.discordPresenceShowDetails = discordpresenceshowdetailscontainer.checked;
+    Toxen.updateDiscordPresence();
+    settings.saveToFile();
+  })
+  discordpresenceshowdetailscontainer.checked = settings.discordPresenceShowDetails;
+  
+  // freezeVisualizer Toggle
+  let freezevisualizercontainer = new SelectBox.SelectBox("Freeze Visualizer");
+  freezevisualizercontainer.appendTo("#freezevisualizercontainer");
+  freezevisualizercontainer.on("change", () => {
+    settings.freezeVisualizer = freezevisualizercontainer.checked;
+    settings.saveToFile();
+  })
+  freezevisualizercontainer.checked = settings.freezeVisualizer;
+  
+}
 
 ipcRenderer.on("updatediscordpresence", () => {
   Toxen.updateDiscordPresence();

@@ -1,4 +1,5 @@
 /// <reference types="node" />
+import { InteractiveProgressBar } from "./toxenStyle";
 export declare let hueApi: import("node-hue-api/lib/api/Api");
 import * as Electron from "electron";
 import * as Zip from "adm-zip";
@@ -70,7 +71,7 @@ export declare class Toxen {
     static toggleFullScreen(): void;
     static toggleFullScreen(mode: boolean): void;
     static updatePlatform: "win" | "linux" | "mac";
-    static interactiveProgressBar: Toxen.InteractiveProgressBar;
+    static interactiveProgressBar: Toxen.ProgressBar;
     static inactivityState: boolean;
     /**
      * Restarts Toxen immediately.
@@ -228,72 +229,8 @@ export declare namespace Toxen {
          */
         equals(callbackfn: (value: ArrayType, index: number, array: TArray<ArrayType>) => boolean): boolean;
     }
-    export interface InteractiveProgressBar {
-        on(event: "click", listener: (value: number) => void): this;
-        on(event: "drag", listener: (value: number) => void): this;
-        on(event: "release", listener: (value: number) => void): this;
-        emit(event: "click", value: number): boolean;
-        emit(event: "drag", value: number): boolean;
-        emit(event: "release", value: number): boolean;
-    }
-    export namespace InteractiveProgressBar {
-        interface HTMLInteractiveProgressBar extends HTMLDivElement {
-            object: InteractiveProgressBar;
-            thumb: HTMLDivElement;
-        }
-    }
-    export class InteractiveProgressBar extends EventEmitter {
+    export class ProgressBar extends InteractiveProgressBar.InteractiveProgressBar {
         constructor(width?: string | number, height?: string | number);
-        /**
-         * The element that contains the slider.
-         */
-        element: InteractiveProgressBar.HTMLInteractiveProgressBar;
-        /**
-         * The thumb circle element that is used to indicate where the value is in the slider.
-         */
-        thumb: HTMLDivElement;
-        /**
-         * Whether or not the slider is currently being clicked on.
-         */
-        clicking: boolean;
-        /**
-         * RGB value of the slider track color.
-         */
-        color: {
-            red: number;
-            green: number;
-            blue: number;
-        };
-        private _vertical;
-        private _min;
-        private _max;
-        private _value;
-        /**
-         * Whether or not the slider is shown vertically.
-         */
-        get vertical(): boolean;
-        set vertical(_value: boolean);
-        /**
-         * The minimum value for the slider.
-         */
-        get min(): number;
-        set min(_value: number);
-        /**
-         * The maximum value for the slider.
-         */
-        get max(): number;
-        set max(_value: number);
-        /**
-         * The current value for the slider.
-         */
-        get value(): number;
-        set value(_value: number);
-        /**
-         * The percentage value for the slider.
-         * How many percent (in `xx[.xx]` format) the value is to reach the maximum value.
-         */
-        get percent(): number;
-        updateRange(): void;
     }
     export {};
 }

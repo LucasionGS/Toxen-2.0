@@ -9,12 +9,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
 const fs = require("fs");
 const rimraf = require("rimraf");
+const toxenStyle_1 = require("./toxenStyle");
 const node_hue_api_1 = require("node-hue-api");
 exports.hueApi = null;
 const ionMarkDown_1 = require("./ionMarkDown");
@@ -625,162 +625,26 @@ switch (process.platform) {
         ;
     }
     Toxen.TArray = TArray;
-    class InteractiveProgressBar extends events_1.EventEmitter {
-        constructor(width = "100%", height = 20) {
-            super();
-            /**
-             * Whether or not the slider is currently being clicked on.
-             */
-            this.clicking = false;
-            /**
-             * RGB value of the slider track color.
-             */
-            this.color = {
-                red: 255,
-                green: 255,
-                blue: 255
-            };
-            this._vertical = false;
-            this._min = 0;
-            this._max = 100;
-            this._value = 0;
-            this.element = document.createElement("div");
-            this.element.object = this;
-            if (typeof width == "number")
-                width = width + "px";
-            if (typeof height == "number")
-                height = height + "px";
-            this.element.style.display = "block";
-            this.element.style.margin = "auto";
-            this.element.style.width = width;
-            this.element.style.height = height;
-            this.element.style.borderStyle = "solid";
-            this.element.style.borderWidth = "1px";
-            this.element.style.boxSizing = "border-box";
-            this.element.style.borderRadius = "20px";
-            this.thumb = document.createElement("div");
-            this.thumb.style.borderRadius = "50%";
-            this.thumb.style.borderStyle = "solid";
-            this.thumb.style.borderWidth = "1px";
-            this.thumb.style.backgroundColor = "white";
-            // this.thumb.style.boxSizing = "border-box";
-            setTimeout(() => {
-                this.vertical = this.vertical;
-            }, 1000);
-            this.element.thumb = this.thumb;
-            this.element.appendChild(this.thumb);
-            window.addEventListener("mouseup", (e) => {
-                if (e.button == 0 && this.clicking == true) {
-                    this.clicking = false;
-                    this.emit("release", this.value);
-                }
-            });
-            this.element.addEventListener("click", (e) => {
-                const p = this;
-                let box = p.element.getBoundingClientRect();
-                let percent = this._vertical ? (box.bottom - e.clientY) / box.height : (e.clientX - box.left) / box.width;
-                percent = Math.min(Math.max(0, percent), 1);
-                this.value = this.max * percent;
-                this.emit("click", this.value);
-            });
-            window.addEventListener("mousemove", (e) => {
-                const p = this;
-                if (p.clicking === true) {
-                    let box = p.element.getBoundingClientRect();
-                    let percent = this._vertical ? (box.bottom - e.clientY) / box.height : (e.clientX - box.left) / box.width;
-                    percent = Math.min(Math.max(0, percent), 1);
-                    this.value = this.max * percent;
-                    this.emit("drag", this.value);
-                }
-            });
-            this.element.addEventListener("mousedown", (e) => {
-                e.preventDefault();
-                if (e.button == 0) {
-                    this.clicking = true;
-                }
-            });
-        }
-        /**
-         * Whether or not the slider is shown vertically.
-         */
-        get vertical() {
-            return this._vertical;
-        }
-        set vertical(_value) {
-            this._vertical = _value;
-            let elm = this.element.getBoundingClientRect();
-            if (!_value) {
-                // this.thumb.style.transform = `translate(-50%, 0)`;
-                // this.thumb.style.width = `calc(${elm.height}px - 1px)`;
-                // this.thumb.style.height = `calc(${elm.height}px - 1px)`;
-                this.thumb.style.transform = `translate(-50%, calc(-${elm.height}px * 0.25))`;
-                this.thumb.style.width = `calc(${elm.height}px * 1.3)`;
-                this.thumb.style.height = `calc(${elm.height}px * 1.3)`;
-            }
-            else {
-                // this.thumb.style.transform = `translate(0, -50%)`;
-                // this.thumb.style.width = `calc(${elm.width}px - 1px)`;
-                // this.thumb.style.height = `calc(${elm.width}px - 1px)`;
-                this.thumb.style.transform = `translate(calc(-${elm.width}px * 0.25), -50%)`;
-                this.thumb.style.width = `calc(${elm.width}px * 1.3)`;
-                this.thumb.style.height = `calc(${elm.width}px * 1.3)`;
-            }
-            this.updateRange();
-        }
-        /**
-         * The minimum value for the slider.
-         */
-        get min() {
-            return this._min;
-        }
-        set min(_value) {
-            this._min = _value;
-            this.updateRange();
-        }
-        /**
-         * The maximum value for the slider.
-         */
-        get max() {
-            return this._max;
-        }
-        set max(_value) {
-            this._max = _value;
-            this.updateRange();
-        }
-        /**
-         * The current value for the slider.
-         */
-        get value() {
-            return this._value;
-        }
-        set value(_value) {
-            this._value = _value;
-            this.updateRange();
-        }
-        /**
-         * The percentage value for the slider.
-         * How many percent (in `xx[.xx]` format) the value is to reach the maximum value.
-         */
-        get percent() {
-            return this.value / this.max * 100;
-        }
-        updateRange() {
-            let pos = this.element.getBoundingClientRect();
-            let percent = this.value / this.max * 100;
-            var lGradient = `linear-gradient(90deg, rgba(${this.color.red},${this.color.green},${this.color.blue},0.7) 0%, rgba(${this.color.red},${this.color.green},${this.color.blue},1) ${Math.round(percent)}%, rgba(255,255,255,0) ${Math.round(percent)}%)`;
-            if (this._vertical) {
-                this.thumb.style.marginLeft = "";
-                this.thumb.style.marginTop = (pos.height - (pos.height * (this.value / this.max))) + "px";
-                lGradient = `linear-gradient(0deg, rgba(${this.color.red},${this.color.green},${this.color.blue},0.7) 0%, rgba(${this.color.red},${this.color.green},${this.color.blue},1) ${Math.round(percent)}%, rgba(255,255,255,0) ${Math.round(percent)}%)`;
-            }
-            else {
-                this.thumb.style.marginLeft = (pos.width * (this.value / this.max)) + "px";
-                this.thumb.style.marginTop = "";
-            }
-            this.element.style.background = lGradient;
+    // export interface InteractiveProgressBar {
+    //   on(event: "click", listener: (value: number) => void): this;
+    //   on(event: "drag", listener: (value: number) => void): this;
+    //   on(event: "release", listener: (value: number) => void): this;
+    //   emit(event: "click", value: number): boolean;
+    //   emit(event: "drag", value: number): boolean;
+    //   emit(event: "release", value: number): boolean;
+    // }
+    // export namespace ProgressBar {
+    //   export interface HTMLInteractiveProgressBar extends HTMLDivElement {
+    //     object: InteractiveProgressBar,
+    //     thumb: HTMLDivElement
+    //   }
+    // }
+    class ProgressBar extends toxenStyle_1.InteractiveProgressBar.InteractiveProgressBar {
+        constructor(width, height) {
+            super(width, height);
         }
     }
-    Toxen.InteractiveProgressBar = InteractiveProgressBar;
+    Toxen.ProgressBar = ProgressBar;
 })(Toxen = exports.Toxen || (exports.Toxen = {}));
 class Settings {
     constructor(doNotReplaceCurrent = false) {
@@ -7116,16 +6980,9 @@ export var toxenModule = (Core: typeof import("../../declarations/toxenCore")) =
         let panel = document.getElementById("moduleActivation");
         panel.innerHTML = "";
         modules.forEach(m => {
-            let randName = `module_${m.moduleName}_` + Tools.generateRandomString(3);
             let div = document.createElement("div");
-            let input = document.createElement("input");
-            input.type = "checkbox";
-            let label = document.createElement("label");
-            label.innerText = (m.module.name ? m.module.name : m.moduleName);
-            div.appendChild(input);
-            input.id = randName;
-            div.appendChild(label);
-            label.setAttribute("for", randName);
+            let input = new toxenStyle_1.SelectBox.SelectBox((m.module.name ? m.module.name : m.moduleName));
+            input.appendTo(div);
             if (m.module.description) {
                 let sup = document.createElement("sup");
                 sup.innerText = m.module.description;
@@ -7133,7 +6990,7 @@ export var toxenModule = (Core: typeof import("../../declarations/toxenCore")) =
             }
             div.appendChild(document.createElement("br"));
             panel.appendChild(div);
-            input.addEventListener("click", () => {
+            input.on("click", () => {
                 m.activation(input.checked);
                 Effect.flashElement(document.getElementById("restartToxenButton"), "green", 500);
             });

@@ -43,21 +43,23 @@ Features and changes that has already been made to Toxen.
 ## Current WIP Update
 General
 - Added a drag feature to popup prompts in the very top of the prompt. Click and drag the popup around anywhere on the screen.
+- Added custom checkboxes and radio buttons (single select buttons) for future customizability.
 
 ToxenScript
 - Added new storyboard functions such as `VisualizerColor_transition` and `VisualizerIntensity_transition`.
 - When sizing an object using `object_size` or `object_size_transition`, you can now write values like `100%` to get 100% of either the width or height of the screen, depending on which parameter it's given to.
-- Added custom `actions`! You can now define a custom sequence of functions to execute at any given time. `Actions` repeat themselves if the timing point has a larger gap than the first and last timing point inside the `Action`.
+- Added custom `actions`! You can now define a custom sequence of timing functions to execute at any given time. `Actions` repeat themselves if the timing point has a larger gap than the first and last timing point inside the `Action`. Check example and exceptions below.
+  - Exceptions: `BPMPulse` and using another `Action` inside of an `Action` definition, will not work as expected.
 ```js
 :ActionStart("rainbow") // This tells Toxen that this is the beginning of a new Action. It'll store all timing functions between here and the next :ActionEnd()
   // Times inside actions will be relative to the execution time instead of the song.
   // This sequence will in 6 seconds cycle through a standard color wheel and transition between them on the visualizer.
-  [0] visualizercolor_transition("blue", "aqua")
-  [1] visualizercolor_transition("aqua", "lime")
-  [2] visualizercolor_transition("lime", "yellow")
-  [3] visualizercolor_transition("yellow", "red")
-  [4] visualizercolor_transition("red", "fuchsia")
-  [5 + 1] visualizercolor_transition("fuchsia", "blue")
+  [0] visualizercolor_transition("blue", "aqua") // Fades from `blue` to `aqua`
+  [1] visualizercolor_transition("aqua", "lime") // Fades from `aqua` to `lime`
+  [2] visualizercolor_transition("lime", "yellow") // Fades from ...
+  [3] visualizercolor_transition("yellow", "red") // Fades from ...
+  [4] visualizercolor_transition("red", "fuchsia") // Fades from ...
+  [5 + 1] visualizercolor_transition("fuchsia", "blue") // Fades from ...
 :ActionEnd() // This tells Toxen that this is the ending of the current Action.
 
 // Usage
