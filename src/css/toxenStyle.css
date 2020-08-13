@@ -46,15 +46,22 @@ selectbox:hover > div.checkbox {
 }
 
 selectbox[disabled]:hover > div.checkbox {
-  box-shadow: 0px 0px 0px currentColor;
+  box-shadow: 0px 0px 0px currentColor; 
 }
 
 selectbox > div.checkbox {
-  background-color: currentColor;
+  background-color: rgba(0, 0, 0, 0);
+  filter: brightness(0.5);
 }
 
 selectbox > div.checkbox[checked] {
-  background-color: rgba(0, 0, 0, 0);
+  background-color: currentColor;
+  box-shadow: 0px 0px 5px currentColor; 
+  filter: brightness(1);
+}
+
+selectbox > div.checkbox[checked]:hover {
+  box-shadow: 0px 0px 10px currentColor; 
 }
 
 selectbox > p.textbox {

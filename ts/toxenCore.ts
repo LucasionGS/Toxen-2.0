@@ -1175,7 +1175,7 @@ export class Settings {
     Settings.current.lightThemeBase = base;
     // browserWindow.setIcon(Settings.current.lightThemeBase ? "./iconlight.ico" : "./icon.ico");
     if (Settings.current.lightThemeBase) {
-      Toxen.setStyleSource("./light.theme.css");
+      Toxen.setStyleSource("./css/light.theme.css");
     }
     else {
       Toxen.setStyleSource("");
@@ -2395,15 +2395,16 @@ export class Song {
       meta.common.picture.forEach((p, i) => {
         fs.writeFile(this.getFullPath("path") + `/picture_${i}.` + (typeof p.format ? p.format.split("/").pop() : "jpg"), p.data, err => {
           if (err) console.error(err);
-          else {
-            console.log("Picture added.");
-          }
         });
       });
     }
 
     // this.details.tags = [...new Set(_tags)];
-    this.details.tags = new Toxen.TArray(_tags);
+    let t = new Toxen.TArray(_tags);
+    this.details.tags = t.cleanArray([
+      "duplicates",
+      "emptyStrings"
+    ]).toArray();
     this.saveDetails();
   }
 }

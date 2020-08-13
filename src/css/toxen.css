@@ -789,7 +789,7 @@ div.selectlist select {
 
 /* SVG */
 .svg_folderopen_white:before {
-  content: url(./svg/folderopen_white.svg);
+  content: url(../svg/folderopen_white.svg);
   width: 20px;
   float: left;
   margin-right: 5px;
@@ -797,7 +797,7 @@ div.selectlist select {
 }
 
 .svg_download_white:before {
-  content: url(./svg/download_white.svg);
+  content: url(../svg/download_white.svg);
   width: 20px;
   float: left;
   margin-right: 5px;
@@ -805,7 +805,7 @@ div.selectlist select {
 }
 
 .svg_reload_white:before {
-  content: url(./svg/reload_white.svg);
+  content: url(../svg/reload_white.svg);
   width: 20px;
   float: left;
   margin-right: 5px;

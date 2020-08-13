@@ -4,6 +4,7 @@
  * @author Lucasion
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.InteractiveProgressBar = exports.SelectBox = exports.EventEmitter = void 0;
 /**
  *
  */
@@ -91,6 +92,16 @@ var SelectBox;
                     let sb = new SelectBox(box.text, box.value, box.defaultChecked, type);
                     if (typeof box.click == "function")
                         sb.on("click", box.click);
+                    if (typeof box.subText == "string") {
+                        let sup = document.createElement("sup");
+                        sup.innerHTML = box.subText;
+                        sb.main.appendChild((function () {
+                            let div = document.createElement("div");
+                            div.style.float = "left";
+                            div.appendChild(sup);
+                            return div;
+                        })());
+                    }
                     sb.parent = this;
                     // Must be last
                     if (typeof box.modify == "function")

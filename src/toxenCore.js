@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -1155,7 +1156,7 @@ class Settings {
         Settings.current.lightThemeBase = base;
         // browserWindow.setIcon(Settings.current.lightThemeBase ? "./iconlight.ico" : "./icon.ico");
         if (Settings.current.lightThemeBase) {
-            Toxen.setStyleSource("./light.theme.css");
+            Toxen.setStyleSource("./css/light.theme.css");
         }
         else {
             Toxen.setStyleSource("");
@@ -2068,14 +2069,15 @@ class Song {
                     fs.writeFile(this.getFullPath("path") + `/picture_${i}.` + (typeof p.format ? p.format.split("/").pop() : "jpg"), p.data, err => {
                         if (err)
                             console.error(err);
-                        else {
-                            console.log("Picture added.");
-                        }
                     });
                 });
             }
             // this.details.tags = [...new Set(_tags)];
-            this.details.tags = new Toxen.TArray(_tags);
+            let t = new Toxen.TArray(_tags);
+            this.details.tags = t.cleanArray([
+                "duplicates",
+                "emptyStrings"
+            ]).toArray();
             this.saveDetails();
         });
     }

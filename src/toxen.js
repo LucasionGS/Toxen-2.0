@@ -652,7 +652,9 @@ function addCustommInputs() {
                 settings.thumbnails = this.value;
                 SongManager.refreshList();
                 settings.saveToFile();
-            }
+            },
+            subText: "Display background image next to the song name in the song list.<br>"
+                + "If you're experiencing low performance, try to disable this."
         },
         {
             text: "Background Images",
@@ -661,7 +663,9 @@ function addCustommInputs() {
                 settings.thumbnails = this.value;
                 SongManager.refreshList();
                 settings.saveToFile();
-            }
+            },
+            subText: "Display background image as the background behind the song name in the song list.<br>"
+                + "If you're experiencing low performance, try to disable this."
         },
         {
             text: "Background Images (Small & Repeating)",
@@ -670,7 +674,10 @@ function addCustommInputs() {
                 settings.thumbnails = this.value;
                 SongManager.refreshList();
                 settings.saveToFile();
-            }
+            },
+            subText: "Display background image as the background behind the song name in the song list.<br>"
+                + "This however, makes the images small and repeat across the song item. Use this if you want to see the full images.<br>"
+                + "If you're experiencing low performance, try to disable this."
         },
     ], "radio");
     thumbnails.appendTo("#thumbnailscontainer");

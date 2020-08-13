@@ -55,6 +55,7 @@ export declare namespace SelectBox {
              * This is executed after all of the default settings have been applied.
              */
             modify?: (this: SelectBox<ValueType>) => void;
+            subText?: string;
         }
     }
     interface SelectBox<ValueType> extends EventEmitter.EventEmitter {

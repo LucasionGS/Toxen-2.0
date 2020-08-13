@@ -98,7 +98,8 @@ export namespace SelectBox {
        * 
        * This is executed after all of the default settings have been applied.
        */
-      modify?: (this: SelectBox<ValueType>) => void
+      modify?: (this: SelectBox<ValueType>) => void,
+      subText?: string
     }
   }
   
@@ -143,6 +144,16 @@ export namespace SelectBox {
         else {
           let sb = new SelectBox<ValueType>(box.text, box.value, box.defaultChecked, type);
           if (typeof box.click == "function") sb.on("click", box.click);
+          if (typeof box.subText == "string") {
+            let sup = document.createElement("sup");
+            sup.innerHTML = box.subText;
+            sb.main.appendChild((function() {
+              let div = document.createElement("div");
+              div.style.float = "left";
+              div.appendChild(sup);
+              return div;
+            })());
+          }
           sb.parent = this;
   
           // Must be last
