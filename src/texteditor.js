@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TextEditor = void 0;
 const toxenCore_1 = require("./toxenCore");
 class TextEditor {
     /**

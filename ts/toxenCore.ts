@@ -7753,7 +7753,7 @@ export var toxenModule = (Core: typeof import("../../declarations/toxenCore")) =
 
       panel.appendChild(div);
 
-      input.on("click", () => {
+      input.on("change", () => {
         m.activation(input.checked);
         Effect.flashElement(document.getElementById("restartToxenButton"), "green", 500);
       });

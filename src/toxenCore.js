@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -6992,7 +6991,7 @@ export var toxenModule = (Core: typeof import("../../declarations/toxenCore")) =
             }
             div.appendChild(document.createElement("br"));
             panel.appendChild(div);
-            input.on("click", () => {
+            input.on("change", () => {
                 m.activation(input.checked);
                 Effect.flashElement(document.getElementById("restartToxenButton"), "green", 500);
             });
