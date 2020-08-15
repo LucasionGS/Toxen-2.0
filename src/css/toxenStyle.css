@@ -77,3 +77,37 @@ selectbox > input.counterbox {
   float: left;
   vertical-align: middle;
 }
+
+/* Checkmark for checkboxes */
+selectbox > div.checkbox[type="checkbox"][checked] {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+}
+
+selectbox > div.checkbox[type="checkbox"][checked]::before {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 50%;
+  width: 3px;
+  background-color: currentColor;
+  filter: invert();
+  content: "";
+  transform: translateX(4px) rotate(-45deg);
+  transform-origin: left bottom;
+}
+
+selectbox > div.checkbox[type="checkbox"][checked]::after {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background-color: currentColor;
+  filter: invert();
+  content: "";
+  transform: translateX(4px) rotate(-45deg);
+  transform-origin: left bottom;
+}

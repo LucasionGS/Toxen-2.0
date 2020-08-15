@@ -444,6 +444,7 @@ function addCustommInputs() {
         // bd.vertical = true;
         document.getElementById("backgrounddiminteractivebarcontainer").appendChild(bd.element);
         bd.value = settings.backgroundDim;
+        _chnBd(settings.backgroundDim);
         bd.on("click", (_, value) => {
             _chnBd(value);
             settings.saveToFile();
@@ -455,13 +456,13 @@ function addCustommInputs() {
             _chnBd(value);
             settings.saveToFile();
         });
-        let _chnBd = function (value) {
+        function _chnBd(value) {
             settings.backgroundDim = value;
             Storyboard.backgroundDim = settings.backgroundDim;
             bd.color.red = 255 - (255 * (settings.backgroundDim / 100));
             bd.color.green = 255 - (255 * (settings.backgroundDim / 100));
             bd.color.blue = 255 - (255 * (settings.backgroundDim / 100));
-        };
+        }
     }
     //#endregion
     // Grouping radio buttons

@@ -498,6 +498,7 @@ function addCustommInputs() {
     // bd.vertical = true;
     document.getElementById("backgrounddiminteractivebarcontainer").appendChild(bd.element);
     bd.value = settings.backgroundDim;
+    _chnBd(settings.backgroundDim);
     bd.on("click", (_, value) => {
       _chnBd(value);
       settings.saveToFile();
@@ -510,7 +511,7 @@ function addCustommInputs() {
       settings.saveToFile();
     });
 
-    let _chnBd = function(value: number) {
+    function _chnBd (value: number) {
       settings.backgroundDim = value;
       Storyboard.backgroundDim = settings.backgroundDim;
       bd.color.red = 255 - (255 * (settings.backgroundDim / 100))
