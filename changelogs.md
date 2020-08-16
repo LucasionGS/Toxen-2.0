@@ -44,6 +44,10 @@ Features and changes that has already been made to Toxen.
 General
 - Added a drag feature to popup prompts in the very top of the prompt. Click and drag the popup around anywhere on the screen.
 - Added custom checkboxes and radio buttons (single select buttons) for future customizability.
+- Added a small prompt when Toxen has updated to a newer version.
+- Added Multi-Song Folder list Quick Select! Whenever you select a song folder in the settings panel, it gets added to a quickselect list that you can choose between.
+- Removed Light theme. (This will be replaced later with a custom theming system later)
+- Removed swapping the panels' positions.
 
 ToxenScript
 - Added new storyboard functions such as `VisualizerColor_transition` and `VisualizerIntensity_transition`.

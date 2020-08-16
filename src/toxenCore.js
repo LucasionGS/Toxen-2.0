@@ -33,6 +33,7 @@ const axios_1 = require("axios");
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 const rpc = require("discord-rpc");
+const child_process_1 = require("child_process");
 // Discord RPC
 var discordClient;
 /**
@@ -50,6 +51,8 @@ class Toxen {
             Update.check(Toxen.version);
         }, 1800000);
         Toxen.on("updated", () => {
+            if (!app.isPackaged)
+                new Prompt("Toxen updated", `You're now running version ${Toxen.version}`).setInteractive(false).close(2000);
         });
         let songmenusidebar = document.querySelector("#songmenusidebar");
         let settingsmenusidebar = document.querySelector("#settingsmenusidebar");
@@ -595,7 +598,7 @@ switch (process.platform) {
                 for (let i = 0; i < this.length; i++) {
                     const value = this[i];
                     if (item === value)
-                        values.push(...this.splice(--i, 1));
+                        values.push(...this.splice(i--, 1));
                 }
             }
             return values;
@@ -1051,20 +1054,44 @@ class Settings {
                     return;
                 }
                 self.songFolder = path.resolve(value.filePaths[0]);
-                document.querySelector("input#songfolderValue").value = self.songFolder;
-                if (fs.existsSync(self.songFolder + "/db.json")) {
-                    yield SongManager.loadFromFile();
-                }
-                else {
-                    SongManager.scanDirectory();
-                }
-                self.saveToFile();
-                SongManager.history.clear();
-                SongManager.search();
-                setTimeout(() => {
-                    SongManager.playRandom();
-                }, 10);
+                Settings.current.applySongFolderListToSelect();
+                Settings.current.setSongFolder();
+                this.applySongFolderListToSelect();
+                this.setSongFolder();
             }));
+        });
+    }
+    applySongFolderListToSelect() {
+        let fList = new Toxen.TArray(this.songFolderList);
+        fList.remove(...fList.filter(s => !fs.existsSync(s)));
+        fList.remove(this.songFolder);
+        fList.unshift(this.songFolder);
+        let list = document.querySelector("select#songfolderValue");
+        list.innerHTML = "";
+        fList.forEach(v => {
+            let opt = document.createElement("option");
+            // opt.text = v.split("/").pop().split("\\").pop();
+            opt.text = v;
+            opt.value = v;
+            list.appendChild(opt);
+        });
+        this.songFolderList = fList.toArray();
+        list.value = this.songFolder;
+    }
+    setSongFolder() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (fs.existsSync(this.songFolder + "/db.json")) {
+                yield SongManager.loadFromFile();
+            }
+            else {
+                SongManager.scanDirectory();
+            }
+            this.saveToFile();
+            SongManager.history.clear();
+            SongManager.search();
+            setTimeout(() => {
+                SongManager.playRandom();
+            }, 10);
         });
     }
     toggleVideo(force) {
@@ -1217,12 +1244,13 @@ class Song {
             genre: null,
             tags: [],
             playlists: [],
+            visualiserColor: null,
             songLength: 0,
             customGroup: null,
         };
         this.element = null;
         /**
-         * A randomly generated hash to cache files correctly.
+         * A randomly generated hash to reload cached files.
          */
         this.hash = "";
         let self = this;
@@ -6655,28 +6683,37 @@ class Update {
             }
             btn.innerText = "Checking for updates...";
             let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${Toxen.updatePlatform}&get=version`;
-            fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
-                if (+latest > currentVersion) {
-                    btn.innerText = "Download Latest Update";
-                    btn.onclick = function () {
-                        Update.downloadLatest();
-                        btn.disabled = true;
-                        btn.innerText = "Downloading latest...";
-                        btn.classList.add("color-blue");
-                    };
-                    new ElectronNotification({
-                        "title": "New Toxen Update is available",
-                        "body": "Go to settings and press Download Latest Update to update."
-                    }).show();
-                }
-                else {
-                    btn.classList.remove("color-blue");
-                    btn.innerText = "Check for updates";
-                    btn.onclick = function () {
-                        Update.check(currentVersion);
-                    };
-                }
-            });
+            if (true || Toxen.updatePlatform == "linux") { // remove `true ||` when using
+                // Manual updator
+                fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
+                    if (+latest > currentVersion) {
+                        btn.innerText = "Download Latest Update";
+                        btn.onclick = function () {
+                            Update.downloadLatest();
+                            btn.disabled = true;
+                            btn.innerText = "Downloading latest...";
+                            btn.classList.add("color-blue");
+                        };
+                        new ElectronNotification({
+                            "title": "New Toxen Update is available",
+                            "body": "Go to settings and press Download Latest Update to update."
+                        }).show();
+                    }
+                    else {
+                        btn.classList.remove("color-blue");
+                        btn.innerText = "Check for updates";
+                        btn.onclick = function () {
+                            Update.check(currentVersion);
+                        };
+                    }
+                });
+            }
+            else {
+                // Squirrel updator
+                Electron.autoUpdater.setFeedURL({
+                    "url": "http://toxen.net/download/files/"
+                });
+            }
         });
     }
     static downloadLatest() {
@@ -6738,6 +6775,18 @@ class Update {
             dl.onError = function (err) {
                 console.error(err);
             };
+        });
+    }
+    static runUpdateScript(path) {
+        let cp = child_process_1.fork(path);
+        cp.on("message", (msg) => {
+            console.log(msg);
+        });
+        cp.on("close", (code) => {
+            console.log("Closed with", code);
+        });
+        cp.on("error", (err) => {
+            console.log("Closed with", err);
         });
     }
 }

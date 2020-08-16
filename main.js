@@ -1,12 +1,80 @@
-const { app, BrowserWindow, Menu, Tray, shell } = require('electron');
+// SQUIRREL UPDATE
+if (require('electron-squirrel-startup')) return;
+
+const { app: electronApp, BrowserWindow, Menu, Tray, shell } = require('electron');
 const { accessSync } = require('fs');
 const { dirname } = require('path');
 
+// this should be placed at top of main.js to handle setup events quickly
+if (handleSquirrelEvent()) {
+  // squirrel event handled and app will exit in 1000ms, so don't do anything else
+  return;
+}
 
-// Auto updating (Reenable when it works :/)
-// require("update-electron-app")({
-//   "repo": "LucasionGS/Toxen-2.0",
-// });
+function handleSquirrelEvent() {
+  if (process.argv.length === 1) {
+    return false;
+  }
+
+  const ChildProcess = require('child_process');
+  const path = require('path');
+
+  const appFolder = path.resolve(process.execPath, '..');
+  const rootAppFolder = path.resolve(appFolder, '..');
+  const updateDotExe = path.resolve(path.join(rootAppFolder, 'Update.exe'));
+  const exeName = path.basename(process.execPath);
+
+  const spawn = function(command, args) {
+    let spawnedProcess, error;
+
+    try {
+      spawnedProcess = ChildProcess.spawn(command, args, {detached: true});
+    } catch (error) {}
+
+    return spawnedProcess;
+  };
+
+  const spawnUpdate = function(args) {
+    return spawn(updateDotExe, args);
+  };
+
+  const squirrelEvent = process.argv[1];
+  switch (squirrelEvent) {
+    case '--squirrel-install':
+    case '--squirrel-updated':
+      // Optionally do things such as:
+      // - Add your .exe to the PATH
+      // - Write to the registry for things like file associations and
+      //   explorer context menus
+
+      // Install desktop and start menu shortcuts
+      spawnUpdate(['--createShortcut', exeName]);
+
+      setTimeout(nodeApp.quit, 1000);
+      return true;
+
+    case '--squirrel-uninstall':
+      // Undo anything you did in the --squirrel-install and
+      // --squirrel-updated handlers
+
+      // Remove desktop and start menu shortcuts
+      spawnUpdate(['--removeShortcut', exeName]);
+
+      setTimeout(nodeApp.quit, 1000);
+      return true;
+
+    case '--squirrel-obsolete':
+      // This is called on the outgoing version of your app before
+      // we update to the new version - it's the opposite of
+      // --squirrel-updated
+
+      nodeApp.quit();
+      return true;
+  }
+};
+
+
+// ELECTRON MAIN APP
 
 // const process = require('process');
 // const fs = require('fs');
@@ -18,7 +86,7 @@ const winHeight = 720;
  * @type {Electron.BrowserWindow}
  */
 let win;
-app.allowRendererProcessReuse = true; // Electron mad if i don't :(
+electronApp.allowRendererProcessReuse = true; // Electron mad if i don't :(
 
 try {
   let cwd = process.cwd();
@@ -31,7 +99,7 @@ try {
   let dir = process.argv.find(a => a.startsWith("--app-path="));
   if (typeof dir == "string") {
     dir = dir.substring("--app-path=".length);
-    if (!app.isPackaged && dir.endsWith("resources\\app")) dir = dir.substring(0, dir.length - "resources\\app".length),
+    if (!electronApp.isPackaged && dir.endsWith("resources\\app")) dir = dir.substring(0, dir.length - "resources\\app".length),
     process.chdir(dir);
   }
   else {
@@ -107,7 +175,7 @@ function createWindow () {
           label: "Quit",
           type: "radio",
           click(){
-            app.quit();
+            electronApp.quit();
           }
         }
       ]);
@@ -124,18 +192,18 @@ function createWindow () {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', createWindow);
+electronApp.on('ready', createWindow);
 
 // Quit when all windows are closed.
-app.on('window-all-closed', () => {
+electronApp.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
-    app.quit();
+    electronApp.quit();
   }
 });
 
-app.on('activate', () => {
+electronApp.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (win === null) {
@@ -145,3 +213,4 @@ app.on('activate', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+

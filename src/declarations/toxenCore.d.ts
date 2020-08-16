@@ -199,9 +199,14 @@ export declare namespace Toxen {
         cleanArray(itemsToClean: (CleanOptions[])): TArray<ArrayType>;
         /**
          * Remove the first instance of an item from the array and returns the removed elements.
+         * @param item Item to find and remove
+         */
+        remove(item: ArrayType): TArray<ArrayType>;
+        /**
+         * Remove the first instance of an item from the array and returns the removed elements.
          * @param items Items to find and remove
          */
-        remove(item: ArrayType, ...items: ArrayType[]): TArray<ArrayType>;
+        remove(...items: ArrayType[]): TArray<ArrayType>;
         /**
          * Remove all instances of an item from the array and returns them.
          * @param items Items to find and remove
@@ -257,6 +262,8 @@ export declare class Settings {
     selectPlaylist(playlist: string): void;
     addPlaylist(): void;
     selectSongFolder(): Promise<void>;
+    applySongFolderListToSelect(): void;
+    setSongFolder(): Promise<void>;
     toggleVideo(force: boolean): boolean;
     toggleSongPanelLock(force?: boolean): boolean;
     /**
@@ -550,6 +557,14 @@ export declare class Song {
          */
         playlists: string[];
         /**
+         * Default Visualizer color for this specific song.
+         */
+        visualiserColor: {
+            red: number;
+            green: number;
+            blue: number;
+        };
+        /**
          * The length of the song in seconds.
          * **Note:** This value is automatically updated if it doesn't match the song's duration.
          * @readonly
@@ -563,7 +578,7 @@ export declare class Song {
      */
     onplay(song: Song): void;
     /**
-     * A randomly generated hash to cache files correctly.
+     * A randomly generated hash to reload cached files.
      */
     hash: string;
     /**
@@ -1175,6 +1190,7 @@ export declare class Update {
      */
     static check(currentVersion: number): Promise<void>;
     static downloadLatest(): Promise<void>;
+    static runUpdateScript(path: string): void;
 }
 export declare class ScriptEditor {
     static open(song: Song): Electron.BrowserWindow;

@@ -28,7 +28,7 @@ import rimraf = require("rimraf");
 import * as __toxenVersion from "./version.json"
 Toxen.version = __toxenVersion;
 const { remote, ipcRenderer, shell } = require("electron");
-let debugMode = !remote.app.isPackaged;
+let devMode = !remote.app.isPackaged;
 let browserWindow = remote.getCurrentWindow();
 
 /**
@@ -77,11 +77,11 @@ async function initialize() {
   if (settings.songFolder == null) {
     switch(process.platform) {
       case "win32":
-        settings.songFolder = process.env.HOMEDRIVE + process.env.HOMEPATH + "/Music/ToxenMusic";
+        settings.songFolder = path.resolve(process.env.HOMEDRIVE + process.env.HOMEPATH + "/Music/ToxenMusic");
         break;
       case "linux":
       case "darwin":
-        settings.songFolder = process.env.HOME + "/Music/ToxenMusic";
+        settings.songFolder = path.resolve(process.env.HOME + "/Music/ToxenMusic");
         break;
     }
   }
@@ -90,18 +90,26 @@ async function initialize() {
     Toxen.discordConnect();
   }
 
+  settings.applySongFolderListToSelect();
+  document.querySelector<HTMLSelectElement>("select#songfolderValue").addEventListener("input", () => {
+    settings.songFolder = document.querySelector<HTMLSelectElement>("select#songfolderValue").value;
+    settings.applySongFolderListToSelect();
+    settings.setSongFolder();
+    console.log("Changed");
+  });
+
   addCustommInputs();
   
   if (settings.showTutorialOnStart) { showTutorial(); }
   stats.load();
   stats.startSaveTimer();
 
-  if ((!debugMode && settings.version != Toxen.version) || debugMode) {
+  if ((!devMode && settings.version != Toxen.version) || devMode) {
     setTimeout(() => {
       Toxen.emit("updated");
     }, 1000);
     settings.version = Toxen.version;
-    let declarationDir = path.resolve(debugMode ? "./src/declarations/" : "./resources/app/src/declarations/");
+    let declarationDir = path.resolve(devMode ? "./src/declarations/" : "./resources/app/src/declarations/");
     let declarationTarget = Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\declarations" : process.env.HOME + "/.toxendata/data/declarations";
     if (fs.existsSync(declarationTarget)) rimraf.sync(declarationTarget);
     copyFilesRecursively(declarationDir, declarationTarget);
@@ -419,7 +427,7 @@ async function initialize() {
   }, false);
   
   // Enable debug mode
-  if (debugMode) {
+  if (devMode) {
     // _debugModeLoop();
     function _debugModeLoop() {
       // Insert logic to go some shit here I suppose

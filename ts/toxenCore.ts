@@ -23,6 +23,7 @@ import axios from "axios";
 const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 import * as rpc from "discord-rpc";
+import { fork } from "child_process";
 // Discord RPC
 var discordClient: rpc.Client;
 /**
@@ -62,7 +63,7 @@ export class Toxen {
     }, 1800000);
 
     Toxen.on("updated", () => {
-
+      if (!app.isPackaged) new Prompt("Toxen updated", `You're now running version ${Toxen.version}`).setInteractive(false).close(2000);
     });
     
     let songmenusidebar: HTMLDivElement = document.querySelector("#songmenusidebar");
@@ -714,16 +715,21 @@ export namespace Toxen {
 
     /**
      * Remove the first instance of an item from the array and returns the removed elements.
+     * @param item Item to find and remove
+     */
+    remove(item: ArrayType): TArray<ArrayType>;
+    /**
+     * Remove the first instance of an item from the array and returns the removed elements.
      * @param items Items to find and remove
      */
-    remove(item: ArrayType, ...items: ArrayType[]): TArray<ArrayType>;
+    remove(...items: ArrayType[]): TArray<ArrayType>;
     remove(...items: ArrayType[]) {
       let values = new TArray<ArrayType>();
       for (let i2 = 0; i2 < items.length; i2++) {
         const item = items[i2];
         for (let i = 0; i < this.length; i++) {
           const value = this[i];
-          if (item === value) values.push(...this.splice(--i, 1));
+          if (item === value) values.push(...this.splice(i--, 1));
         }
       }
       return values;
@@ -1059,20 +1065,46 @@ export class Settings {
         return;
       }
       self.songFolder = path.resolve(value.filePaths[0]);
-      document.querySelector<HTMLInputElement>("input#songfolderValue").value = self.songFolder;
-      if (fs.existsSync(self.songFolder + "/db.json")) {
-        await SongManager.loadFromFile();
-      }
-      else {
-        SongManager.scanDirectory();
-      }
-      self.saveToFile();
-      SongManager.history.clear();
-      SongManager.search();
-      setTimeout(() => {
-        SongManager.playRandom();
-      }, 10);
+      Settings.current.applySongFolderListToSelect();
+      Settings.current.setSongFolder();
+      this.applySongFolderListToSelect();
+      this.setSongFolder();
     });
+
+  }
+
+  applySongFolderListToSelect() {
+    let fList = new Toxen.TArray(this.songFolderList);
+    fList.remove(...fList.filter(s => !fs.existsSync(s)));
+    fList.remove(this.songFolder);
+    fList.unshift(this.songFolder);
+
+    let list = document.querySelector<HTMLInputElement>("select#songfolderValue");
+    list.innerHTML = "";
+    fList.forEach(v => {
+      let opt = document.createElement("option");
+      // opt.text = v.split("/").pop().split("\\").pop();
+      opt.text = v;
+      opt.value = v;
+      list.appendChild(opt);
+    });
+    this.songFolderList = fList.toArray();
+    list.value = this.songFolder;
+  }
+
+  async setSongFolder() {
+    if (fs.existsSync(this.songFolder + "/db.json")) {
+      await SongManager.loadFromFile();
+    }
+    else {
+      SongManager.scanDirectory();
+    }
+    this.saveToFile();
+    SongManager.history.clear();
+    SongManager.search();
+    setTimeout(() => {
+      SongManager.playRandom();
+    }, 10);
   }
 
   toggleVideo(force: boolean) {
@@ -1793,6 +1825,15 @@ export class Song {
      */
     playlists: string[],
 
+    /**
+     * Default Visualizer color for this specific song.
+     */
+    visualiserColor: {
+      red: number,
+      green: number,
+      blue: number
+    }
+
     // Unmodifiable
     /**
      * The length of the song in seconds.  
@@ -1811,6 +1852,7 @@ export class Song {
     genre: null,
     tags: [],
     playlists: [],
+    visualiserColor: null,
     songLength: 0,
     customGroup: null,
   };
@@ -1828,7 +1870,7 @@ export class Song {
   onplay(song: Song) { }
 
   /**
-   * A randomly generated hash to cache files correctly.
+   * A randomly generated hash to reload cached files.
    */
   hash = "";
 
@@ -7346,28 +7388,37 @@ export class Update {
     }
     btn.innerText = "Checking for updates...";
     let toxenGetLatestURL = `https://toxen.net/download/latest.php?platform=${Toxen.updatePlatform}&get=version`;
-    fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
-      if (+latest > currentVersion) {
-        btn.innerText = "Download Latest Update";
-        btn.onclick = function() {
-          Update.downloadLatest();
-          btn.disabled = true;
-          btn.innerText = "Downloading latest...";
-          btn.classList.add("color-blue");
+    if (true || Toxen.updatePlatform == "linux") { // remove `true ||` when using
+      // Manual updator
+      fetch(toxenGetLatestURL).then(res => res.text()).then(latest => {
+        if (+latest > currentVersion) {
+          btn.innerText = "Download Latest Update";
+          btn.onclick = function() {
+            Update.downloadLatest();
+            btn.disabled = true;
+            btn.innerText = "Downloading latest...";
+            btn.classList.add("color-blue");
+          }
+          new ElectronNotification({
+            "title": "New Toxen Update is available",
+            "body": "Go to settings and press Download Latest Update to update."
+          }).show();
         }
-        new ElectronNotification({
-          "title": "New Toxen Update is available",
-          "body": "Go to settings and press Download Latest Update to update."
-        }).show();
-      }
-      else {
-        btn.classList.remove("color-blue");
-        btn.innerText = "Check for updates";
-        btn.onclick = function() {
-          Update.check(currentVersion);
+        else {
+          btn.classList.remove("color-blue");
+          btn.innerText = "Check for updates";
+          btn.onclick = function() {
+            Update.check(currentVersion);
+          }
         }
-      }
-    });
+      });
+    }
+    else {
+      // Squirrel updator
+      Electron.autoUpdater.setFeedURL({
+        "url": "http://toxen.net/download/files/"
+      });
+    }
   }
   
   static async downloadLatest() {
@@ -7430,6 +7481,19 @@ export class Update {
     dl.onError = function(err) {
       console.error(err);
     };
+  }
+
+  static runUpdateScript(path: string) {
+    let cp = fork(path);
+    cp.on("message", (msg) => {
+      console.log(msg);
+    });
+    cp.on("close", (code) => {
+      console.log("Closed with", code);
+    });
+    cp.on("error", (err) => {
+      console.log("Closed with", err);
+    });
   }
 }
 

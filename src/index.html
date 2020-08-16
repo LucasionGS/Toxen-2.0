@@ -201,7 +201,9 @@
       <input type="range" class="fancyrange" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.setVolume(this.value);" onmouseup="settings.saveToFile();">
       <hr> -->
       <label for="songFolder">Song Folder</label>
-      <input type="text" name="songFolder" id="songfolderValue" readonly class="fancyinput">
+      <select type="text" name="songFolder" id="songfolderValue" class="fancyselect">
+        
+      </select>
       <button class="fancybutton svg_folderopen_white" onclick="Settings.current.selectSongFolder();" id="selectfolderbutton">Select</button>
       <style>
       </style>
