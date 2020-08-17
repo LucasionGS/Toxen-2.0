@@ -3097,7 +3097,7 @@ class SongManager {
                 ytdl.getBasicInfo(url, (err, info) => {
                     if (err)
                         return console.error(err);
-                    console.log(info);
+                    // console.log(info);
                     ytInputArtist.value = info.media.artist ? info.media.artist : info.title.split(/-|~/).length > 1 ? info.title.split(/-|~/)[0].trim() : info.author.name;
                     ytInputTitle.value = info.media.song ? info.media.song : info.title.split(/-|~/).length > 1 ? info.title.split(/-|~/).filter((v, i) => i > 0).join("-").trim() : info.title;
                     let artists = SongManager.getAllArtists();
@@ -4955,7 +4955,6 @@ class ToxenScriptManager {
             function lineParser(line) {
                 try { // Massive trycatch for any error.
                     let maxPerSecond = 0;
-                    // const checkVariable = /(?<=^\s*)(\$\w+)\s*(?:=>?|:|\()\s*((?:"(?:.*?(?<!\\))"|(?:\d+)))/g;
                     const checkVariable = /(?<=^\s*)(\$\w+)\s*(?:=>?|:|\()\s*((?:"(?:.*?(?<!\\))"|(?:-?\d*(?:\.?\d+))))/g;
                     if (checkVariable.test(line)) {
                         line.replace(checkVariable, function (item, $1, $2) {
@@ -6007,6 +6006,49 @@ ToxenScriptManager.eventFunctions = {
         let percent = event.percent;
         let distanceR = +r + ((+r2 - +r) * percent);
         obj.rotation = distanceR;
+    },
+    object_color_transition: function ([name, hex1, hex2], event) {
+        let obj = StoryboardObject.getObject(name);
+        if (!obj)
+            return;
+        ;
+        let rgb1 = {
+            red: 0,
+            green: 0,
+            blue: 0
+        };
+        let rgb2 = {
+            red: 0,
+            green: 0,
+            blue: 0
+        };
+        let rgbC = {
+            red: 0,
+            green: 0,
+            blue: 0
+        };
+        try {
+            rgb1 = Tools.cssColorToRgb(hex1);
+        }
+        catch (error) {
+            rgb1.red = 0;
+            rgb1.green = 0;
+            rgb1.blue = 0;
+            console.warn(error);
+        }
+        try {
+            rgb2 = Tools.cssColorToRgb(hex2);
+        }
+        catch (error) {
+            rgb2.red = 0;
+            rgb2.green = 0;
+            rgb2.blue = 0;
+            console.warn(error);
+        }
+        rgbC.red = +rgb1.red + ((+rgb2.red - +rgb1.red) * event.percent);
+        rgbC.green = +rgb1.green + ((+rgb2.green - +rgb1.green) * event.percent);
+        rgbC.blue = +rgb1.blue + ((+rgb2.blue - +rgb1.blue) * event.percent);
+        obj.fill = Tools.cssColorToHex(`rgb(${rgbC.red},${rgbC.green},${rgbC.blue})`);
     },
     // :Functions
     /**

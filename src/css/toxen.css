@@ -771,14 +771,14 @@ div.selectlist select {
 }
 .toxenscript_eventinvalid {
   color: #f50;
-  background: url("./underline.gif") bottom repeat-x;
+  background: url("../img/underline.gif") bottom repeat-x;
 }
 .toxenscript_timing {
   color: #78ff4a;
 }
 .toxenscript_timinginvalid {
   color: #e4ff4a;
-  background: url("./underline.gif") bottom repeat-x;
+  background: url("../img/underline.gif") bottom repeat-x;
 }
 .toxenscript_comment {
   color: #248f00;

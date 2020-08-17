@@ -18,7 +18,7 @@ Features I want to implement (This will be updated as I get more ideas and remem
     - https://toxen.net/listings/SUBJECT
   - A Toxen forum where you can ask questions or suggest ideas for future updates.
 
-- Smoother Redesign (Check refs from Jiri & Ruby)
+- Smoother Redesign (Check refs from Dood & Ruby)
   - Single side panel visible while not idle.
     - Side panel will have the buttons for Music Panel, Settings, and other panels.
     - VSCode has something very similar to this concept, use it for inspiration.
@@ -33,6 +33,8 @@ Features I want to implement (This will be updated as I get more ideas and remem
     - The ability to move the buttons on the main interface around to whichever corner you prefer.
   - Better sorting in settings. Possibly a top menu for categories.
   - An info page with all shortcuts (God damn it then I need to remember them all >_>)
+  
+- 
 
 - Known bugs to fix
   - None in mind right now, please notify me if you find something!
@@ -45,12 +47,12 @@ General
 - Added a drag feature to popup prompts in the very top of the prompt. Click and drag the popup around anywhere on the screen.
 - Added custom checkboxes and radio buttons (single select buttons) for future customizability.
 - Added a small prompt when Toxen has updated to a newer version.
-- Added Multi-Song Folder list Quick Select! Whenever you select a song folder in the settings panel, it gets added to a quickselect list that you can choose between.
+- Added Multi-Song Folder list Quick Select! Whenever you select a song folder in the settings panel, it gets added to a quickselect list that you can choose between. The latest list you've selected will always be in the top of the list.
 - Removed Light theme. (This will be replaced later with a custom theming system later)
 - Removed swapping the panels' positions.
 
 ToxenScript
-- Added new storyboard functions such as `VisualizerColor_transition` and `VisualizerIntensity_transition`.
+- Added new storyboard functions such as `VisualizerColor_transition`, `VisualizerIntensity_transition`, and `Object_color_transition`.
 - When sizing an object using `object_size` or `object_size_transition`, you can now write values like `100%` to get 100% of either the width or height of the screen, depending on which parameter it's given to.
 - Added custom `actions`! You can now define a custom sequence of timing functions to execute at any given time. `Actions` repeat themselves if the timing point has a larger gap than the first and last timing point inside the `Action`. Check example and exceptions below.
   - Exceptions: `BPMPulse` and using another `Action` inside of an `Action` definition, will not work as expected.

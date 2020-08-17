@@ -18,7 +18,7 @@ selectbox > div.checkbox {
   float: left;
   border-width: 2px;
   border-style: solid;
-  transition: all 0.1s ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
 selectbox > div.checkbox[type="checkbox"] {
