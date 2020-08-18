@@ -661,7 +661,7 @@ function addCustommInputs() {
                     let div = document.createElement("div");
                     div.style.width = "128px";
                     div.style.height = "32px";
-                    div.style.color = `rgb(${song.details.visualizerColor.red}, ${song.details.visualizerColor.green}, ${song.details.visualizerColor.blue})`;
+                    div.style.backgroundColor = `rgb(${song.details.visualizerColor.red}, ${song.details.visualizerColor.green}, ${song.details.visualizerColor.blue})`;
                     return div;
                 })(),
                 "for " + song.parseName()

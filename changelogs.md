@@ -43,11 +43,14 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+
+## 202008190010
 General
 - Added a drag feature to popup prompts in the very top of the prompt. Click and drag the popup around anywhere on the screen.
 - Added custom checkboxes and radio buttons (single select buttons) for future customizability.
 - Added a small prompt when Toxen has updated to a newer version.
 - Added Multi-Song Folder list Quick Select! Whenever you select a song folder in the settings panel, it gets added to a quickselect list that you can choose between. The latest list you've selected will always be in the top of the list.
+- Added setting default color for the visualizer per song without needing to edit a storyboard script (Storyboard scripts still overwrite defaults)
 - Removed Light theme. (This will be replaced later with a custom theming system later)
 - Removed swapping the panels' positions.
 
