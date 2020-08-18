@@ -706,6 +706,51 @@ function addCustommInputs() {
   });
   buttonactivationbyhovercontainer.appendTo("#buttonactivationbyhovercontainer");
   buttonactivationbyhovercontainer.checked = settings.buttonActivationByHover;
+
+  // Set Song Default Color
+  document.getElementById("setsongdefaultcolor").appendChild(Toxen.generate.button({
+    "text": "Set as Song Default Color",
+    "click"() {
+      let song = SongManager.getCurrentlyPlayingSong();
+      if (song) song.details.visualizerColor = {
+        red: settings.visualizerColor.red,
+        green: settings.visualizerColor.green,
+        blue: settings.visualizerColor.blue
+      }
+      song.saveDetails();
+      Storyboard.rgb(
+        song.details.visualizerColor.red,
+        song.details.visualizerColor.green,
+        song.details.visualizerColor.blue
+      );
+
+      new Prompt("Song default color set", [
+        "Set the visualizer color as",
+        (function() {
+          let div = document.createElement("div");
+          div.style.width = "128px";
+          div.style.height = "32px";
+          div.style.color = `rgb(${song.details.visualizerColor.red}, ${song.details.visualizerColor.green}, ${song.details.visualizerColor.blue})`;
+          return div;
+        })(),
+        "for " + song.parseName()
+      ]).close(3000);
+    },
+    "id": "setsongdefaultcolorbutton"
+  }));
+  document.getElementById("setsongdefaultcolor").appendChild(Toxen.generate.button({
+    "text": "Reset song's default color",
+    "click"() {
+      let song = SongManager.getCurrentlyPlayingSong();
+      if (song) song.details.visualizerColor = null;
+      song.saveDetails();
+      Storyboard.red = settings.visualizerColor.red;
+      Storyboard.green = settings.visualizerColor.green;
+      Storyboard.blue = settings.visualizerColor.blue;
+      new Prompt("", "Reset default color for " + song.parseName()).close(2000).setInteractive(false);
+    },
+    "id": "resetsongdefaultcolorbutton"
+  }));
   
   // Visualizer style radio buttons
   let thumbnails = new SelectBox.SelectBoxGroup([

@@ -559,7 +559,7 @@ export declare class Song {
         /**
          * Default Visualizer color for this specific song.
          */
-        visualiserColor: {
+        visualizerColor: {
             red: number;
             green: number;
             blue: number;

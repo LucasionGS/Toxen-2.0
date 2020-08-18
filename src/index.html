@@ -348,10 +348,10 @@
             document.getElementById("greenColorBlock").firstElementChild.innerText = green;
             document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
             
-            document.getElementById("colorPicker").value = Debug.rgbToHex(red, green, blue);
+            document.getElementById("colorPicker").value = Tools.rgbToHex(red, green, blue);
           }
           function local_setColorsFromSelector(value) {
-            let rgb = Debug.hexToRgb(value);
+            let rgb = Tools.hexToRgb(value);
             if (rgb == null) return;
             let red = +(document.getElementById("visualizercolor.redValue").value = rgb.red);
             let green = +(document.getElementById("visualizercolor.greenValue").value = rgb.green);
@@ -367,6 +367,7 @@
           }
         </script>
       </div>
+      <div id="setsongdefaultcolor"></div>
       <hr>
       <label for="backgrounddimValue">Background Dimming</label>
       <!-- <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = Storyboard.backgroundDim = this.value" onmouseup="settings.saveToFile();"> -->

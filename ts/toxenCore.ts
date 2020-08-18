@@ -1828,7 +1828,7 @@ export class Song {
     /**
      * Default Visualizer color for this specific song.
      */
-    visualiserColor: {
+    visualizerColor: {
       red: number,
       green: number,
       blue: number
@@ -1852,7 +1852,7 @@ export class Song {
     genre: null,
     tags: [],
     playlists: [],
-    visualiserColor: null,
+    visualizerColor: null,
     songLength: 0,
     customGroup: null,
   };
@@ -5471,6 +5471,8 @@ export class ToxenScriptManager {
       }
     }
 
+    let song = SongManager.getCurrentlyPlayingSong();
+
     // Resetting to the default values on reset.
     StoryboardObject.objects = [];
     Storyboard.setAnalyserFftLevel(Settings.current.visualizerQuantity);
@@ -5479,13 +5481,21 @@ export class ToxenScriptManager {
     Storyboard.timingPoint = 0;
     Storyboard.visualizerStyle = Settings.current.visualizerStyle;
     Storyboard.setIntensity(Settings.current.visualizerIntensity);
-    Storyboard.rgb(
-      Settings.current.visualizerColor.red,
-      Settings.current.visualizerColor.green,
-      Settings.current.visualizerColor.blue
-    );
+    if (song.details.visualizerColor) {
+      Storyboard.rgb(
+        song.details.visualizerColor.red,
+        song.details.visualizerColor.green,
+        song.details.visualizerColor.blue
+      );
+    }
+    else {
+      Storyboard.rgb(
+        Settings.current.visualizerColor.red,
+        Settings.current.visualizerColor.green,
+        Settings.current.visualizerColor.blue
+      );
+    }
 
-    let song = SongManager.getCurrentlyPlayingSong();
     if (Settings.current.remote && song.txnScript) {
       ToxenScriptManager.scriptParser(song.getFullPath("txnScript"));
     }
