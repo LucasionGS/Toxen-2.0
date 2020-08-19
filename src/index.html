@@ -54,7 +54,7 @@
         </div>
       </div>
       <hr> -->
-      <div id="lockPanel" onclick="Settings.current.toggleSongPanelLock(); Settings.current.saveToFile()" title="Toggle lock Panel">🔓</div>
+      <div id="lockPanel" onclick="settings.toggleSongPanelLock(); settings.saveToFile()" title="Toggle lock Panel">🔓</div>
       <div class="flex" style="width: 90%">
         <div style="width: 100%">
         <label for="search">Search</label>
@@ -82,10 +82,10 @@
       </div>
       <br>
       <div class="flex">
-        <select style="width: 100%" name="playlist" id="playlistselection" class="fancyselect" onchange="Settings.current.selectPlaylist(this.value); Settings.current.saveToFile();">
+        <select style="width: 100%" name="playlist" id="playlistselection" class="fancyselect" onchange="settings.selectPlaylist(this.value); settings.saveToFile();">
           <option value="%null%">None</option>
         </select>
-        <button style="width: 35%" class="fancybutton" onclick="Settings.current.addPlaylist();">New</button>
+        <button style="width: 35%" class="fancybutton" onclick="settings.addPlaylist();">New</button>
       </div>
       <hr>
       <div class="flex">
@@ -198,13 +198,13 @@
       <button id="updatetoxen" class="fancybutton">Loading...</button>
       <hr>
       <!-- <label for="volumeValue">Volume</label>
-      <input type="range" class="fancyrange" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.setVolume(this.value);" onmouseup="settings.saveToFile();">
+      <input type="range" class="fancyrange" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="settings.setVolume(this.value);" onmouseup="settings.saveToFile();">
       <hr> -->
       <label for="songFolder">Song Folder</label>
       <select type="text" name="songFolder" id="songfolderValue" class="fancyselect">
         
       </select>
-      <button class="fancybutton svg_folderopen_white" onclick="Settings.current.selectSongFolder();" id="selectfolderbutton">Select</button>
+      <button class="fancybutton svg_folderopen_white" onclick="settings.selectSongFolder();" id="selectfolderbutton">Select</button>
       <style>
       </style>
       <hr>
@@ -310,27 +310,27 @@
       <div class="flex" id="visualizercolorflexbox">
         <div style="width: 48px;">
           <label for="visualizercolor.redValue" style="text-align: center; width: 100%; display: block">Red</label>
-          <input type="range" class="fancyrange" id="visualizercolor.redValue" orient="vertical" value="0" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.red = +this.value" onmouseup="settings.saveToFile();">
+          <input type="range" class="fancyrange" id="visualizercolor.redValue" orient="vertical" value="0" max="255" min="0" oninput="local_setColors(); settings.visualizerColor.red = +this.value" onchange="settings.saveToFile();">
           <div id="redColorBlock" style="width: 48px; height: 48px">
             <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
           </div>
         </div>
         <div style="width: 48px;">
           <label for="visualizercolor.greenValue" style="text-align: center; width: 100%; display: block">Green</label>
-          <input type="range" class="fancyrange" id="visualizercolor.greenValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.green = +this.value" onmouseup="settings.saveToFile();">
+          <input type="range" class="fancyrange" id="visualizercolor.greenValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); settings.visualizerColor.green = +this.value" onchange="settings.saveToFile();">
           <div id="greenColorBlock" style="width: 48px; height: 48px">
             <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
           </div>
         </div>
         <div style="width: 48px;">
           <label for="visualizercolor.blueValue" style="text-align: center; width: 100%; display: block">Blue</label>
-          <input type="range" class="fancyrange" id="visualizercolor.blueValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); Settings.current.visualizerColor.blue = +this.value" onmouseup="settings.saveToFile();">
+          <input type="range" class="fancyrange" id="visualizercolor.blueValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); settings.visualizerColor.blue = +this.value" onchange="settings.saveToFile();">
           <div id="blueColorBlock" style="width: 48px; height: 48px">
             <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
           </div>
         </div>
         <div>
-          <input id="colorPicker" type="color" style="width: 64px; height: 64px; padding: 0" oninput="local_setColorsFromSelector(this.value)" title="Select from color picker...">
+          <input id="colorPicker" type="color" style="width: 64px; height: 64px; padding: 0" oninput="local_setColorsFromSelector(this.value); settings.saveToFile()" title="Select from color picker...">
           <!-- <div id="totalColorBlock" style="width: 64px; height: 64px"></div> -->
           <!-- <br> -->
         </div>
@@ -349,6 +349,7 @@
             document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
             
             document.getElementById("colorPicker").value = Tools.rgbToHex(red, green, blue);
+
           }
           function local_setColorsFromSelector(value) {
             let rgb = Tools.hexToRgb(value);
@@ -364,13 +365,17 @@
             document.getElementById("redColorBlock").firstElementChild.innerText = red;
             document.getElementById("greenColorBlock").firstElementChild.innerText = green;
             document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
+
+            settings.visualizerColor.red = red;
+            settings.visualizerColor.green = green;
+            settings.visualizerColor.blue = blue;
           }
         </script>
       </div>
       <div id="setsongdefaultcolor"></div>
       <hr>
       <label for="backgrounddimValue">Background Dimming</label>
-      <!-- <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="Settings.current.backgroundDim = Storyboard.backgroundDim = this.value" onmouseup="settings.saveToFile();"> -->
+      <!-- <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="settings.backgroundDim = Storyboard.backgroundDim = this.value" onmouseup="settings.saveToFile();"> -->
       <br>
       <div id="backgrounddiminteractivebarcontainer" style="width: 128px; margin-left: 16px; margin-top: 8px;"></div>
       <hr>
@@ -418,7 +423,7 @@
         ► <span style="text-decoration: underline;">Advanced Settings</span>
       </label>
       <div id="advancedoptions">
-        <!-- <input type="checkbox" name="tntoggle" id="discordpresenceToggle" onclick="Settings.current.toggleDiscordPresence(this.checked); settings.saveToFile();">
+        <!-- <input type="checkbox" name="tntoggle" id="discordpresenceToggle" onclick="settings.toggleDiscordPresence(this.checked); settings.saveToFile();">
         <label for="discordpresenceToggle">Discord Presence</label> -->
         <div id="discordpresencecontainer">
           <!-- JavaScript Insert -->
@@ -446,7 +451,7 @@
         <hr>
         <label for="songFolder">FFMPEG Path</label>
         <input type="text" name="ffmpegPath" id="ffmpegpathValue" readonly class="fancyinput">
-        <button class="fancybutton svg_folderopen_white" onclick="Settings.current.selectFFMPEGPath();">Select</button>
+        <button class="fancybutton svg_folderopen_white" onclick="settings.selectFFMPEGPath();">Select</button>
         <button class="fancybutton svg_download_white" onclick="Toxen.ffmpegDownload();">Install FFMPEG</button>
         <hr>
         <h2>Hue Bridge</h2>
@@ -462,10 +467,10 @@
         <button class="fancybutton" onclick="local_saveHue();">Save Hue Settings</button>
         <script>
           function local_saveHue() {
-            Settings.current.hueBridgeIp = document.getElementById('huebridgeipValue').value;
-            Settings.current.hueBridgeUser = document.getElementById('huebridgeuserValue').value;
-            Settings.current.hueBridgeClientKey = document.getElementById('huebridgeclientkeyValue').value;
-            Settings.current.saveToFile();
+            settings.hueBridgeIp = document.getElementById('huebridgeipValue').value;
+            settings.hueBridgeUser = document.getElementById('huebridgeuserValue').value;
+            settings.hueBridgeClientKey = document.getElementById('huebridgeclientkeyValue').value;
+            settings.saveToFile();
           }
         </script>
       </div>

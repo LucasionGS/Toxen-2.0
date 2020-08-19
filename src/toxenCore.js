@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -4745,7 +4746,6 @@ class StoryboardObject {
                     value = withoutPound;
                 }
             }
-            console.log(withPound, withoutPound);
             if (this.type != "square" && this.type != "circle")
                 this.type = "square";
             this.fill = value;
@@ -4754,7 +4754,7 @@ class StoryboardObject {
             this.type = "image";
             let img = document.createElement("img");
             img.src = path.resolve(SongManager.getCurrentlyPlayingSong().getFullPath("path"), value);
-            img.addEventListener("load", e => {
+            img.addEventListener("load", () => {
                 this.fill = img;
                 if (newWidth === null)
                     this.width = img.naturalWidth;

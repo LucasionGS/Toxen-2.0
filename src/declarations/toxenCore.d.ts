@@ -454,7 +454,7 @@ interface HTMLPromptElement extends HTMLDivElement {
     /**
      * Prompt object that belongs to this element.
      */
-    prompt?: Prompt;
+    prompt: Prompt;
 }
 export declare class Song {
     constructor();

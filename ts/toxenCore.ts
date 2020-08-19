@@ -1404,7 +1404,7 @@ interface HTMLPromptElement extends HTMLDivElement {
   /**
    * Prompt object that belongs to this element.
    */
-  prompt?: Prompt;
+  prompt: Prompt;
 }
 
 export class Song {
@@ -5353,7 +5353,6 @@ export class StoryboardObject {
           value = withoutPound;
         }
       }
-      console.log(withPound, withoutPound);
       if (this.type != "square" && this.type != "circle") this.type = "square"
       this.fill = value;
     }
@@ -5361,7 +5360,7 @@ export class StoryboardObject {
       this.type = "image";
       let img = document.createElement("img");
       img.src = path.resolve(SongManager.getCurrentlyPlayingSong().getFullPath("path"), value);
-      img.addEventListener("load", e => {
+      img.addEventListener("load", () => {
         this.fill = img;
         if (newWidth === null) this.width = img.naturalWidth;
         if (newHeight === null) this.height = img.naturalHeight;
@@ -7047,7 +7046,7 @@ export class Prompt {
    * @param description 
    */
   constructor(title: string = null, description: HTMLElement | (string | HTMLElement)[] | string = null) {
-    this.main = document.createElement("div");
+    this.main = document.createElement("div") as HTMLPromptElement;
     this.main.classList.add("promptmain");
 
     // Add moveable header
@@ -7389,7 +7388,7 @@ export class Prompt {
    * You can set a prompts name by setting `Prompt.name` to a string.
    */
   static close(name: string) {
-    let ps: HTMLPromptElement[] = document.querySelectorAll(`div[promptname="${name}"]`) as unknown as HTMLHeadingElement[];
+    let ps = document.querySelectorAll<HTMLPromptElement>(`div[promptname="${name}"]`);
     for (let i = 0; i < ps.length; i++) {
       const p = ps[i];
       if (p.hasOwnProperty("prompt")) {

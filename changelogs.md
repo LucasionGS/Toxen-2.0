@@ -33,8 +33,6 @@ Features I want to implement (This will be updated as I get more ideas and remem
     - The ability to move the buttons on the main interface around to whichever corner you prefer.
   - Better sorting in settings. Possibly a top menu for categories.
   - An info page with all shortcuts (God damn it then I need to remember them all >_>)
-  
-- 
 
 - Known bugs to fix
   - None in mind right now, please notify me if you find something!
@@ -43,6 +41,8 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+- Fixed visualizer color selector not saving color until the ranges were moved.
+
 
 ## 202008190010
 General
@@ -58,7 +58,7 @@ ToxenScript
 - Added new storyboard functions such as `VisualizerColor_transition`, `VisualizerIntensity_transition`, and `Object_color_transition`.
 - When sizing an object using `object_size` or `object_size_transition`, you can now write values like `100%` to get 100% of either the width or height of the screen, depending on which parameter it's given to.
 - Added custom `actions`! You can now define a custom sequence of timing functions to execute at any given time. `Actions` repeat themselves if the timing point has a larger gap than the first and last timing point inside the `Action`. Check example and exceptions below.
-  - Exceptions: `BPMPulse` and using another `Action` inside of an `Action` definition, will not work as expected.
+  - Exceptions: Preprocessed functions like `BPMPulse` and `Action`, will not work as expected. (Preprocessed means they are converted at runtime)
 ```js
 :ActionStart("rainbow") // This tells Toxen that this is the beginning of a new Action. It'll store all timing functions between here and the next :ActionEnd()
   // Times inside actions will be relative to the execution time instead of the song.

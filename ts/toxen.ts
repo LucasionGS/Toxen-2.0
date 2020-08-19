@@ -973,19 +973,19 @@ window.onbeforeunload = (event) => {
 function handleWindowControls() {
   // Make minimise/maximise/restore/close buttons work when they are clicked
   document.getElementById('min-button').addEventListener("click", event => {
-      browserWindow.minimize();
+    browserWindow.minimize();
   });
 
   document.getElementById('max-button').addEventListener("click", event => {
-      browserWindow.maximize();
+    browserWindow.maximize();
   });
 
   document.getElementById('restore-button').addEventListener("click", event => {
-      browserWindow.unmaximize();
+    browserWindow.unmaximize();
   });
 
   document.getElementById('close-button').addEventListener("click", event => {
-      browserWindow.close();
+    browserWindow.close();
   });
 
   // Toggle maximise/restore buttons when maximisation/unmaximisation occurs
@@ -994,10 +994,10 @@ function handleWindowControls() {
   browserWindow.on('unmaximize', toggleMaxRestoreButtons);
 
   function toggleMaxRestoreButtons() {
-      if (browserWindow.isMaximized()) {
-          document.body.classList.add('maximized');
-      } else {
-          document.body.classList.remove('maximized');
-      }
+    if (browserWindow.isMaximized()) {
+      document.body.classList.add('maximized');
+    } else {
+      document.body.classList.remove('maximized');
+    }
   }
 }
