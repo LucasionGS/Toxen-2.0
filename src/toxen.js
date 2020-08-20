@@ -44,6 +44,9 @@ window.addEventListener("load", () => {
 });
 // Progress bar
 Toxen.interactiveProgressBar = new Toxen.ProgressBar("48%", 16);
+Toxen.interactiveProgressBar.mouseover = v => {
+    return ToxenScriptManager.convertSecondsToDigitalClock(v, true);
+};
 Toxen.interactiveProgressBar.element.id = "progressbar";
 Toxen.interactiveProgressBar.element.classList.add("hideoninactive");
 // Progress bar events
@@ -82,7 +85,7 @@ function initialize() {
             settings.setSongFolder();
             console.log("Changed");
         });
-        addCustommInputs();
+        addCustomInputs();
         if (settings.showTutorialOnStart) {
             showTutorial();
         }
@@ -128,6 +131,9 @@ function initialize() {
             return __awaiter(this, void 0, void 0, function* () {
                 // Song Info
                 song.displayInfo();
+                // Reset speed changes
+                // (document.getElementById("ratechangerbar") as InteractiveProgressBar.InteractiveProgressBar.HTMLInteractiveProgressBar).object.value = 1;
+                // SongManager.playbackRate = 1;
                 // Discord Rich Presence
                 Toxen.updateDiscordPresence(song);
                 while (isNaN(SongManager.player.duration)) {
@@ -208,12 +214,19 @@ function initialize() {
             var _context = new AudioContext();
             var _src;
             _src = _context.createMediaElementSource(document.querySelector("#musicObject"));
+            // Analyser
             let _analyser = _context.createAnalyser();
             _src.connect(_analyser);
             _analyser.connect(_context.destination);
             Storyboard.analyser = _analyser;
-            console.log("Visualizer is now ready.");
+            // Bass/Gain
+            let _bass = _context.createGain();
+            _bass.gain.value = 0;
+            _src.connect(_bass);
+            _bass.connect(_context.destination);
+            Storyboard.bass = _bass;
             initializeVisualizer();
+            console.log("Visualizer is now ready.");
         })();
         //#endregion
         let search = document.querySelector("#search");
@@ -428,13 +441,16 @@ function initialize() {
         SongManager.playRandom();
     });
 }
-function addCustommInputs() {
+function addCustomInputs() {
     //#region Custom sliders/Progress bars
     document.body.appendChild(Toxen.interactiveProgressBar.element); // Insert the progress bar
     { // Block scope
         let audioAdjuster = new Toxen.ProgressBar(128, 12); // Create the volume bar
         audioAdjuster.max = 100;
         audioAdjuster.element.id = "audioadjusterbar";
+        audioAdjuster.mouseover = v => {
+            return Math.round(v) + "%";
+        };
         document.getElementById("audioadjuster").appendChild(audioAdjuster.element); // Insert the volume bar
         audioAdjuster.on("click", (_, value) => {
             Settings.current.setVolume(value);
@@ -447,6 +463,129 @@ function addCustommInputs() {
             Settings.current.setVolume(value);
             Settings.current.saveToFile();
         });
+        [
+            Toxen.generate.button({
+                "text": "0.25x",
+                click() {
+                    _chnRate(0.25, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "0.5x",
+                click() {
+                    _chnRate(0.5, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "0.75x",
+                click() {
+                    _chnRate(0.75, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "1.00x",
+                click() {
+                    _chnRate(1.00, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "1.25x",
+                click() {
+                    _chnRate(1.25, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "1.50x",
+                click() {
+                    _chnRate(1.50, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "1.75x",
+                click() {
+                    _chnRate(1.75, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "2.00x",
+                click() {
+                    _chnRate(2.00, true);
+                }
+            }),
+        ].forEach(v => document.getElementById("playbackratebuttoncontainer").appendChild(v));
+        let rateChanger = new Toxen.ProgressBar("100%", 20);
+        rateChanger.element.id = "ratechangerbar";
+        rateChanger.min = 0.1;
+        rateChanger.max = 2;
+        document.getElementById("playbackratecontainer").appendChild(rateChanger.element);
+        _chnRate(1, true);
+        rateChanger.on("change", (_, value) => {
+            _chnRate(value);
+        });
+        function _chnRate(value, setRateChangerToo = false) {
+            SongManager.playbackRate = value;
+            if (setRateChangerToo)
+                rateChanger.value = value;
+        }
+        [
+            Toxen.generate.button({
+                "text": "0x",
+                click() {
+                    _chnBass(0, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "0.5x",
+                click() {
+                    _chnBass(0.5, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "1x",
+                click() {
+                    _chnBass(1, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "1.5x",
+                click() {
+                    _chnBass(1.5, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "2x",
+                click() {
+                    _chnBass(2, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "2.5x",
+                click() {
+                    _chnBass(2.5, true);
+                }
+            }),
+            Toxen.generate.button({
+                "text": "3x",
+                click() {
+                    _chnBass(3, true);
+                }
+            })
+        ].forEach(v => document.getElementById("gainbuttoncontainer").appendChild(v));
+        let bassChanger = new Toxen.ProgressBar("100%", 20);
+        bassChanger.element.id = "gainchangerbar";
+        bassChanger.min = 0;
+        bassChanger.max = 4;
+        document.getElementById("gaincontainer").appendChild(bassChanger.element);
+        _chnBass(0, true);
+        bassChanger.on("change", (_, value) => {
+            _chnBass(value);
+        });
+        function _chnBass(value, setBassChangerToo = false) {
+            if (Storyboard.bass)
+                Storyboard.bass.gain.value = value;
+            if (setBassChangerToo)
+                bassChanger.value = value;
+        }
         let bd = new Toxen.ProgressBar("100%", 20);
         // bd.vertical = true;
         document.getElementById("backgrounddiminteractivebarcontainer").appendChild(bd.element);
@@ -876,7 +1015,7 @@ document.onreadystatechange = (event) => {
         handleWindowControls();
     }
 };
-window.onbeforeunload = (event) => {
+window.onbeforeunload = () => {
     /* If window is reloaded, remove win event listeners
     (DOM element listeners get auto garbage collected but not
     Electron win listeners as the win is not dereferenced unless closed) */
@@ -884,16 +1023,16 @@ window.onbeforeunload = (event) => {
 };
 function handleWindowControls() {
     // Make minimise/maximise/restore/close buttons work when they are clicked
-    document.getElementById('min-button').addEventListener("click", event => {
+    document.getElementById('min-button').addEventListener("click", () => {
         browserWindow.minimize();
     });
-    document.getElementById('max-button').addEventListener("click", event => {
+    document.getElementById('max-button').addEventListener("click", () => {
         browserWindow.maximize();
     });
-    document.getElementById('restore-button').addEventListener("click", event => {
+    document.getElementById('restore-button').addEventListener("click", () => {
         browserWindow.unmaximize();
     });
-    document.getElementById('close-button').addEventListener("click", event => {
+    document.getElementById('close-button').addEventListener("click", () => {
         browserWindow.close();
     });
     // Toggle maximise/restore buttons when maximisation/unmaximisation occurs

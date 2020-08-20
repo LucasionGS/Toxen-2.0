@@ -98,6 +98,7 @@ class Toxen {
                 inactivityTimer = 0;
         });
         Toxen.on("active", () => {
+            Toxen.inactivityState = false;
             inactivityTimer = 0;
             document.body.style.cursor = "";
             let btns = document.querySelectorAll(".hideoninactive");
@@ -107,6 +108,7 @@ class Toxen {
             }
         });
         Toxen.on("inactive", () => {
+            Toxen.inactivityState = true;
             inactivityTimer = inactivityLimit;
             document.body.style.cursor = "none";
             let btns = document.querySelectorAll(".hideoninactive");
@@ -1865,14 +1867,14 @@ class Song {
     /**
      * Scroll to the element and reveal it.
      */
-    focus() {
+    focus(delay = 0) {
         let cpp = this.getGroup();
         if (cpp != null) {
             cpp.collapsed = false;
         }
         setTimeout(() => {
             this.element.scrollIntoViewIfNeeded();
-        }, 250);
+        }, delay);
     }
     /**
      * Return all playlists as a keyvalue pair object.
@@ -2119,7 +2121,8 @@ class SongManager {
         return SongManager.player.playbackRate;
     }
     static set playbackRate(v) {
-        SongManager.player.playbackRate = v;
+        if (SongManager.player)
+            SongManager.player.playbackRate = v;
     }
     static resetPlaybackRate() {
         SongManager.playbackRate = 1;
@@ -4486,6 +4489,7 @@ Storyboard.backgroundDim = 0;
 Storyboard.currentBackgroundDim = 0;
 Storyboard.currentBackground = "";
 Storyboard.analyser = null;
+Storyboard.bass = null;
 Storyboard.bufferLength = 256;
 Storyboard.dataArray = null;
 Storyboard._fadingEnabled = false;
@@ -4547,10 +4551,13 @@ class Subtitles {
             return subData;
         });
     }
+    static getSubtitleElement() {
+        return document.querySelector("p#subtitles");
+    }
     static renderSubtitles(srtFile) {
         return __awaiter(this, void 0, void 0, function* () {
             Subtitles.current = yield Subtitles.parseSrt(srtFile);
-            var subText = document.querySelector("p#subtitles");
+            var subText = Subtitles.getSubtitleElement();
             if (subText && subText.innerHTML) {
                 subText.innerHTML = "";
             }
@@ -4851,25 +4858,31 @@ class ToxenScriptManager {
             }
             let song = SongManager.getCurrentlyPlayingSong();
             // Resetting to the default values on reset.
-            StoryboardObject.objects = [];
-            Storyboard.setAnalyserFftLevel(Settings.current.visualizerQuantity);
-            Storyboard.backgroundDim = Settings.current.backgroundDim;
-            Storyboard.visualizerDirection = 0;
-            Storyboard.timingPoint = 0;
-            Storyboard.visualizerStyle = Settings.current.visualizerStyle;
-            Storyboard.setIntensity(Settings.current.visualizerIntensity);
-            if (song.details.visualizerColor) {
+            let subElm = Subtitles.getSubtitleElement();
+            subElm.style.top = ""; // Reset Subtitle position
+            subElm.style.fontSize = ""; // Reset Subtitle position
+            StoryboardObject.objects = []; // Remove all previous objects
+            Storyboard.setAnalyserFftLevel(Settings.current.visualizerQuantity); // Reset Analyser level for Visualizer
+            Storyboard.backgroundDim = Settings.current.backgroundDim; // Reset background dim
+            Storyboard.visualizerDirection = 0; // Reset visualizer direction
+            Storyboard.timingPoint = 0; // Reset the offset timing point
+            Storyboard.visualizerStyle = Settings.current.visualizerStyle; // Reset visualizer style.
+            Storyboard.setIntensity(Settings.current.visualizerIntensity); // Reset visualizer intensity
+            if (song.details.visualizerColor) { // Reset colors to default app or default song
                 Storyboard.rgb(song.details.visualizerColor.red, song.details.visualizerColor.green, song.details.visualizerColor.blue);
             }
             else {
                 Storyboard.rgb(Settings.current.visualizerColor.red, Settings.current.visualizerColor.green, Settings.current.visualizerColor.blue);
             }
-            if (Settings.current.remote && song.txnScript) {
+            if ((Settings.current.remote || fs.existsSync(song.getFullPath("txnScript"))) && song.txnScript) {
                 ToxenScriptManager.scriptParser(song.getFullPath("txnScript"));
             }
-            else if (song.txnScript && fs.existsSync(song.getFullPath("txnScript"))) {
-                ToxenScriptManager.scriptParser(song.getFullPath("txnScript"));
-            }
+            // if (Settings.current.remote && song.txnScript) {
+            //   ToxenScriptManager.scriptParser(song.getFullPath("txnScript"));
+            // }
+            // else if (song.txnScript && fs.existsSync(song.getFullPath("txnScript"))) {
+            //   ToxenScriptManager.scriptParser(song.getFullPath("txnScript"));
+            // }
         });
     }
     /**
@@ -5512,6 +5525,21 @@ ToxenScriptManager.eventFunctions = {
             Storyboard.setBackground(_path, "");
         }
     },
+    subtitlesize: function ([size]) {
+        if (!Tools.isNumber(size))
+            size = 24 + "";
+        let elm = Subtitles.getSubtitleElement();
+        elm.style.fontSize = size + "px";
+    },
+    subtitleposition: function ([y]) {
+        if (y.endsWith("%"))
+            y = (StoryboardObject.heightPercent(y) * StoryboardObject.ratio) + "";
+        else if (!Tools.isNumber(y))
+            y = (32 * StoryboardObject.heightRatio) + "";
+        let elm = Subtitles.getSubtitleElement();
+        let elmH = elm.getBoundingClientRect().height;
+        elm.style.top = Tools.clamp(+y - (elmH / 2), 32, (Toxen.inactivityState ? window.innerHeight - elmH - 32 : window.innerHeight - elmH - 128)) + "px";
+    },
     /**
      * Change the color of the visualizer
      * @param args Arguments
@@ -6089,6 +6117,9 @@ ToxenScriptManager.eventFunctions = {
                     `ipAddress: ${ipAddress}\nhueUser.username: ${hueUser.username}\nhueUser.clientkey: ${hueUser.clientKey}`);
             }
         });
+    },
+    ":subtitleposition": function (args, event) {
+        ToxenScriptManager.eventFunctions["subtitleposition"](args, event);
     },
     ":log": function () {
         console.log([...arguments[0]]);

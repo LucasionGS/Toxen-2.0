@@ -150,9 +150,11 @@ export declare namespace InteractiveProgressBar {
         on(event: "click", listener: (event: EventEmitter.EventHandler, value: number) => void): this;
         on(event: "drag", listener: (event: EventEmitter.EventHandler, value: number) => void): this;
         on(event: "release", listener: (event: EventEmitter.EventHandler, value: number) => void): this;
+        on(event: "change", listener: (event: EventEmitter.EventHandler, value: number) => void): this;
         emit(event: "click", value: number): EventEmitter.EventHandler;
         emit(event: "drag", value: number): EventEmitter.EventHandler;
         emit(event: "release", value: number): EventEmitter.EventHandler;
+        emit(event: "change", value: number): EventEmitter.EventHandler;
     }
     namespace InteractiveProgressBar {
         interface HTMLInteractiveProgressBar extends HTMLDivElement {
@@ -162,6 +164,7 @@ export declare namespace InteractiveProgressBar {
     }
     class InteractiveProgressBar extends EventEmitter.EventEmitter {
         constructor(width?: string | number, height?: string | number);
+        mouseover: ((value: number) => string);
         /**
          * The element that contains the slider.
          */

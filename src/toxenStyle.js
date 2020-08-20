@@ -323,6 +323,7 @@ var InteractiveProgressBar;
     class InteractiveProgressBar extends EventEmitter.EventEmitter {
         constructor(width = "100%", height = 20) {
             super();
+            this.mouseover = value => value + "";
             /**
              * Whether or not the slider is currently being clicked on.
              */
@@ -368,6 +369,7 @@ var InteractiveProgressBar;
                 if (e.button == 0 && this.clicking == true) {
                     this.clicking = false;
                     this.emit("release", this.value);
+                    this.emit("change", this.value);
                 }
             });
             this.element.addEventListener("click", (e) => {
@@ -377,6 +379,7 @@ var InteractiveProgressBar;
                 percent = Math.min(Math.max(0, percent), 1);
                 this.value = this.max * percent;
                 this.emit("click", this.value);
+                this.emit("change", this.value);
             });
             window.addEventListener("mousemove", (e) => {
                 const p = this;
@@ -386,6 +389,7 @@ var InteractiveProgressBar;
                     percent = Math.min(Math.max(0, percent), 1);
                     this.value = this.max * percent;
                     this.emit("drag", this.value);
+                    this.emit("change", this.value);
                 }
             });
             this.element.addEventListener("mousedown", (e) => {
@@ -393,6 +397,9 @@ var InteractiveProgressBar;
                 if (e.button == 0) {
                     this.clicking = true;
                 }
+            });
+            this.thumb.addEventListener("mouseover", (e) => {
+                this.thumb.title = this.mouseover(this.value);
             });
         }
         /**

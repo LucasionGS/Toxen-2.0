@@ -607,7 +607,7 @@ export declare class Song {
     /**
      * Scroll to the element and reveal it.
      */
-    focus(): void;
+    focus(delay?: number): void;
     /**
      * Return all playlists as a keyvalue pair object.
      */
@@ -863,6 +863,7 @@ export declare class Storyboard {
      */
     static setIntensity(value: number): void;
     static analyser: AnalyserNode;
+    static bass: GainNode;
     static setAnalyserFftLevel(size: number): void;
     static setAnalyserFftSize(size: AnalyserFftSizeIndex): void;
     static bufferLength: number;

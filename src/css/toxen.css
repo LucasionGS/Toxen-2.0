@@ -464,19 +464,23 @@ div.sidebar:hover, div.sidebar[open] {
 }
 
 p#subtitles {
+  pointer-events: none;
   position: absolute;
   display: inline-block;
   top: 40px;
   font-size: 24px;
   text-align: center;
-  width: 100%;
-  padding: 0;
+  /* width: 100%; */
+  padding: 1px 10px;
   font-family: var(--subtitleFont);
   box-sizing: border-box;
   background-color: var(--subtitleBackgroundColor);
   text-shadow: var(--subtitleShadow);
   color: var(--subtitleColor);
-  margin: auto;
+  /* margin: auto; */
+  margin-left: 50%;
+  transform: translateX(-50%);
+  transition: top 0.2s ease-in-out;
 }
 
 div#progress {

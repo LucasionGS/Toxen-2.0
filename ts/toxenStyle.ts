@@ -393,10 +393,12 @@ export namespace InteractiveProgressBar {
     on(event: "click", listener: (event: EventEmitter.EventHandler, value: number) => void): this;
     on(event: "drag", listener: (event: EventEmitter.EventHandler, value: number) => void): this;
     on(event: "release", listener: (event: EventEmitter.EventHandler, value: number) => void): this;
+    on(event: "change", listener: (event: EventEmitter.EventHandler, value: number) => void): this;
     
     emit(event: "click", value: number): EventEmitter.EventHandler;
     emit(event: "drag", value: number): EventEmitter.EventHandler;
     emit(event: "release", value: number): EventEmitter.EventHandler;
+    emit(event: "change", value: number): EventEmitter.EventHandler;
   }
   export namespace InteractiveProgressBar {
     export interface HTMLInteractiveProgressBar extends HTMLDivElement {
@@ -439,6 +441,7 @@ export namespace InteractiveProgressBar {
         if (e.button == 0 && this.clicking == true) {
           this.clicking = false;
           this.emit("release", this.value);
+          this.emit("change", this.value);
         }
       });
       this.element.addEventListener("click", (e) => {
@@ -448,6 +451,7 @@ export namespace InteractiveProgressBar {
         percent = Math.min(Math.max(0, percent), 1);
         this.value = this.max * percent;
         this.emit("click", this.value);
+        this.emit("change", this.value);
       });
       window.addEventListener("mousemove", (e) => {
         const p: InteractiveProgressBar = this;
@@ -457,6 +461,7 @@ export namespace InteractiveProgressBar {
           percent = Math.min(Math.max(0, percent), 1);
           this.value = this.max * percent;
           this.emit("drag", this.value);
+          this.emit("change", this.value);
         }
       });
       this.element.addEventListener("mousedown", (e) => {
@@ -465,7 +470,12 @@ export namespace InteractiveProgressBar {
           this.clicking = true;
         }
       });
+      this.thumb.addEventListener("mouseover", (e) => {
+        this.thumb.title = this.mouseover(this.value);
+      });
     }
+
+    mouseover: ((value: number) => string) = value => value + "";
 
     /**
      * The element that contains the slider.
