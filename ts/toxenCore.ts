@@ -5985,12 +5985,18 @@ export class ToxenScriptManager {
       let elm = Subtitles.getSubtitleElement();
       elm.style.fontSize = size + "px";
     },
-    subtitleposition: function ([y]) {
+    subtitleposition: function ([y, mode]: [string, "instant"]) {
       if (y.endsWith("%")) y = (StoryboardObject.heightPercent(y) * StoryboardObject.ratio) + "";
+      else if (y == "random") y = (Tools.randomInt(StoryboardObject.heightDefault, 32)) + "";
       else if (!Tools.isNumber(y)) y = (32 * StoryboardObject.heightRatio) + "";
+      
       let elm = Subtitles.getSubtitleElement();
+      if (mode == "instant") elm.toggleAttribute("smooth", false);
+      else elm.toggleAttribute("smooth", true);
       let elmH = elm.getBoundingClientRect().height;
-      elm.style.top =  Tools.clamp(+y - (elmH / 2), 32, (Toxen.inactivityState ? window.innerHeight - elmH - 32 : window.innerHeight - elmH - 128)) + "px";
+      let min = 32,
+          max = (Toxen.inactivityState ? window.innerHeight - elmH - 32 : window.innerHeight - elmH - 128);
+      elm.style.top =  Tools.clamp(+y - (elmH / 2), min, max) + "px";
     },
     /**
      * Change the color of the visualizer

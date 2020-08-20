@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -5531,14 +5530,21 @@ ToxenScriptManager.eventFunctions = {
         let elm = Subtitles.getSubtitleElement();
         elm.style.fontSize = size + "px";
     },
-    subtitleposition: function ([y]) {
+    subtitleposition: function ([y, mode]) {
         if (y.endsWith("%"))
             y = (StoryboardObject.heightPercent(y) * StoryboardObject.ratio) + "";
+        else if (y == "random")
+            y = (Tools.randomInt(StoryboardObject.heightDefault, 32)) + "";
         else if (!Tools.isNumber(y))
             y = (32 * StoryboardObject.heightRatio) + "";
         let elm = Subtitles.getSubtitleElement();
+        if (mode == "instant")
+            elm.toggleAttribute("smooth", false);
+        else
+            elm.toggleAttribute("smooth", true);
         let elmH = elm.getBoundingClientRect().height;
-        elm.style.top = Tools.clamp(+y - (elmH / 2), 32, (Toxen.inactivityState ? window.innerHeight - elmH - 32 : window.innerHeight - elmH - 128)) + "px";
+        let min = 32, max = (Toxen.inactivityState ? window.innerHeight - elmH - 32 : window.innerHeight - elmH - 128);
+        elm.style.top = Tools.clamp(+y - (elmH / 2), min, max) + "px";
     },
     /**
      * Change the color of the visualizer

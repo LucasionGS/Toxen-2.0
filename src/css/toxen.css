@@ -480,6 +480,9 @@ p#subtitles {
   /* margin: auto; */
   margin-left: 50%;
   transform: translateX(-50%);
+}
+
+p#subtitles[smooth] {
   transition: top 0.2s ease-in-out;
 }
 
