@@ -988,6 +988,10 @@ export declare class ToxenScriptManager {
         events: ToxenEvent[];
     };
     static actions: (typeof ToxenScriptManager._curAction)[];
+    static curBlock: {
+        startPoint: number;
+        endPoint: number;
+    };
     /**
      * Function Types for ToxenScript
      */

@@ -48,7 +48,10 @@ General
 - The background for subtitles now only fill as much as the text does instead of reaching the corners.
 
 ToxenScript
-- Added `subtitleposition` as a timing function and `:subtitleposition` runtime function. It's recommended to use it as a `always` timing point instead of as a runtime function, as it will auto adjust when using `always`. It takes 1 parameter, which is the new Y position. You can write in a numbere or a percentage value. It cannot go off-screen
+- Added `subtitleposition` as a timing function and `:subtitleposition` runtime function. It's recommended to use it as a `always` timing point instead of as a runtime function, as it will auto adjust when using `always`. It takes 1 parameter, which is the new Y position. You can write in a numbere or a percentage value. It cannot go off-screen.
+- Added `subtitlesize` to rescale subtitles. It takes 1 parameter, which is a size value. The default is `24`. Custom subtitle sizing inside the SRT file will overwrite the storyboard.
+- Added block timing! If you omit a timing point after you used a timing point on a prior function, that same timing point will be used on the new ones!
+
 
 ## 202008190010
 General

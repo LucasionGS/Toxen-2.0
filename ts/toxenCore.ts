@@ -5489,6 +5489,7 @@ export class ToxenScriptManager {
     Storyboard.timingPoint = 0; // Reset the offset timing point
     Storyboard.visualizerStyle = Settings.current.visualizerStyle; // Reset visualizer style.
     Storyboard.setIntensity(Settings.current.visualizerIntensity); // Reset visualizer intensity
+    ToxenScriptManager.curBlock = null; // Clean up current timing block.
     if (song.details.visualizerColor) { // Reset colors to default app or default song
       Storyboard.rgb(
         song.details.visualizerColor.red,
@@ -5690,24 +5691,33 @@ export class ToxenScriptManager {
         
 
         // Check if non-time function
-        const checkFunction = /^\s*:(\S*?)\s*(=>?|:|\()s*.*/g;
+        const checkFunction = /^\s*:(\S*?)\s*(=>?|:|\()\s*.*/g;
+        const checkTimingFunctionWithoutTime = /^(?<!\[.*?\])\s*(\w*?)\s*(=>?|:|\()\s*.*/g;
         if (checkFunction.test(line)) {
           // line = "[0 - 1]" + line;
           line = "[always]" + line;
         }
+        else if (checkTimingFunctionWithoutTime.test(line) && ToxenScriptManager.curBlock != null) {
+          line = `[${ToxenScriptManager.curBlock.startPoint} - ${ToxenScriptManager.curBlock.endPoint}]` + line;
+        }
+
         // Check if no only start
         const checkTimeEmpty = /(?<=\[)\s*(?=\])/g;
         const checkTime = /(?<=\[)[^+-]*(?=\])/g;
         if (checkTimeEmpty.test(line)) {
           line = line.replace(checkTime, "always");
+          
         }
         if (checkTime.test(line)) {
           line = line.replace(checkTime, "$& - $");
         }
         // Regexes
-        const timeReg = /(?<=\[).+\s*(?:-|\+)\s*\S+(?=\])/g;
-        const typeReg = /(?<=\[.+\s*(?:-|\+)\s*\S+\]\s*)\S+?(?=\s*(=>?|:|\())/g;
-        const argReg = /(?<=\[.+\s*(?:-|\+)\s*\S+\]\s*\S*\s*(=>?|:|\()\s*).*/g;
+        const timeReg = /(?<=\[).*\s*(?:-|\+)\s*.*(?=\])/g;
+        const typeReg = /(?<=\[.*\s*(?:-|\+)\s*.*\]\s*)\S+?(?=\s*(=>?|:|\())/g;
+        const argReg = /(?<=\[.*\s*(?:-|\+)\s*.*\]\s*\S*\s*(=>?|:|\()\s*).*/g;
+        // const timeReg = /(?<=\[).+\s*(?:-|\+)\s*\S+(?=\])/g;
+        // const typeReg = /(?<=\[.+\s*(?:-|\+)\s*\S+\]\s*)\S+?(?=\s*(=>?|:|\())/g;
+        // const argReg = /(?<=\[.+\s*(?:-|\+)\s*\S+\]\s*\S*\s*(=>?|:|\()\s*).*/g;
 
         // Variables
         var startPoint: any = 0;
@@ -5720,8 +5730,13 @@ export class ToxenScriptManager {
         
         timeRegResult = timeRegResult.replace(/\s/g, "");
         if (timeRegResult.toLowerCase() == "always-$") {
+          
           startPoint = 0;
           endPoint = (ToxenScriptManager.defaultVariables["$end"] as Function)();
+        }
+        else if (timeRegResult.toLowerCase() == "-" && ToxenScriptManager.curBlock != null) {
+          startPoint = ToxenScriptManager.curBlock.startPoint;
+          endPoint = ToxenScriptManager.curBlock.endPoint;
         }
         else {
           if (timeRegResult.includes("-")) {
@@ -5782,8 +5797,14 @@ export class ToxenScriptManager {
         //   ToxenScriptManager.events[ToxenScriptManager.events.length - 1].endPoint = startPoint;
         // }
 
+        // By now, the startPoint and endPoint are numbers.
         if (startPoint >= endPoint) { // Catch error if sP is higher than eP
           return "startPoint cannot be higher than endPoint";
+        }
+
+        ToxenScriptManager.curBlock = {
+          "startPoint": startPoint,
+          "endPoint": endPoint,
         }
 
         var type = line.match(typeReg)[0].toLowerCase();
@@ -6562,6 +6583,11 @@ export class ToxenScriptManager {
 
   static actions: (typeof ToxenScriptManager._curAction)[] = [];
 
+  static curBlock: {
+    startPoint: number,
+    endPoint: number,
+  } = null;
+
   /**
    * Function Types for ToxenScript
    */
@@ -6575,6 +6601,19 @@ export class ToxenScriptManager {
    */
   static syntaxHighlightToxenScript(code: string, validEventNames = ToxenScriptManager.getEventNames()) {
     const regex: {[key: string]: {"expression": RegExp, "function": ($0: string, ...$n: string[]) => string}} = {
+      "htmlbrackets": {
+        "expression": /[<>&]/g,
+        "function": function($0) {
+          switch ($0) {
+            case "<":
+              return "&lt;";
+            case ">":
+              return "&gt;";
+            case "&":
+              return "&amp;";
+          }
+        }
+      },
       "value": {
         "expression": /(?<!\[[^\]]*)(?:"(.*?)(?<!\\)"|-?\d*(?:\.?\d+%?))(?!\])/g,
         "function": function($0, $1) {
@@ -6617,7 +6656,7 @@ export class ToxenScriptManager {
         }
       },
       "event": {
-        "expression": /((?<=\[.*\]\s*)[A-z]+)|:[A-z]+/g,
+        "expression": /((?<=\[.*\]\s*)[A-Za-z_]+)|^(?<=\s*):?[A-Za-z_]+/gm,
         "function": function($0) {
           for (let i = 0; i < validEventNames.length; i++) {
             const test = validEventNames[i];

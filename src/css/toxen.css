@@ -486,6 +486,10 @@ p#subtitles[smooth] {
   transition: top 0.2s ease-in-out;
 }
 
+p#subtitles:empty {
+  padding: 0;
+}
+
 div#progress {
   width: 100%;
   position: sticky;
