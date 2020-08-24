@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Theme = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -5370,11 +5369,11 @@ class ToxenScriptManager {
                 }
             },
             "event": {
-                "expression": /((?<=\[.*\]\s*)[A-Za-z_]+)|^(?<=\s*):?[A-Za-z_]+/gm,
+                "expression": /((?<=\[.*\])\s*[A-Za-z_]+)|^(?<=)\s*:?[A-Za-z_]+/gm,
                 "function": function ($0) {
                     for (let i = 0; i < validEventNames.length; i++) {
                         const test = validEventNames[i];
-                        if (test.toLowerCase() == $0.toLowerCase()) {
+                        if (test.toLowerCase() == $0.toLowerCase().trim()) {
                             return `<span class=toxenscript_event>${$0}</span>`;
                         }
                     }

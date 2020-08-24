@@ -2,9 +2,8 @@ import * as fs from "fs";
 import * as Electron from "electron";
 import { TextEditor } from "../texteditor";
 import { ScriptEditor, Song, ToxenScriptManager, SelectList } from "../toxenCore.js";
-import {Imd} from "../../src/ionMarkDown";
 const { remote, shell, ipcRenderer } = Electron;
-const { Menu, dialog } = remote;
+const { Menu } = remote;
 const browserWindow = remote.getCurrentWindow();
 
 var song: Song;
@@ -33,7 +32,7 @@ ipcRenderer.on("editor.response.data",
   
   ToxenScriptManager.eventFunctions = _eventFunctions;
   song = JSON.parse(_song);
-  document.getElementById("info").innerHTML = Imd.MarkDownToHTML(song.details.artist + " - " + song.details.title) + "<br>" + `<code>${song.txnScript}</code>`;
+  document.getElementById("info").innerHTML = `${song.details.artist + " - " + song.details.title}` + "<br>" + `<code>${song.txnScript}</code>`;
   editor = new Editor(document.getElementById("editor") as unknown as HTMLTextAreaElement, song.txnScript);
   browserWindow.on("close", () => {
     if (saveOnQuit) {

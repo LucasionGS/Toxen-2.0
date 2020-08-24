@@ -4,9 +4,8 @@ const fs = require("fs");
 const Electron = require("electron");
 const texteditor_1 = require("../texteditor");
 const toxenCore_js_1 = require("../toxenCore.js");
-const ionMarkDown_1 = require("../../src/ionMarkDown");
 const { remote, shell, ipcRenderer } = Electron;
-const { Menu, dialog } = remote;
+const { Menu } = remote;
 const browserWindow = remote.getCurrentWindow();
 var song;
 var editor;
@@ -27,7 +26,7 @@ ipcRenderer.on("editor.response.data",
     });
     toxenCore_js_1.ToxenScriptManager.eventFunctions = _eventFunctions;
     song = JSON.parse(_song);
-    document.getElementById("info").innerHTML = ionMarkDown_1.Imd.MarkDownToHTML(song.details.artist + " - " + song.details.title) + "<br>" + `<code>${song.txnScript}</code>`;
+    document.getElementById("info").innerHTML = `${song.details.artist + " - " + song.details.title}` + "<br>" + `<code>${song.txnScript}</code>`;
     editor = new Editor(document.getElementById("editor"), song.txnScript);
     browserWindow.on("close", () => {
         if (saveOnQuit) {

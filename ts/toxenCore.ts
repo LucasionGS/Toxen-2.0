@@ -6656,11 +6656,11 @@ export class ToxenScriptManager {
         }
       },
       "event": {
-        "expression": /((?<=\[.*\]\s*)[A-Za-z_]+)|^(?<=\s*):?[A-Za-z_]+/gm,
+        "expression": /((?<=\[.*\])\s*[A-Za-z_]+)|^(?<=)\s*:?[A-Za-z_]+/gm,
         "function": function($0) {
           for (let i = 0; i < validEventNames.length; i++) {
             const test = validEventNames[i];
-            if (test.toLowerCase() == $0.toLowerCase()) {
+            if (test.toLowerCase() == $0.toLowerCase().trim()) {
               return `<span class=toxenscript_event>${$0}</span>`;
             }
           }
