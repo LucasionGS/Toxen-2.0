@@ -192,308 +192,223 @@
         </div> -->
       </div>
     </div>
-    <div class="sidebar right" id="settingsmenusidebar">
-      <h2>Settings</h2>
-      <sup id="currentversion"></sup>
-      <button id="updatetoxen" class="fancybutton">Loading...</button>
-      <hr>
-      <!-- <label for="volumeValue">Volume</label>
-      <input type="range" class="fancyrange" id="volumeValue" orient="vertical" value="50" max="100" min="0" oninput="settings.setVolume(this.value);" onmouseup="settings.saveToFile();">
-      <hr> -->
-      <label for="songFolder">Song Folder</label>
-      <select type="text" name="songFolder" id="songfolderValue" class="fancyselect">
-        
-      </select>
-      <button class="fancybutton svg_folderopen_white" onclick="settings.selectSongFolder();" id="selectfolderbutton">Select</button>
-      <hr>
-      <label>Song Speed Rate</label>
-      <div id="playbackratebuttoncontainer"></div>
-      <div style="width: 128px; margin-left: 16px; margin-top: 8px;" id="playbackratecontainer"></div>
-      <br>
-      <label>Song Gain</label>
-      <div id="gainbuttoncontainer"></div>
-      <div style="width: 128px; margin-left: 16px; margin-top: 8px;" id="gaincontainer"></div>
-      <hr>
-      <!-- <h3>Song Grouping</h3> -->
-      <label id="songgroupinglabel">Song Grouping</label>
-      <sup>Group songs into smaller folders in the song menu.</sup>
-      <!-- <input type="radio" name="sgstyle" id="songgrouping=0" value="0" onclick="settings.songGrouping = 0; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=0">No grouping</label><br>
-      <input type="radio" name="sgstyle" id="songgrouping=1" value="1" onclick="settings.songGrouping = 1; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=1">By Artist</label><br>
-      <input type="radio" name="sgstyle" id="songgrouping=2" value="2" onclick="settings.songGrouping = 2; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=2">By Album</label><br>
-      <input type="radio" name="sgstyle" id="songgrouping=3" value="3" onclick="settings.songGrouping = 3; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=3">By Source</label><br>
-      <input type="radio" name="sgstyle" id="songgrouping=4" value="4" onclick="settings.songGrouping = 4; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=4">By Language</label><br>
-      <input type="radio" name="sgstyle" id="songgrouping=5" value="5" onclick="settings.songGrouping = 5; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=5">By Genre</label><br>
-      <input type="radio" name="sgstyle" id="songgrouping=6" value="6" onclick="settings.songGrouping = 6; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=6">By Year</label><br>
-      <input type="radio" name="sgstyle" id="songgrouping=7" value="7" onclick="settings.songGrouping = 7; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=7">By Custom Group</label><br>
-      <input type="radio" name="sgstyle" id="songgrouping=8" value="7" onclick="settings.songGrouping = 7; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=8">Alphabetically (Artist)</label><br>
-      <input type="radio" name="sgstyle" id="songgrouping=9" value="8" onclick="settings.songGrouping = 8; settings.saveToFile(); SongManager.refreshList();">
-      <label for="songgrouping=9">Alphabetically (Title)</label> -->
-      <div id="songgroupingcontainer">
-        <!-- JavaScript Insert -->
-      </div>
-      <hr>
-      <h3>Visual Settings</h3>
-      <label>Visualizer Style</label>
-      <sup>Customize how the visualizer is shown.</sup>
-      <!-- <input type="radio" name="avstyle" id="visualizerstyle=0" value="0" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 0; settings.saveToFile();">
-      <label for="visualizerstyle=0">Bottom</label><br>
-      <input type="radio" name="avstyle" id="visualizerstyle=1" value="1" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 1; settings.saveToFile();">
-      <label for="visualizerstyle=1">Top</label><br>
-      <input type="radio" name="avstyle" id="visualizerstyle=2" value="2" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 2; settings.saveToFile();">
-      <label for="visualizerstyle=2">Top and bottom (Identical)</label><br>
-      <input type="radio" name="avstyle" id="visualizerstyle=3" value="3" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 3; settings.saveToFile();">
-      <label for="visualizerstyle=3">Center</label><br>
-      <input type="radio" name="avstyle" id="visualizerstyle=4" value="4" onclick="settings.visualizerStyle = Storyboard.visualizerStyle = 4; settings.saveToFile();">
-      <label for="visualizerstyle=4">Top and bottom (Alternating)</label> -->
-      <div id="visualizerstylecontainer">
-        <!-- JavaScript Insert -->
-      </div>
-      <!-- <hr> -->
-      <br>
-      <br>
-      <!-- <input type="checkbox" name="avtoggle" id="visualizerToggle" onclick="settings.visualizer = this.checked; settings.saveToFile();">
-      <label for="visualizerToggle">Visualizer</label> -->
-      <div id="visualizercontainer">
-        <!-- JavaScript Insert -->
-      </div>
-      <sup>
-        Display audio visualizer.
-      </sup>
-      <br>
-      <!-- <input type="checkbox" name="sbtoggle" id="storyboardToggle" onclick="settings.storyboard = this.checked; ToxenScriptManager.loadCurrentScript(); settings.saveToFile();">
-      <label for="storyboardToggle">Storyboard</label> -->
-      <div id="storyboardcontainer">
-        <!-- JavaScript Insert -->
-      </div>
-      <sup>
-        Display ToxenScript storyboards.<br>
-        If you're experiencing low performance, try to disable this.
-      </sup>
-      <br>
-      <!-- <input type="checkbox" name="videotoggle" id="videoToggle" onclick="settings.toggleVideo(this.checked); settings.saveToFile();">
-      <label for="videoToggle">Display Video</label> -->
-      <div id="videotogglecontainer">
-        <!-- JavaScript Insert -->
-      </div>
-      <sup>
-        If your song is a video media, play it in the background.<br>
-        Turning this off will disable rendering of the video.
-      </sup>
-      <br>
-      <!-- <input type="checkbox" name="hovertoggle" id="buttonactivationbyhoverToggle" onclick="settings.buttonActivationByHover = this.checked; settings.saveToFile();">
-      <label for="buttonactivationbyhoverToggle">Button Activation By Hover</label> -->
-      <div id="buttonactivationbyhovercontainer">
-        <!-- JavaScript Insert -->
-      </div>
-      <sup>
-        Enable this to open the panels by only hovering over the buttons insteading of needing to click them.
-      </sup>
-      <br>
-      <label>Theme</label>
-      <sup>
-        Theming will be added eventually™
-      </sup>
-      <!-- <br>
-      <input type="checkbox" name="avtoggle" id="lightthemebaseToggle" onclick="settings.setThemeBase(this.checked); settings.saveToFile();">
-      <label for="lightthemebaseToggle">Light Theme Base</label>
-      <sup>
-        Enable this to willingly burn your eyes up.
-        <br>
-        <span style="text-decoration: underline;">Not recommended to use as it isn't fully compatible with newer features.<br>This might be fixed or possibily removed in a future update.</span>
-      </sup>
-      <br> -->
-      <br>
-      <label id="visualizercolorlabel">Visualizer Color</label>
-      <div class="flex" id="visualizercolorflexbox">
-        <div style="width: 48px;">
-          <label for="visualizercolor.redValue" style="text-align: center; width: 100%; display: block">Red</label>
-          <input type="range" class="fancyrange" id="visualizercolor.redValue" orient="vertical" value="0" max="255" min="0" oninput="local_setColors(); settings.visualizerColor.red = +this.value" onchange="settings.saveToFile();">
-          <div id="redColorBlock" style="width: 48px; height: 48px">
-            <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
-          </div>
-        </div>
-        <div style="width: 48px;">
-          <label for="visualizercolor.greenValue" style="text-align: center; width: 100%; display: block">Green</label>
-          <input type="range" class="fancyrange" id="visualizercolor.greenValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); settings.visualizerColor.green = +this.value" onchange="settings.saveToFile();">
-          <div id="greenColorBlock" style="width: 48px; height: 48px">
-            <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
-          </div>
-        </div>
-        <div style="width: 48px;">
-          <label for="visualizercolor.blueValue" style="text-align: center; width: 100%; display: block">Blue</label>
-          <input type="range" class="fancyrange" id="visualizercolor.blueValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); settings.visualizerColor.blue = +this.value" onchange="settings.saveToFile();">
-          <div id="blueColorBlock" style="width: 48px; height: 48px">
-            <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
-          </div>
-        </div>
-        <div>
-          <input id="colorPicker" type="color" style="width: 64px; height: 64px; padding: 0" oninput="local_setColorsFromSelector(this.value); settings.saveToFile()" title="Select from color picker...">
-          <!-- <div id="totalColorBlock" style="width: 64px; height: 64px"></div> -->
-          <!-- <br> -->
-        </div>
-        <script>
-          function local_setColors() {
-            let red = +document.getElementById("visualizercolor.redValue").value;
-            let green = +document.getElementById("visualizercolor.greenValue").value;
-            let blue = +document.getElementById("visualizercolor.blueValue").value;
-            Storyboard.rgb(red, green, blue);
-            document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
-            document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
-            document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
-
-            document.getElementById("redColorBlock").firstElementChild.innerText = red;
-            document.getElementById("greenColorBlock").firstElementChild.innerText = green;
-            document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
+    <div class="sidebar right" id="settingsmenusidebar" style="display: flex; scroll-behavior: smooth;">
+      <div id="settingspanelscontainer">
+        <section>
+          <sup id="currentversion"></sup>
+          <button id="updatetoxen" class="fancybutton">Loading...</button>
+          <hr>
+        </section>
+        <section name="generalsettings">
+          <h2>General</h2>
+          <label for="songFolder">Song Folder</label>
+          <select type="text" name="songFolder" id="songfolderValue" class="fancyselect">
             
-            document.getElementById("colorPicker").value = Tools.rgbToHex(red, green, blue);
-
-          }
-          function local_setColorsFromSelector(value) {
-            let rgb = Tools.hexToRgb(value);
-            if (rgb == null) return;
-            let red = +(document.getElementById("visualizercolor.redValue").value = rgb.red);
-            let green = +(document.getElementById("visualizercolor.greenValue").value = rgb.green);
-            let blue = +(document.getElementById("visualizercolor.blueValue").value = rgb.blue);
-            Storyboard.rgb(red, green, blue);
-            document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
-            document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
-            document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
-
-            document.getElementById("redColorBlock").firstElementChild.innerText = red;
-            document.getElementById("greenColorBlock").firstElementChild.innerText = green;
-            document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
-
-            settings.visualizerColor.red = red;
-            settings.visualizerColor.green = green;
-            settings.visualizerColor.blue = blue;
-          }
-        </script>
+          </select>
+          <button class="fancybutton svg_folderopen_white" onclick="settings.selectSongFolder();" id="selectfolderbutton">Select</button>
+          <hr>
+          <label>Song Speed Rate</label>
+          <div id="playbackratebuttoncontainer"></div>
+          <div style="width: 128px; margin-left: 16px; margin-top: 8px;" id="playbackratecontainer"></div>
+          <br>
+          <label>Song Gain</label>
+          <div id="gainbuttoncontainer"></div>
+          <div style="width: 128px; margin-left: 16px; margin-top: 8px;" id="gaincontainer"></div>
+          <hr>
+          <label id="songgroupinglabel">Song Grouping</label>
+          <sup>Group songs into smaller folders in the song menu.</sup>
+          <div id="songgroupingcontainer">
+            <!-- JavaScript Insert -->
+          </div>
+          <div id="buttonactivationbyhovercontainer">
+            <!-- JavaScript Insert -->
+          </div>
+          <sup>
+            Enable this to open the panels by only hovering over the buttons insteading of needing to click them.
+          </sup>
+        </section>
+        <section name="visualsettings">
+          <hr>
+          <h2>Visuals</h2>
+          <label>Visualizer Style</label>
+          <sup>Customize how the visualizer is shown.</sup>
+          <div id="visualizerstylecontainer">
+            <!-- JavaScript Insert -->
+          </div>
+          <br>
+          <br>
+          <div id="visualizercontainer">
+            <!-- JavaScript Insert -->
+          </div>
+          <sup>
+            Display audio visualizer.
+          </sup>
+          <br>
+          <div id="storyboardcontainer">
+            <!-- JavaScript Insert -->
+          </div>
+          <sup>
+            Display ToxenScript storyboards.<br>
+            If you're experiencing low performance, try to disable this.
+          </sup>
+          <br>
+          <div id="videotogglecontainer">
+            <!-- JavaScript Insert -->
+          </div>
+          <sup>
+            If your song is a video media, play it in the background.<br>
+            Turning this off will disable rendering of the video.
+          </sup>
+          <br>
+          <label id="visualizercolorlabel">Visualizer Color</label>
+          <div class="flex" id="visualizercolorflexbox">
+            <div style="width: 48px;">
+              <label for="visualizercolor.redValue" style="text-align: center; width: 100%; display: block">Red</label>
+              <input type="range" class="fancyrange" id="visualizercolor.redValue" orient="vertical" value="0" max="255" min="0" oninput="local_setColors(); settings.visualizerColor.red = +this.value" onchange="settings.saveToFile();">
+              <div id="redColorBlock" style="width: 48px; height: 48px">
+                <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+              </div>
+            </div>
+            <div style="width: 48px;">
+              <label for="visualizercolor.greenValue" style="text-align: center; width: 100%; display: block">Green</label>
+              <input type="range" class="fancyrange" id="visualizercolor.greenValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); settings.visualizerColor.green = +this.value" onchange="settings.saveToFile();">
+              <div id="greenColorBlock" style="width: 48px; height: 48px">
+                <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+              </div>
+            </div>
+            <div style="width: 48px;">
+              <label for="visualizercolor.blueValue" style="text-align: center; width: 100%; display: block">Blue</label>
+              <input type="range" class="fancyrange" id="visualizercolor.blueValue" orient="vertical" value="255" max="255" min="0" oninput="local_setColors(); settings.visualizerColor.blue = +this.value" onchange="settings.saveToFile();">
+              <div id="blueColorBlock" style="width: 48px; height: 48px">
+                <p style="line-height: 47px; display: block; width: 100%; text-align: center;">0</p>
+              </div>
+            </div>
+            <div>
+              <input id="colorPicker" type="color" style="width: 64px; height: 64px; padding: 0" oninput="local_setColorsFromSelector(this.value); settings.saveToFile()" title="Select from color picker...">
+              <!-- <div id="totalColorBlock" style="width: 64px; height: 64px"></div> -->
+              <!-- <br> -->
+            </div>
+            <script>
+              function local_setColors() {
+                let red = +document.getElementById("visualizercolor.redValue").value;
+                let green = +document.getElementById("visualizercolor.greenValue").value;
+                let blue = +document.getElementById("visualizercolor.blueValue").value;
+                Storyboard.rgb(red, green, blue);
+                document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
+                document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
+                document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
+  
+                document.getElementById("redColorBlock").firstElementChild.innerText = red;
+                document.getElementById("greenColorBlock").firstElementChild.innerText = green;
+                document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
+                
+                document.getElementById("colorPicker").value = Tools.rgbToHex(red, green, blue);
+  
+              }
+              function local_setColorsFromSelector(value) {
+                let rgb = Tools.hexToRgb(value);
+                if (rgb == null) return;
+                let red = +(document.getElementById("visualizercolor.redValue").value = rgb.red);
+                let green = +(document.getElementById("visualizercolor.greenValue").value = rgb.green);
+                let blue = +(document.getElementById("visualizercolor.blueValue").value = rgb.blue);
+                Storyboard.rgb(red, green, blue);
+                document.getElementById("redColorBlock").style.backgroundColor = `rgb(${red}, 0, 0)`;
+                document.getElementById("greenColorBlock").style.backgroundColor = `rgb(0, ${green}, 0)`;
+                document.getElementById("blueColorBlock").style.backgroundColor = `rgb(0, 0, ${blue})`;
+  
+                document.getElementById("redColorBlock").firstElementChild.innerText = red;
+                document.getElementById("greenColorBlock").firstElementChild.innerText = green;
+                document.getElementById("blueColorBlock").firstElementChild.innerText = blue;
+  
+                settings.visualizerColor.red = red;
+                settings.visualizerColor.green = green;
+                settings.visualizerColor.blue = blue;
+              }
+            </script>
+          </div>
+          <div id="setsongdefaultcolor"></div>
+          <hr>
+          <label for="backgrounddimValue">Background Dimming</label>
+          <br>
+          <div id="backgrounddiminteractivebarcontainer" style="width: 128px; margin-left: 16px; margin-top: 8px;"></div>
+          <hr>
+          <label>Song List Thumbnails</label>
+          <div id="thumbnailscontainer">
+            <!-- JavaScript Insert -->
+          </div>
+        </section>
+        <section name="advancedsettings">
+          <hr>
+          <h2>Advanced</h2>
+          <div id="discordpresencecontainer">
+            <!-- JavaScript Insert -->
+          </div>
+          <sup>
+            Discord presence makes Toxen appear as the current "game" being played on your Discord status.
+          </sup>
+          <div id="discordpresenceshowdetailscontainer">
+            <!-- JavaScript Insert -->
+          </div>
+          <sup>
+            Display the details of the current song playing in Discord Presence.
+            Details include Artist, Title, and current time.
+          </sup>
+          <div id="freezevisualizercontainer">
+            <!-- JavaScript Insert -->
+          </div>
+          <sup>
+            Freeze the audio visualizer when the current song is paused.
+          </sup>
+          <hr>
+          <label for="songFolder">FFMPEG Path</label>
+          <input type="text" name="ffmpegPath" id="ffmpegpathValue" readonly class="fancyinput">
+          <button class="fancybutton svg_folderopen_white" onclick="settings.selectFFMPEGPath();">Select</button>
+          <button class="fancybutton svg_download_white" onclick="Toxen.ffmpegDownload();">Install FFMPEG</button>
+          <hr>
+          <h3>Hue Bridge</h3>
+          <sup>If you own a Philips Hue Bridge, you can allow connection to your lights to be used in the storyboard.</sup>
+          <label>Bridge IP / Hostname</label>
+          <input type="text" name="huebridgeip" id="huebridgeipValue" placeholder="Bridge IP / Hostname" class="fancyinput">
+          <br>
+          <label>Bridge Username</label>
+          <input type="text" name="huebridgeuser" id="huebridgeuserValue" placeholder="Bridge Username" class="fancyinput">
+          <br>
+          <label>Bridge Client Key</label>
+          <input type="password" name="huebridgeclientkey" id="huebridgeclientkeyValue" placeholder="Bridge Client Key" class="fancyinput">
+          <button class="fancybutton" onclick="local_saveHue();">Save Hue Settings</button>
+          <script>
+            function local_saveHue() {
+              settings.hueBridgeIp = document.getElementById('huebridgeipValue').value;
+              settings.hueBridgeUser = document.getElementById('huebridgeuserValue').value;
+              settings.hueBridgeClientKey = document.getElementById('huebridgeclientkeyValue').value;
+              settings.saveToFile();
+            }
+          </script>
+        </section>
+        <section name="modules">
+          <hr>
+          <h2>Modules</h2>
+          <sup>
+            If you have any modules installed, they will appear here. You can enable them and disable them by changing the checkbox.<br>
+            Restarting Toxen is required to update the modules' state.
+          </sup>
+          <br>
+          <div id="moduleActivation"><!-- JavaScript does its thing right arrrrouuuuund: here--></div>
+          <hr>
+          <div class="flex">
+            <button id="restartToxenButton" class="fancybutton svg_reload_white" onclick="Toxen.restart()" style="width: 100%;">Restart Toxen</button>
+            <button id="restartToxenButton" class="fancybutton" onclick="SongManager.history.clearAndPrompt()" style="width: 100%;">Clear History</button>
+          </div>
+          <hr>
+        </section>
       </div>
-      <div id="setsongdefaultcolor"></div>
-      <hr>
-      <label for="backgrounddimValue">Background Dimming</label>
-      <!-- <input type="range" class="fancyrange" id="backgrounddimValue" orient="vertical" value="50" max="100" min="0" oninput="settings.backgroundDim = Storyboard.backgroundDim = this.value" onmouseup="settings.saveToFile();"> -->
-      <br>
-      <div id="backgrounddiminteractivebarcontainer" style="width: 128px; margin-left: 16px; margin-top: 8px;"></div>
-      <hr>
-      <!-- <input type="checkbox" name="sptrtoggle" id="songmenutorightToggle" onclick="settings.toggleSongPanelToRight(this.checked); settings.saveToFile();">
-      <label for="songmenutorightToggle">Right-hand Song Menu</label>
-      <sup>
-        Display the song menu to the right side of the screen and settings to the left.
-        <br>
-        <span style="text-decoration: underline;">Not recommended to use as it isn't fully compatible with newer features.<br>This might be fixed or possibily removed in a future update.</span>
-      </sup>
-      <hr> -->
-      <!-- <label>Song Thumbnail Style</label><br>
-      <input type="radio" name="tnstyle" id="thumbnails=0" onclick="settings.thumbnails = 0; SongManager.refreshList(); settings.saveToFile();">
-      <label for="thumbnails=0">No Images</label><br>
-      <input type="radio" name="tnstyle" id="thumbnails=1" onclick="settings.thumbnails = 1; SongManager.refreshList(); settings.saveToFile();">
-      <label for="thumbnails=1">Thumbnails</label><br>
-      <sup>
-        Display background image next to the song name in the song list.<br>
-        If you're experiencing low performance, try to disable this.
-      </sup>
-      <input type="radio" name="tnstyle" id="thumbnails=2" onclick="settings.thumbnails = 2; SongManager.refreshList(); settings.saveToFile();">
-      <label for="thumbnails=2">Background Images</label>
-      <sup>
-        Display background image as the background behind the song name in the song list.<br>
-        If you're experiencing low performance, try to disable this.
-      </sup>
-      <input type="radio" name="tnstyle" id="thumbnails=3" onclick="settings.thumbnails = 3; SongManager.refreshList(); settings.saveToFile();">
-      <label for="thumbnails=3">Background Images (Small & Repeating)</label>
-      <sup>
-        Display background image as the background behind the song name in the song list.<br>
-        This however, makes the images small and repeat across the song item. Use this if you want to see the full images.<br>
-        If you're experiencing low performance, try to disable this.
-      </sup> -->
-      <div id="thumbnailscontainer">
-        <!-- JavaScript Insert -->
+      <div id="settingspanelselectionbar">
+        <img src="./svg/settings_white.svg" class="goToSettingsSection" name="generalsettings" title="General">
+        <img src="./svg/eye_white.svg" class="goToSettingsSection" name="visualsettings" title="Visuals">
+        <img src="./svg/pencil_white.svg" class="goToSettingsSection" name="themesettings" title="Themes">
+        <img src="./svg/tools_white.svg" class="goToSettingsSection" name="advancedsettings" title="Advanced">
+        <img src="./../icon.png" class="goToSettingsSection" name="modules" title="Modules">
       </div>
-      <hr>
-      <script>
-        function local_advSettingsToggle(checked) {
-          document.getElementById("advancedToggleId").innerHTML = (checked ? "▼" : "►") + ` <span style="text-decoration: underline;">Advanced Settings</span>`;
-        }
-      </script>
-      <input type="checkbox" name="advtoggle" id="advancedToggle" onclick="settings.advanced = this.checked; local_advSettingsToggle(this.checked)" hidden>
-      <label title="Click to toggle advanced settings view" style="text-decoration: none;" for="advancedToggle" id="advancedToggleId">
-        ► <span style="text-decoration: underline;">Advanced Settings</span>
-      </label>
-      <div id="advancedoptions">
-        <!-- <input type="checkbox" name="tntoggle" id="discordpresenceToggle" onclick="settings.toggleDiscordPresence(this.checked); settings.saveToFile();">
-        <label for="discordpresenceToggle">Discord Presence</label> -->
-        <div id="discordpresencecontainer">
-          <!-- JavaScript Insert -->
-        </div>
-        <sup>
-          Discord presence makes Toxen appear as the current "game" being played on your Discord status.
-        </sup>
-        <!-- <input type="checkbox" name="tntoggle" id="discordpresenceshowdetailsToggle" onclick="settings.discordPresenceShowDetails = this.checked; Toxen.updateDiscordPresence(); settings.saveToFile();">
-        <label for="discordpresenceshowdetailsToggle">Discord Presence: Show Details</label> -->
-        <div id="discordpresenceshowdetailscontainer">
-          <!-- JavaScript Insert -->
-        </div>
-        <sup>
-          Display the details of the current song playing in Discord Presence.
-          Details include Artist, Title, and current time.
-        </sup>
-        <!-- <input type="checkbox" name="avtoggle" id="freezevisualizerToggle" onclick="settings.freezeVisualizer = this.checked; settings.saveToFile();">
-        <label for="freezevisualizerToggle">Freeze Visualizer</label> -->
-        <div id="freezevisualizercontainer">
-          <!-- JavaScript Insert -->
-        </div>
-        <sup>
-          Freeze the audio visualizer when the current song is paused.
-        </sup>
-        <hr>
-        <label for="songFolder">FFMPEG Path</label>
-        <input type="text" name="ffmpegPath" id="ffmpegpathValue" readonly class="fancyinput">
-        <button class="fancybutton svg_folderopen_white" onclick="settings.selectFFMPEGPath();">Select</button>
-        <button class="fancybutton svg_download_white" onclick="Toxen.ffmpegDownload();">Install FFMPEG</button>
-        <hr>
-        <h2>Hue Bridge</h2>
-        <sup>If you own a Philips Hue Bridge, you can allow connection to your lights to be used in the storyboard.</sup>
-        <label>Bridge IP / Hostname</label>
-        <input type="text" name="huebridgeip" id="huebridgeipValue" placeholder="Bridge IP / Hostname" class="fancyinput">
-        <br>
-        <label>Bridge Username</label>
-        <input type="text" name="huebridgeuser" id="huebridgeuserValue" placeholder="Bridge Username" class="fancyinput">
-        <br>
-        <label>Bridge Client Key</label>
-        <input type="password" name="huebridgeclientkey" id="huebridgeclientkeyValue" placeholder="Bridge Client Key" class="fancyinput">
-        <button class="fancybutton" onclick="local_saveHue();">Save Hue Settings</button>
-        <script>
-          function local_saveHue() {
-            settings.hueBridgeIp = document.getElementById('huebridgeipValue').value;
-            settings.hueBridgeUser = document.getElementById('huebridgeuserValue').value;
-            settings.hueBridgeClientKey = document.getElementById('huebridgeclientkeyValue').value;
-            settings.saveToFile();
-          }
-        </script>
-      </div>
-      <hr>
-      <h2>Module Toggling</h2>
-      <sup>
-        If you have any modules installed, they will appear here. You can enable them and disable them by changing the checkbox.<br>
-        Restarting Toxen is required to update the modules' state.
-      </sup>
-      <br>
-      <div id="moduleActivation"><!-- JavaScript does its thing right arrrrouuuuund: here--></div>
-      <hr>
-      <div class="flex">
-        <button id="restartToxenButton" class="fancybutton svg_reload_white" onclick="Toxen.restart()" style="width: 100%;">Restart Toxen</button>
-        <button id="restartToxenButton" class="fancybutton" onclick="SongManager.history.clearAndPrompt()" style="width: 100%;">Clear History</button>
-      </div>
-      <hr>
     </div>
     <p id="subtitles"></p>
   </div>

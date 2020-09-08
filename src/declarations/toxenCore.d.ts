@@ -226,7 +226,7 @@ export declare namespace Toxen {
         /**
          * Return a regular array.
          */
-        toArray(): ArrayType[];
+        toArray(): this[number][];
         /**
          * Iterates through each element and uses the callback to return a boolean value.
          *
@@ -1340,53 +1340,6 @@ export declare class Statistics {
      * Returns the amount of enabled modules.
      */
     get modulesEnabled(): number;
-}
-export declare class Theme {
-    /**
-     * CSS File this theme belongs to.
-     */
-    constructor(file: string);
-    file: string;
-    /**
-     * Themeable objects referring to one specific object.
-     */
-    objects: {
-        songPanel: Themeable;
-        settingsPanel: Themeable;
-    };
-    /**
-     * Themeable classes. Can refer to multiple objects.
-     */
-    classes: {};
-    /**
-     * Generate CSS markup from themeable objects in this object.
-     * @returns CSS string
-     */
-    generateCSS(): string;
-    /**
-     * A string of custom CSS to apply after the object create CSS.
-     *
-     * Anything you can write in CSS, you can write to this.
-     */
-    customCSS: string;
-}
-declare class Themeable {
-    /**
-     * @param selector Unique CSS selector for this DOM element.
-     */
-    constructor(selector: string);
-    /**
-     * @param element DOM Element
-     * @param selector Unique CSS selector for this DOM element.
-     */
-    constructor(element: HTMLElement, selector: string);
-    selector: string;
-    element: HTMLElement;
-    getStyle: () => CSSStyleDeclaration;
-    /**
-     * Return the styling as a CSS string.
-     */
-    toString(): string;
 }
 interface SelectListItem<ValueType> {
     "text": string;

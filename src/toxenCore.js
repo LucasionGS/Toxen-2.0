@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -7348,61 +7349,6 @@ class Statistics {
     }
 }
 exports.Statistics = Statistics;
-class Theme {
-    /**
-     * CSS File this theme belongs to.
-     */
-    constructor(file) {
-        /**
-         * Themeable objects referring to one specific object.
-         */
-        this.objects = {
-            "songPanel": new Themeable("#songmenusidebar"),
-            "settingsPanel": new Themeable("#settingsmenusidebar"),
-        };
-        /**
-         * Themeable classes. Can refer to multiple objects.
-         */
-        this.classes = {};
-        /**
-         * A string of custom CSS to apply after the object create CSS.
-         *
-         * Anything you can write in CSS, you can write to this.
-         */
-        this.customCSS = "";
-        this.file = file;
-    }
-    /**
-     * Generate CSS markup from themeable objects in this object.
-     * @returns CSS string
-     */
-    generateCSS() {
-        // Generate CSS markup
-        return "";
-    }
-}
-exports.Theme = Theme;
-class Themeable {
-    constructor(element, selector = null) {
-        this.getStyle = () => {
-            return this.element.style;
-        };
-        if (typeof element == "string") {
-            this.selector = element;
-            element = document.querySelector(element);
-        }
-        else {
-            this.selector = selector;
-        }
-        this.element = element;
-    }
-    /**
-     * Return the styling as a CSS string.
-     */
-    toString() {
-        return this.element.style + "";
-    }
-}
 class SelectList extends events_1.EventEmitter {
     constructor(items, closeAutomatically = true) {
         super();

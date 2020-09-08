@@ -459,6 +459,15 @@ async function initialize() {
 
   // Load Settings
   settings.applySettingsToPanel();
+
+  ([...document.getElementsByClassName("goToSettingsSection")] as HTMLImageElement[]).forEach(img => {
+    let section = document.querySelector("section[name='"+ img.getAttribute("name") +"']");
+    if (section) {
+      img.addEventListener("click", () => {
+        section.scrollIntoView();
+      });
+    }
+  });
   
   // Apply visualizer coloring values from visualizer ranges
   (function() {
