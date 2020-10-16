@@ -250,7 +250,7 @@ export class Toxen {
    */
   static set title(value: string) {
     document.getElementById("toxen-title-text").innerHTML = value;
-    let plain = Tools.decodeHTML(value);
+    let plain = Tools.stripHTML(value);
     document.title = plain;
   }
   
@@ -403,7 +403,7 @@ export class Toxen {
           + (`${ScriptEditor.window != null ? "Editing "
           : song.isVideo ? "Watching "
           : "Listening to "}`)
-          + `${Tools.decodeHTML(song.parseName())}`;
+          + `${Tools.stripHTML(song.parseName())}`;
           if (song.details.source) options["state"] = `\nFrom ${Tools.decodeHTML(song.details.source)}`;
         }
         discordClient.setActivity(options);
@@ -875,7 +875,7 @@ export class Settings {
     if (!fs.existsSync(path.dirname(fileLocation))) {
       fs.mkdirSync(path.dirname(fileLocation), { recursive: true });
     } 
-    fs.writeFileSync(fileLocation, JSON.stringify(this, null, 2));
+    return fs.promises.writeFile(fileLocation, JSON.stringify(this, null, 2));
   }
 
   /**
@@ -968,7 +968,9 @@ export class Settings {
       opt.value = "%null%";
       selection.appendChild(opt);
     }
+
     
+    this.playlists.sort();
     for (let i = 0; i < this.playlists.length; i++) {
       const playlist = this.playlists[i];
       let opt = document.createElement("option");
@@ -1000,6 +1002,69 @@ export class Settings {
     Settings.current.reloadPlaylists();
     new Prompt("", "Switched to playlist "+ (playlist != "%null%" ? "\"" + playlist + "\"" : "None" ) +"").close(1000);
     SongManager.search();
+
+    if (playlist == "%null%") document.querySelector<HTMLButtonElement>("#playlistRenameButton").disabled = true;
+    else document.querySelector<HTMLButtonElement>("#playlistRenameButton").disabled = false;
+  }
+
+  renamePlaylist(playlist: string = Settings.current.playlist) {
+    if (playlist == null) return;
+    let newNameInput = Toxen.generate.input({
+      placeholder: playlist,
+      value: playlist,
+    });
+    let p = new Prompt("Rename playlist", [
+      `Rename \"${playlist}\"`,
+      newNameInput
+    ]);
+    newNameInput.focus();
+    newNameInput.setSelectionRange(0, playlist.length);
+    let [renameBtn] = p.addButtons(["Rename", "Close"], "fancybutton", true);
+    renameBtn.classList.add("color-green");
+    renameBtn.addEventListener("click", () => {
+      let newName = newNameInput.value.trim();
+      SongManager.songList.forEach(s => {
+        let id = s.details.playlists?.findIndex(pl => pl == playlist);
+        if (id != null && id > -1) {
+          s.details.playlists[id] = newName;
+          s.saveDetails();
+        }
+      });
+      
+      let id = Settings.current.playlists?.findIndex(pl => pl == playlist)
+      if (id != null && id > -1) {
+        Settings.current.playlists[id] = newName;
+      }
+      
+      Settings.current.reloadPlaylists();
+      Settings.current.selectPlaylist(newName);
+      Settings.current.saveToFile();
+      p.close();
+    });
+    
+    newNameInput.addEventListener("keydown", e => {
+      if (e.key == "Enter") {
+        renameBtn.click();
+      }
+    });
+    newNameInput.addEventListener("input", () => {
+      if (newNameInput.value.trim() == "%null%") {
+        renameBtn.disabled = true;
+        renameBtn.title = "Playlist can't be named %null% for interal reasons.";
+      }
+      else if (newNameInput.value.trim() == "") {
+        renameBtn.disabled = true;
+        renameBtn.title = "Playlist can't be named nothing.";
+      }
+      else if (newNameInput.value.trim() != playlist && this.playlists.includes(newNameInput.value.trim())) {
+        renameBtn.disabled = true;
+        renameBtn.title = "Playlist already exists.";
+      }
+      else {
+        renameBtn.title = "Rename playlist!";
+        renameBtn.disabled = false;
+      }
+    })
   }
 
   addPlaylist() {
@@ -2109,10 +2174,10 @@ export class Song {
     makeElement("customGroup", "Custom Group", "customGroup");
   }
 
-  saveDetails() {
+  async saveDetails() {
     try {
       this.details.tags = this.details.tags.filter(t => t.trim() !== "")
-      fs.writeFileSync(this.getFullPath("path") + "/details.json", JSON.stringify(this.details, null, 2));
+      await fs.promises.writeFile(this.getFullPath("path") + "/details.json", JSON.stringify(this.details, null, 2));
       SongManager.saveToFile();
       if (SongManager.getCurrentlyPlayingSong() == this) {
         Toxen.title = this.parseName();
@@ -2606,7 +2671,7 @@ export class SongManager {
   /**
    * Export every song into a folder.
    */
-  static async exportAll(location: string = null, songList: Song[] = null) {
+  static async exportAllSongs(location: string = null, songList: Song[] = null) {
     let songs = Array.isArray(songList) ? songList : SongManager.songList;
     let ans = typeof location === "string" ? location : dialog.showSaveDialogSync(browserWindow, {
       "title": `Zip ${songs.length} Toxen song file${songs.length > 1 ? "s" : ""}`,
@@ -2628,7 +2693,36 @@ export class SongManager {
         p = new Prompt(`All songs zipped and exported!`);
         p.close(2000);
         shell.showItemInFolder(ans);
-      }, 10);
+      }, 250);
+    }
+  }
+  /**
+   * Export every song into a folder.
+   */
+  static async exportAllBackgrounds(location: string = null, songList: Song[] = null) {
+    let songsWithBackgrounds: Song[];
+    let allSongs = songsWithBackgrounds = (Array.isArray(songList) ? songList : SongManager.songList)
+    songsWithBackgrounds = songsWithBackgrounds.filter(s => s.background != null);
+    let ans = typeof location === "string" ? location : dialog.showSaveDialogSync(browserWindow, {
+      "title": `Zip ${songsWithBackgrounds.length} Toxen background file${songsWithBackgrounds.length > 1 ? "s" : ""}`,
+      "buttonLabel": `Zip Background${songsWithBackgrounds.length > 1 ? "s" : ""}`,
+      "defaultPath": `toxen_background${songsWithBackgrounds.length > 1 ? "s" : ""}.zip`
+    });
+
+    if (typeof ans == "string") {
+      let zip = new Zip();
+      let p = new Prompt(`Exporting ${songsWithBackgrounds.length} backgrounds from ${allSongs.length} songs...`, "This can take a while depending on how many backgrounds you're exporting and your computer's speed.");
+      setTimeout(() => {
+        for (let i = 0; i < songsWithBackgrounds.length; i++) {
+          const song = songsWithBackgrounds[i];
+          zip.addFile(Tools.stripHTML(song.parseName()) + `_${i}.` + path.extname(song.background), fs.readFileSync(song.getFullPath("background")));
+        }
+        zip.writeZip(ans);
+        p.close();
+        p = new Prompt(`All backgrounds zipped and exported!`);
+        p.close(2000);
+        shell.showItemInFolder(ans);
+      }, 250);
     }
   }
 
@@ -4503,7 +4597,15 @@ export const toxenMenus = {
         click: (menuItem) => {
           const songs: Song[] = SongManager.getSelectedSongs();
 
-          SongManager.exportAll(null, songs);
+          SongManager.exportAllSongs(null, songs);
+        }
+      },
+      {
+        label: "Export songs' backgrounds",
+        click: (menuItem) => {
+          const songs: Song[] = SongManager.getSelectedSongs();
+
+          SongManager.exportAllBackgrounds(null, songs);
         }
       },
       {

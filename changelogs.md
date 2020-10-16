@@ -41,12 +41,17 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+
+## 202010160227
 General
 - Added shortcuts to quickly go to certain sections of the settings panel and resorted some of the settings.
 - Added playback rate changer! You can now change the speed of the songs by applying it in settings.
 - Added gain changer as well! Apply it same way in settings, right below song speed.
+- Added export backgrounds from selected songs to selected songs.
+- Added playlist renaming.
 - The background for subtitles now only fill as much as the text does instead of reaching the corners.
 - Fixed visualizer color selector not saving color until the ranges were moved.
+- Changed the sorting of playlists to alphabetically.
 
 ToxenScript
 - Added `subtitleposition` as a timing function and `:subtitleposition` runtime function. It's recommended to use it as a `always` timing point instead of as a runtime function, as it will auto adjust when using `always`. It takes 1 parameter, which is the new Y position. You can write in a numbere or a percentage value. It cannot go off-screen.

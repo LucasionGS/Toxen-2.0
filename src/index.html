@@ -85,42 +85,29 @@
         <select style="width: 100%" name="playlist" id="playlistselection" class="fancyselect" onchange="settings.selectPlaylist(this.value); settings.saveToFile();">
           <option value="%null%">None</option>
         </select>
-        <button style="width: 35%" class="fancybutton" onclick="settings.addPlaylist();">New</button>
+        <button id="playlistNewButton" style="width: 35%" class="fancybutton" onclick="settings.addPlaylist();">New</button>
+        <button id="playlistRenameButton" style="width: 35%" class="fancybutton" onclick="settings.renamePlaylist();">Rename</button>
       </div>
       <hr>
       <div class="flex">
-        <!-- <button
-        class="fancybutton color-red"
-        id="toggleShuffle"
-        title="Shuffle makes songs play randomly instead of in a list order"
-        onclick="SongManager.toggleShuffle()">Shuffle</button>
-        <button
-        class="fancybutton color-red"
-        id="toggleRepeat"
-        title="Repeat make the current song repeat forever"
-        onclick="SongManager.toggleRepeat()">Repeat</button> -->
         <button
         class="fancybutton color-red"
         id="toggleOnlyvisible"
         title="This makes sure only songs that are visible (i.e is inside an open Song Group) will be played."
         onclick="SongManager.toggleOnlyVisible()">Only play songs visible in the panel</button>
       </div>
-        <script>
-          function local_playNext() {
-            if (settings.repeat == true) {
-              settings.repeat = false;
-              SongManager.playNext()
-              settings.repeat = true;
-            }
-            else {
-              SongManager.playNext()
-            }
+      <script>
+        function local_playNext() {
+          if (settings.repeat == true) {
+            settings.repeat = false;
+            SongManager.playNext()
+            settings.repeat = true;
           }
-        </script>
-      <!-- <div class="flex">
-        <button class="fancybutton color-blue" onclick="SongManager.playPrev()">Previous Song</button>
-        <button class="fancybutton color-blue" onclick="local_playNext()">Next Song</button>
-      </div> -->
+          else {
+            SongManager.playNext()
+          }
+        }
+      </script>
       <hr>
       <div class="flex">
         <button class="fancybutton" onclick="SongManager.scanDirectory();" title="Refresh the music library">Refresh Music Library</button>

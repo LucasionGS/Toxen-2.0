@@ -260,6 +260,7 @@ export declare class Settings {
      */
     reloadPlaylists(newInstance?: boolean): HTMLSelectElement;
     selectPlaylist(playlist: string): void;
+    renamePlaylist(playlist?: string): void;
     addPlaylist(): void;
     selectSongFolder(): Promise<void>;
     applySongFolderListToSelect(): void;
@@ -596,7 +597,7 @@ export declare class Song {
      * Display the details the song has stored.
      */
     displayInfo(): void;
-    saveDetails(): boolean;
+    saveDetails(): Promise<boolean>;
     setBackground(filePath: string): void;
     setStoryboard(filePath: string): void;
     setSubtitles(filePath: string): void;
@@ -665,7 +666,11 @@ export declare class SongManager {
     /**
      * Export every song into a folder.
      */
-    static exportAll(location?: string, songList?: Song[]): Promise<void>;
+    static exportAllSongs(location?: string, songList?: Song[]): Promise<void>;
+    /**
+     * Export every song into a folder.
+     */
+    static exportAllBackgrounds(location?: string, songList?: Song[]): Promise<void>;
     static importMediaFile(file: File, playOnDone?: boolean): Promise<Song>;
     /**
      * Return all the song object that has selected enabled
