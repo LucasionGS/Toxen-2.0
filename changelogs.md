@@ -1,16 +1,16 @@
 # Toxen Next
 Features I want to implement (This will be updated as I get more ideas and remember to write them down)  
 (Post-release) means it's a feature I will work on after the official release and will be added as future updates.
-- Custom Themes
 - Graphical Storyboard Editor Interface (Post-release)
 - Built-in Graphical SRT(subtitle) creator (Post-release)
+- Music Queue with manual sorting
+- Custom Themes
 - Better and more media conversions to supported files.
 - Better song info editing
   - Multi-song info editing
 - Multi-add to playlist
 - Remove a playlist
 - Visualizer Quanity Customizer (Interface buttons for `Storyboard`.`setAnalyserFftLevel` and `Storyboard`.`setAnalyserFftSize`)
-- Music Playback Rate Changer (Like the first version of Toxen used to have)
 - Custom mini-notice for small, not super important and temporary notifications that doesn't require to be shoved in your face.
 
 - [Toxen.net](https://toxen.net/) website
@@ -29,13 +29,16 @@ Features I want to implement (This will be updated as I get more ideas and remem
     - Information about Toxen and the credits (Patch notes?)
   - Song Wheel(?)
     - Songs could be pushed further out towards the center (and more visible) the closer it goes to the center of the visible part song list.
-  - Draggable buttons(?)
-    - The ability to move the buttons on the main interface around to whichever corner you prefer.
   - Better sorting in settings. Possibly a top menu for categories.
-  - An info page with all shortcuts (God damn it then I need to remember them all >_>)
+  - An info page with all shortcuts (God damn it I need to remember them all >_>)
 
 - Known bugs to fix
-  - None in mind right now, please notify me if you find something!
+  - Rare crashes when using the debugger (Chromium console) menu in Toxen. This shouldn't be a problem for normal users, but more for programmers (and me).
+    - `Temp fix`: Avoid using the debugger if you don't need to. If you're a dev and REALLY need to, make sure `Tools.updateCSS` isn't being used on an interval in the TS/JS code.
+  - Visualizer intensity can exceed the window if set too high.
+    - `Temp fix`: Don't set the intensity too high lmao
+  - When downloading videos (specifically with video ticked) using the YouTube downloader, on download completion the song might not start properly.
+    - `Temp fix`: Either selecting a different song and reselecting the new song or if that doesn't work, restart Toxen and it should be all good.
 
 # Toxen Change Logs
 Features and changes that has already been made to Toxen.

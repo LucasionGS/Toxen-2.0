@@ -909,7 +909,7 @@ ipcRenderer.on("updatediscordpresence", () => {
     Toxen.updateDiscordPresence();
 });
 var avg = 0;
-var avgSec = 0;
+// var avgSec = 0;
 var dim = 0;
 /**
  * Run once to activate the visualizer and storyboard elements.
@@ -923,6 +923,7 @@ function initializeVisualizer() {
     StoryboardObject.heightRatio = canvas.height / StoryboardObject.heightDefault;
     var ctx = canvas.getContext("2d");
     Storyboard.setAnalyserFftSize(512);
+    var body = document.body;
     function renderFrame() {
         requestAnimationFrame(renderFrame);
         if (settings.freezeVisualizer && SongManager.player.paused)
@@ -954,6 +955,9 @@ function initializeVisualizer() {
                     dim -= 1;
                 }
             }
+            // Background zooming
+            // body.style.scale = "2";
+            // console.log(Storyboard.currentVisualizerIntensityAverage);
         }
         else {
             dim = Settings.current.backgroundDim;
@@ -965,6 +969,7 @@ function initializeVisualizer() {
         Storyboard.currentBackgroundDim = 100 - dim;
         ctx.fillStyle = "rgba(0, 0, 0, " + (dim / 100) + ")";
         ctx.fillRect(0, 0, WIDTH, HEIGHT);
+        var multiplier = Settings.current.volume / 100;
         var intensity = Storyboard.visualizerIntensity / 10;
         if (settings.visualizer) {
             avg = 0;
@@ -1008,13 +1013,14 @@ function initializeVisualizer() {
                 avg += Storyboard.dataArray[i];
             }
             avg /= Storyboard.bufferLength * 2;
-            avgSec += avg;
+            // avgSec += avg;
+            Storyboard.currentVisualizerIntensityAverage = avg;
             // avg -= settings.volume;
         }
     }
-    setInterval(() => {
-        avgSec = 0;
-    }, 1000);
+    // setInterval(() => {
+    //   avgSec = 0;
+    // }, 1000);
     renderFrame();
 }
 // When document has loaded, initialise

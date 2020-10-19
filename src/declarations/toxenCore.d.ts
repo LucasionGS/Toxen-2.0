@@ -840,6 +840,11 @@ export declare class Storyboard {
      */
     static currentBackgroundDim: number;
     /**
+     * @readonly
+     * The currently shown average visualizer intensity value.
+     */
+    static currentVisualizerIntensityAverage: number;
+    /**
      * Fade into a RGB color.
      */
     static rgb(red?: number, green?: number, blue?: number): {

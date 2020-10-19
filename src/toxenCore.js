@@ -35,6 +35,7 @@ const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 const rpc = require("discord-rpc");
 const child_process_1 = require("child_process");
+// import Git, {SimpleGit} from "simple-git";
 // Discord RPC
 var discordClient;
 /**
@@ -879,7 +880,7 @@ class Settings {
             if (!fs.existsSync(path.dirname(fileLocation))) {
                 fs.mkdirSync(path.dirname(fileLocation), { recursive: true });
             }
-            return fs.promises.writeFile(fileLocation, JSON.stringify(this, null, 2));
+            return fs.writeFileSync(fileLocation, JSON.stringify(this, null, 2));
         });
     }
     /**
@@ -4590,6 +4591,11 @@ Storyboard.backgroundDim = 0;
  * **Note:** This is often different from the ``Settings.backgroundDim`` setting, as this is dynamic.
  */
 Storyboard.currentBackgroundDim = 0;
+/**
+ * @readonly
+ * The currently shown average visualizer intensity value.
+ */
+Storyboard.currentVisualizerIntensityAverage = 0;
 Storyboard.currentBackground = "";
 Storyboard.analyser = null;
 Storyboard.bass = null;
@@ -5012,13 +5018,18 @@ class ToxenScriptManager {
                 // Updates only when required.
                 ToxenScriptManager.isRunning = true;
                 let _gl = function () {
+                    // if (Settings.current.storyboard && ToxenScriptManager.events.length > 0) {
+                    //   for (let i = 0; i < ToxenScriptManager.events.length; i++) {
+                    //     const e = ToxenScriptManager.events[i];
+                    //     if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
+                    //       e.fn();
+                    //     }
+                    //   }
+                    // }
                     if (Settings.current.storyboard && ToxenScriptManager.events.length > 0) {
-                        for (let i = 0; i < ToxenScriptManager.events.length; i++) {
-                            const e = ToxenScriptManager.events[i];
-                            if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
-                                e.fn();
-                            }
-                        }
+                        ToxenScriptManager.events
+                            .filter(e => SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint)
+                            .forEach(e => e.fn());
                     }
                     requestAnimationFrame(_gl);
                 };
@@ -7537,6 +7548,7 @@ class PanelManager {
         });
         PanelManager.songPanelButton.addEventListener("mouseout", () => {
             songmenusidebar.toggleAttribute("open", false);
+            document.querySelector("#songselection");
         });
         PanelManager.settingsPanelButton.addEventListener("mouseenter", () => {
             if (Settings.current.buttonActivationByHover)

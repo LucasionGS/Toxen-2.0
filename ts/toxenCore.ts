@@ -24,6 +24,7 @@ const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 import * as rpc from "discord-rpc";
 import { fork } from "child_process";
+// import Git, {SimpleGit} from "simple-git";
 // Discord RPC
 var discordClient: rpc.Client;
 /**
@@ -875,7 +876,7 @@ export class Settings {
     if (!fs.existsSync(path.dirname(fileLocation))) {
       fs.mkdirSync(path.dirname(fileLocation), { recursive: true });
     } 
-    return fs.promises.writeFile(fileLocation, JSON.stringify(this, null, 2));
+    return fs.writeFileSync(fileLocation, JSON.stringify(this, null, 2));
   }
 
   /**
@@ -4984,6 +4985,12 @@ export class Storyboard {
    * **Note:** This is often different from the ``Settings.backgroundDim`` setting, as this is dynamic.
    */
   static currentBackgroundDim = 0;
+  
+  /**
+   * @readonly
+   * The currently shown average visualizer intensity value.
+   */
+  static currentVisualizerIntensityAverage = 0;
   /**
    * Fade into a RGB color.
    */
@@ -5663,13 +5670,18 @@ export class ToxenScriptManager {
       // Updates only when required.
       ToxenScriptManager.isRunning = true;
       let _gl = function() {
+        // if (Settings.current.storyboard && ToxenScriptManager.events.length > 0) {
+        //   for (let i = 0; i < ToxenScriptManager.events.length; i++) {
+        //     const e = ToxenScriptManager.events[i];
+        //     if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
+        //       e.fn();
+        //     }
+        //   }
+        // }
         if (Settings.current.storyboard && ToxenScriptManager.events.length > 0) {
-          for (let i = 0; i < ToxenScriptManager.events.length; i++) {
-            const e = ToxenScriptManager.events[i];
-            if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
-              e.fn();
-            }
-          }
+          ToxenScriptManager.events
+          .filter(e => SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint)
+          .forEach(e => e.fn());
         }
         requestAnimationFrame(_gl);
       }
@@ -8377,6 +8389,7 @@ export class PanelManager {
     });
     PanelManager.songPanelButton.addEventListener("mouseout", () => {
       songmenusidebar.toggleAttribute("open", false);
+      document.querySelector<HTMLDivElement>("#songselection")
     });
     
     PanelManager.settingsPanelButton.addEventListener("mouseenter", () => {
