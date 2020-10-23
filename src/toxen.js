@@ -16,10 +16,11 @@ const { Toxen, Settings, Song, SongManager, Storyboard, StoryboardObject, ToxenS
 const path = require("path");
 const rimraf = require("rimraf");
 const __toxenVersion = require("./version.json");
+const user_1 = require("./auth/models/user");
 Toxen.version = __toxenVersion;
-const { remote, ipcRenderer, shell } = require("electron");
-let devMode = !remote.app.isPackaged;
-let browserWindow = remote.getCurrentWindow();
+const electron_1 = require("electron");
+let devMode = !electron_1.remote.app.isPackaged;
+let browserWindow = electron_1.remote.getCurrentWindow();
 /**
  * Global Settings Object
  */
@@ -450,6 +451,12 @@ function initialize() {
     });
 }
 function addCustomInputs() {
+    {
+        let btn = document.querySelector("#loginButton");
+        btn.addEventListener("click", () => __awaiter(this, void 0, void 0, function* () {
+            console.log(yield user_1.default.loginPrompt());
+        }));
+    }
     //#region Custom sliders/Progress bars
     document.body.appendChild(Toxen.interactiveProgressBar.element); // Insert the progress bar
     { // Block scope
@@ -905,7 +912,7 @@ function addCustomInputs() {
     });
     freezevisualizercontainer.checked = settings.freezeVisualizer;
 }
-ipcRenderer.on("updatediscordpresence", () => {
+electron_1.ipcRenderer.on("updatediscordpresence", () => {
     Toxen.updateDiscordPresence();
 });
 var avg = 0;

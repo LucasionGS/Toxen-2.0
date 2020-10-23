@@ -5,6 +5,7 @@ import * as Electron from "electron";
 import * as Zip from "adm-zip";
 import { EventEmitter } from "events";
 import * as rpc from "discord-rpc";
+import User from "./auth/models/user";
 interface HTMLElementScroll extends HTMLElement {
     scrollIntoViewIfNeeded(): void;
 }
@@ -14,6 +15,7 @@ declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 40
  */
 export declare class Toxen {
     static initialize(): void;
+    static User: typeof User;
     /**
      * Clear characters windows filesystem or Toxen doesn't understand.
      */

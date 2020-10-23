@@ -20,7 +20,7 @@ const node_hue_api_1 = require("node-hue-api");
 exports.hueApi = null;
 const ionMarkDown_1 = require("./ionMarkDown");
 const Electron = require("electron");
-const { remote, shell, ipcRenderer } = Electron;
+const { remote, shell, ipcRenderer, webFrame } = Electron;
 const { Menu, dialog, Notification: ElectronNotification, app } = remote;
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
@@ -35,6 +35,7 @@ const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 const rpc = require("discord-rpc");
 const child_process_1 = require("child_process");
+const user_1 = require("./auth/models/user");
 // import Git, {SimpleGit} from "simple-git";
 // Discord RPC
 var discordClient;
@@ -431,6 +432,7 @@ class Toxen {
     }
 }
 exports.Toxen = Toxen;
+Toxen.User = user_1.default;
 /**
  * A list of valid audio extension
  */
@@ -4371,6 +4373,27 @@ function reloadMenu() {
                         browserWindow.reload();
                     },
                     accelerator: "F5"
+                },
+                {
+                    label: "Zoom in",
+                    click() {
+                        webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() + 0.10, 0.20, 5));
+                    },
+                    accelerator: "Ctrl + p"
+                },
+                {
+                    label: "Zoom out",
+                    click() {
+                        webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() - 0.10, 0.20, 5));
+                    },
+                    accelerator: "Ctrl + -"
+                },
+                {
+                    label: "Reset Zoom",
+                    click() {
+                        webFrame.setZoomFactor(1);
+                    },
+                    accelerator: "Ctrl + -"
                 },
                 {
                     label: "Toggle Fullscreen",

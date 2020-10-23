@@ -9,7 +9,7 @@ import { v3 as hue } from "node-hue-api";
 export let hueApi: import("node-hue-api/lib/api/Api") = null;
 import { Imd } from "./ionMarkDown";
 import * as Electron from "electron";
-const { remote, shell, ipcRenderer } = Electron;
+const { remote, shell, ipcRenderer, webFrame } = Electron;
 const { Menu, dialog, Notification: ElectronNotification, app } = remote;
 import * as ffmpeg from "fluent-ffmpeg";
 import * as path from "path";
@@ -24,6 +24,7 @@ const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 import * as rpc from "discord-rpc";
 import { fork } from "child_process";
+import User from "./auth/models/user";
 // import Git, {SimpleGit} from "simple-git";
 // Discord RPC
 var discordClient: rpc.Client;
@@ -122,6 +123,8 @@ export class Toxen {
       }
     });
   }
+
+  public static User = User;
 
   /**
    * Clear characters windows filesystem or Toxen doesn't understand.
@@ -4899,6 +4902,27 @@ function reloadMenu() {
             browserWindow.reload();
           },
           accelerator: "F5"
+        },
+        {
+          label:"Zoom in",
+          click() {
+            webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() + 0.10, 0.20, 5));
+          },
+          accelerator: "Ctrl + p"
+        },
+        {
+          label:"Zoom out",
+          click() {
+            webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() - 0.10, 0.20, 5));
+          },
+          accelerator: "Ctrl + -"
+        },
+        {
+          label:"Reset Zoom",
+          click() {
+            webFrame.setZoomFactor(1);
+          },
+          accelerator: "Ctrl + -"
         },
         {
           label:"Toggle Fullscreen",

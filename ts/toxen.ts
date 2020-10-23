@@ -22,12 +22,13 @@ const {
   toxenMenus,
   toxenHeaderMenu,
   showTutorial,
-} = ToxenCore
+} = ToxenCore;
 import * as path from "path";
 import rimraf = require("rimraf");
 import * as __toxenVersion from "./version.json"
+import User from "./auth/models/user";
 Toxen.version = __toxenVersion;
-const { remote, ipcRenderer, shell } = require("electron");
+import { remote, ipcRenderer, webFrame } from "electron";
 let devMode = !remote.app.isPackaged;
 let browserWindow = remote.getCurrentWindow();
 
@@ -507,6 +508,13 @@ async function initialize() {
 }
 
 function addCustomInputs() {
+  {
+    let btn = document.querySelector<HTMLButtonElement>("#loginButton");
+    btn.addEventListener("click", async () => {
+      console.log(await User.loginPrompt());
+    });
+  }
+  
   //#region Custom sliders/Progress bars
   document.body.appendChild(Toxen.interactiveProgressBar.element); // Insert the progress bar
 
