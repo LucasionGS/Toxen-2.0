@@ -4908,21 +4908,21 @@ function reloadMenu() {
           click() {
             webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() + 0.10, 0.20, 5));
           },
-          accelerator: "Ctrl + p"
+          accelerator: "Ctrl + i"
         },
         {
           label:"Zoom out",
           click() {
             webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() - 0.10, 0.20, 5));
           },
-          accelerator: "Ctrl + -"
+          accelerator: "Ctrl + o"
         },
         {
           label:"Reset Zoom",
           click() {
             webFrame.setZoomFactor(1);
           },
-          accelerator: "Ctrl + -"
+          accelerator: "Ctrl + 0"
         },
         {
           label:"Toggle Fullscreen",
