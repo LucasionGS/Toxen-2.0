@@ -126,6 +126,19 @@ export class Toxen {
 
   public static User = User;
 
+  public static zoomIn() {
+    webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() + 0.10, 0.20, 5));
+    localStorage.setItem("zoom", webFrame.getZoomFactor().toString());
+  }
+  public static zoomOut() {
+    webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() - 0.10, 0.20, 5));
+    localStorage.setItem("zoom", webFrame.getZoomFactor().toString());
+  }
+  public static zoomReset() {
+    webFrame.setZoomFactor(1);
+    localStorage.setItem("zoom", webFrame.getZoomFactor().toString());
+  }
+
   /**
    * Clear characters windows filesystem or Toxen doesn't understand.
    */
@@ -4906,21 +4919,21 @@ function reloadMenu() {
         {
           label:"Zoom in",
           click() {
-            webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() + 0.10, 0.20, 5));
+            Toxen.zoomIn();
           },
           accelerator: "Ctrl + i"
         },
         {
           label:"Zoom out",
           click() {
-            webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() - 0.10, 0.20, 5));
+            Toxen.zoomOut();
           },
           accelerator: "Ctrl + o"
         },
         {
           label:"Reset Zoom",
           click() {
-            webFrame.setZoomFactor(1);
+            Toxen.zoomReset();
           },
           accelerator: "Ctrl + 0"
         },
@@ -7866,6 +7879,7 @@ export class Effect {
     ef.style.pointerEvents = "none";
     ef.style.zIndex = "1000";
     ef.style.backgroundColor = color;
+    ef.style.borderRadius = "10px";
     let opacity = 0;
     // let add = 0.005;
     let add = 10 / ms;
@@ -7877,8 +7891,8 @@ export class Effect {
       ef.style.opacity = (opacity).toString();
       ef.style.position = "absolute";
       let boundingBox = element.getBoundingClientRect();
-      ef.style.left = boundingBox.left + "px";
-      ef.style.top =  boundingBox.top + "px";
+      ef.style.left = (boundingBox.left + 1)  + "px";
+      ef.style.top =  (boundingBox.top + 1) + "px";
       ef.style.width = element.clientWidth + "px";
       ef.style.height = element.clientHeight + "px";
     }, 10);

@@ -385,8 +385,9 @@
           <div id="moduleActivation"><!-- JavaScript does its thing right arrrrouuuuund: here--></div>
           <hr>
           <div class="flex">
-            <button id="restartToxenButton" class="fancybutton svg_reload_white" onclick="Toxen.restart()" style="width: 100%;">Restart Toxen</button>
-            <button id="restartToxenButton" class="fancybutton" onclick="SongManager.history.clearAndPrompt()" style="width: 100%;">Clear History</button>
+            <button id="restartToxenButton" class="fancybutton svg_reload_white" onclick="Toxen.restart();" style="width: 100%;">Restart Toxen</button>
+            <button id="clearHistoryButton" class="fancybutton" onclick="SongManager.history.clearAndPrompt();" style="width: 100%;">Clear History</button>
+            <button id="ToggleFullscreen" class="fancybutton" onclick="Toxen.toggleFullScreen();" style="width: 100%;">Toggle Fullscreen</button>
           </div>
           <hr>
         </section>
@@ -394,7 +395,7 @@
       <div id="settingspanelselectionbar">
         <img src="./svg/settings_white.svg" class="goToSettingsSection" name="generalsettings" title="General">
         <img src="./svg/eye_white.svg" class="goToSettingsSection" name="visualsettings" title="Visuals">
-        <img src="./svg/pencil_white.svg" class="goToSettingsSection" name="themesettings" title="Themes">
+        <!-- <img src="./svg/pencil_white.svg" class="goToSettingsSection" name="themesettings" title="Themes"> -->
         <img src="./svg/tools_white.svg" class="goToSettingsSection" name="advancedsettings" title="Advanced">
         <img src="./../icon.png" class="goToSettingsSection" name="modules" title="Modules">
       </div>

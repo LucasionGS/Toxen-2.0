@@ -76,6 +76,9 @@ function initialize() {
                     break;
             }
         }
+        // Load zoom level
+        if (localStorage.getItem("zoom"))
+            electron_1.webFrame.setZoomFactor(+localStorage.getItem("zoom"));
         if (settings.discordPresence === true) {
             Toxen.discordConnect();
         }

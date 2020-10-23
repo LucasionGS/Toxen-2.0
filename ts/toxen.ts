@@ -90,6 +90,9 @@ async function initialize() {
     }
   }
 
+  // Load zoom level
+  if (localStorage.getItem("zoom")) webFrame.setZoomFactor(+localStorage.getItem("zoom"));
+
   if (settings.discordPresence === true) {
     Toxen.discordConnect();
   }

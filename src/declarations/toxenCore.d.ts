@@ -16,6 +16,9 @@ declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 40
 export declare class Toxen {
     static initialize(): void;
     static User: typeof User;
+    static zoomIn(): void;
+    static zoomOut(): void;
+    static zoomReset(): void;
     /**
      * Clear characters windows filesystem or Toxen doesn't understand.
      */
