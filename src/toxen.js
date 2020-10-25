@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const toxenStyle_1 = require("./toxenStyle");
 const ToxenCore = require("./toxenCore");
-const { Toxen, Settings, Song, SongManager, Storyboard, StoryboardObject, ToxenScriptManager, Tools, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, SongGroup, toxenMenus, toxenHeaderMenu, showTutorial, } = ToxenCore;
+const { Toxen, Settings, Song, SongManager, Storyboard, StoryboardObject, ToxenScriptManager, Tools, Prompt, Update, ScriptEditor, ToxenModule, Statistics, SelectList, PanelManager, SongGroup, Sync, toxenMenus, toxenHeaderMenu, showTutorial, } = ToxenCore;
 const path = require("path");
 const rimraf = require("rimraf");
 const __toxenVersion = require("./version.json");
@@ -63,6 +63,7 @@ Toxen.interactiveProgressBar.on("click", (_, value) => {
 });
 function initialize() {
     return __awaiter(this, void 0, void 0, function* () {
+        Sync.compare(JSON.parse(fs.readFileSync("test.json", "utf8")), JSON.parse(fs.readFileSync("test2.json", "utf8")));
         // Load settings
         settings.loadFromFile();
         if (settings.songFolder == null) {

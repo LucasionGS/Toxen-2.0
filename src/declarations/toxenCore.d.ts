@@ -5,6 +5,7 @@ import * as Electron from "electron";
 import * as Zip from "adm-zip";
 import { EventEmitter } from "events";
 import * as rpc from "discord-rpc";
+import * as tree from "directory-tree";
 import User from "./auth/models/user";
 interface HTMLElementScroll extends HTMLElement {
     scrollIntoViewIfNeeded(): void;
@@ -1391,6 +1392,11 @@ export declare class PanelManager {
     static defaults(): void;
     static songPanelButton: HTMLDivElement;
     static settingsPanelButton: HTMLDivElement;
+}
+export declare class Sync {
+    static outputTree(tree: tree.DirectoryTree): void;
+    static makeTree(): tree.DirectoryTree;
+    static compare(oldData: tree.DirectoryTree, newData: tree.DirectoryTree): void;
 }
 /**
  * List of assets used in Toxen.

@@ -24,6 +24,8 @@ const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 import * as rpc from "discord-rpc";
 import { fork } from "child_process";
+import * as tree from "directory-tree";
+import { DeepDiffMapper } from "./diffMapper";
 import User from "./auth/models/user";
 // import Git, {SimpleGit} from "simple-git";
 // Discord RPC
@@ -8514,6 +8516,23 @@ export class PanelManager {
 
   static songPanelButton: HTMLDivElement;
   static settingsPanelButton: HTMLDivElement;
+}
+
+export class Sync {
+  static outputTree(tree: tree.DirectoryTree) {
+    fs.writeFileSync("./test.json", JSON.stringify(tree, null, 2));
+  }
+  
+  static makeTree() {
+    return tree(Settings.current.songFolder, {
+      normalizePath: true
+    });
+  }
+  
+  static compare(oldData: tree.DirectoryTree, newData: tree.DirectoryTree) {
+    
+    // fs.writeFileSync("./comparedData.json", JSON.stringify(data, null, 2));
+  }
 }
 
 /**

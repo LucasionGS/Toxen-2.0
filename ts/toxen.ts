@@ -19,6 +19,7 @@ const {
   SelectList,
   PanelManager,
   SongGroup,
+  Sync,
   toxenMenus,
   toxenHeaderMenu,
   showTutorial,
@@ -76,6 +77,7 @@ Toxen.interactiveProgressBar.on("click", (_, value) => {
 });
 
 async function initialize() {
+  Sync.compare(JSON.parse(fs.readFileSync("test.json", "utf8")), JSON.parse(fs.readFileSync("test2.json", "utf8")));
   // Load settings
   settings.loadFromFile();
   if (settings.songFolder == null) {

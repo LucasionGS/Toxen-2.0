@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.PanelManager = exports.SelectList = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
+exports.showTutorial = exports.Assets = exports.Sync = exports.PanelManager = exports.SelectList = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -35,6 +35,7 @@ const browserWindow = remote.getCurrentWindow();
 const commandExists = require("command-exists");
 const rpc = require("discord-rpc");
 const child_process_1 = require("child_process");
+const tree = require("directory-tree");
 const user_1 = require("./auth/models/user");
 // import Git, {SimpleGit} from "simple-git";
 // Discord RPC
@@ -7666,6 +7667,20 @@ class PanelManager {
     }
 }
 exports.PanelManager = PanelManager;
+class Sync {
+    static outputTree(tree) {
+        fs.writeFileSync("./test.json", JSON.stringify(tree, null, 2));
+    }
+    static makeTree() {
+        return tree(Settings.current.songFolder, {
+            normalizePath: true
+        });
+    }
+    static compare(oldData, newData) {
+        // fs.writeFileSync("./comparedData.json", JSON.stringify(data, null, 2));
+    }
+}
+exports.Sync = Sync;
 /**
  * List of assets used in Toxen.
  *
