@@ -906,7 +906,7 @@ export class Settings {
     SongManager.player.volume = value / 100;
     let volumeRange = document.querySelector<InteractiveProgressBar.InteractiveProgressBar.HTMLInteractiveProgressBar>("#audioadjusterbar");
 
-    if (volumeRange.object.value != value) volumeRange.object.value = value;
+    if (volumeRange.object.value != value) volumeRange.object.value = Math.ceil(value);
   }
 
   applySettingsToPanel() {
@@ -1473,6 +1473,38 @@ export class Settings {
    * The current version.
    */
   version: number = 0;
+}
+
+export namespace SettingsPanel {
+  export const sections: {[name: string]: Section} = {}
+  export class Section {
+    constructor(public name: string) {
+      const h2 = document.createElement("h2")
+      this.div.appendChild(h2);
+      this.div.appendChild(this.divContent);
+      this.div.appendChild(document.createElement("hr"));
+    }
+    private div: HTMLDivElement = document.createElement("div");
+    private divContent: HTMLDivElement = document.createElement("div");
+    private inputs: SectionInput[];
+
+    public addInput(html: string) {
+      this.inputs.push(new SectionInput(html));
+    }
+  }
+
+  class SectionInput {
+    constructor(public html: string) {
+
+    }
+
+    private div: HTMLDivElement = document.createElement("div");
+  }
+
+  export function addSection(sectionName: string): Section {
+    // Implement
+    return new Section(sectionName);
+  }
 }
 
 /**

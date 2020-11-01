@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showTutorial = exports.Assets = exports.Sync = exports.PanelManager = exports.SelectList = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.Settings = exports.Toxen = exports.hueApi = void 0;
+exports.showTutorial = exports.Assets = exports.Sync = exports.PanelManager = exports.SelectList = exports.Statistics = exports.ToxenModule = exports.Effect = exports.ScriptEditor = exports.Update = exports.Prompt = exports.Tools = exports.ToxenScriptManager = exports.StoryboardObject = exports.Storyboard = exports.toxenHeaderMenu = exports.toxenMenus = exports.SongGroup = exports.SongManager = exports.Song = exports.SettingsPanel = exports.Settings = exports.Toxen = exports.hueApi = void 0;
 // FS takes files relative to the root "Resources" directory.
 // It is NOT relative to the HTML file or script file.
 //@@ts-expect-error
@@ -907,7 +907,7 @@ class Settings {
         SongManager.player.volume = value / 100;
         let volumeRange = document.querySelector("#audioadjusterbar");
         if (volumeRange.object.value != value)
-            volumeRange.object.value = value;
+            volumeRange.object.value = Math.ceil(value);
     }
     applySettingsToPanel() {
         for (const key in this) {
@@ -1287,6 +1287,36 @@ class Settings {
 }
 exports.Settings = Settings;
 Settings.current = null;
+var SettingsPanel;
+(function (SettingsPanel) {
+    SettingsPanel.sections = {};
+    class Section {
+        constructor(name) {
+            this.name = name;
+            this.div = document.createElement("div");
+            this.divContent = document.createElement("div");
+            const h2 = document.createElement("h2");
+            this.div.appendChild(h2);
+            this.div.appendChild(this.divContent);
+            this.div.appendChild(document.createElement("hr"));
+        }
+        addInput(html) {
+            this.inputs.push(new SectionInput(html));
+        }
+    }
+    SettingsPanel.Section = Section;
+    class SectionInput {
+        constructor(html) {
+            this.html = html;
+            this.div = document.createElement("div");
+        }
+    }
+    function addSection(sectionName) {
+        // Implement
+        return new Section(sectionName);
+    }
+    SettingsPanel.addSection = addSection;
+})(SettingsPanel = exports.SettingsPanel || (exports.SettingsPanel = {}));
 class Song {
     constructor() {
         this.songId = 0;

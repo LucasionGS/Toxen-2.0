@@ -1077,8 +1077,16 @@ function initializeVisualizer() {
     if (settings.visualizer) {
       avg = 0;
       if (Storyboard.visualizerDirection == 0) Storyboard.dataArray = Storyboard.dataArray.reverse();
-      for (var i = 0; i < Storyboard.bufferLength; i++) {
-        barHeight = (Storyboard.dataArray[i]*intensity-(10*intensity));
+
+      let minBarHeight: number = null;
+      for (let i = 0; i < Storyboard.bufferLength; i++) {
+        let _h = Math.max(0, (Storyboard.dataArray[i]*intensity-(10*intensity)));
+        _h *= 0.75;
+        if (minBarHeight === null || _h < minBarHeight) minBarHeight = _h;
+      }
+
+      for (let i = 0; i < Storyboard.bufferLength; i++) {
+        barHeight = Math.max(0, (Storyboard.dataArray[i]*intensity-(10*intensity)) - minBarHeight);
 
         var r = Storyboard.red;
         var g = Storyboard.green;
@@ -1097,9 +1105,6 @@ function initializeVisualizer() {
             ctx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight); // From Bottom
             break;
           case 3:
-            if (barHeight < 0) {
-              barHeight = 0;
-            }
             ctx.fillRect(x, (HEIGHT / 2) - barHeight, barWidth, barHeight * 2); // Center
             break;
           case 4:

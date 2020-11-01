@@ -447,6 +447,20 @@ export declare class Settings {
      */
     version: number;
 }
+export declare namespace SettingsPanel {
+    const sections: {
+        [name: string]: Section;
+    };
+    class Section {
+        name: string;
+        constructor(name: string);
+        private div;
+        private divContent;
+        private inputs;
+        addInput(html: string): void;
+    }
+    function addSection(sectionName: string): Section;
+}
 /**
  * Custom HTML Song Element that extends div.
  * Every `musicitem` is this.
