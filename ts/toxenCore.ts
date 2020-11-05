@@ -25,7 +25,7 @@ const commandExists = require("command-exists");
 import * as rpc from "discord-rpc";
 import { fork } from "child_process";
 import * as tree from "directory-tree";
-import { DeepDiffMapper } from "./diffMapper";
+import { Updator } from "./updator";
 import User from "./auth/models/user";
 // import Git, {SimpleGit} from "simple-git";
 // Discord RPC
@@ -1843,17 +1843,17 @@ export class Song {
     };
   }
 
-  songId = 0;
-
   getListIndex() {
     return SongManager.songList.findIndex(s => s.songId === this.songId);
   }
-
+  
   getPlayableListIndex() {
     return SongManager.playableSongs.findIndex(s => s.songId === this.songId);
   }
-
+  
   click = function() {};
+  
+  songId = 0;
 
   /**
    * Relative path for this song / Folder name
@@ -4839,12 +4839,6 @@ function reloadMenu() {
           type: "separator"
         },
         {
-          label:"Statistics",
-          click(){
-            Statistics.current.display();
-          }
-        },
-        {
           type: "separator"
         },
         {
@@ -4986,6 +4980,78 @@ function reloadMenu() {
         browserWindow.webContents.toggleDevTools();
       },
       accelerator: "F12"
+    },
+    {
+      label: "Tools",
+      submenu: [
+        {
+          label: "Statistics",
+          click(){
+            Statistics.current.display();
+          },
+          accelerator: "CTRL + Shift + S"
+        },
+        {
+          label: "Find BPM...",
+          click() {
+            let bpmTally = document.createElement("h3");
+            bpmTally.innerText = "0 BPM";
+            bpmTally.style.textAlign = "center";
+
+            let tally = 0;
+
+            let startTime: number = 0;
+            let endTime: number = 0;
+            let bpm: number = 0;
+
+            let tap = Toxen.generate.button({
+              text: "Tap",
+              modify(e) {
+                e.style.margin = "auto";
+                e.style.display = "block";
+                e.addEventListener("mousedown", () => {
+                  tally++;
+
+                  if (startTime == 0) startTime = SongManager.player.currentTime;
+                  else endTime = SongManager.player.currentTime;
+
+                  updateBPM();
+                })
+              }
+            });
+
+            function updateBPM() {
+              let time = +((endTime - startTime).toFixed(1));
+
+              bpm = (1 / (time / tally)) * 60;
+              if (endTime > startTime) bpmTally.innerText = bpm.toFixed(2) + " BPM";
+            }
+            let p = new Prompt("Find BPM", [
+              "Start tapping the \"Tap\" and press to the beat",
+              bpmTally,
+              tap
+            ]);
+            p.addButtons([
+              Toxen.generate.button({
+                text: "Reset",
+                click() {
+                  SongManager.player.currentTime = tally = startTime = endTime = bpm = 0;
+                  SongManager.player.play();
+                  bpmTally.innerText = "0 BPM";
+                }
+              }),
+              "Close"
+            ], "fancybutton", true);
+          }
+        },
+        {
+          label: "ToxenScript Editor",
+          click(){
+            ScriptEditor.open(SongManager.getCurrentlyPlayingSong());
+          },
+          accelerator: "CTRL + E"
+        },
+      ]
     },
     {
       label: "Help",

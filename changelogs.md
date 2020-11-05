@@ -44,6 +44,16 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+General
+  - New
+    - Added Tools menu under `Toxen > Tools`
+    - Added BPM Calculator under `Toxen > Tools > BPM Finder...`
+
+  - Changes/Fixed
+    - Modified Audio Visualizer to be more equalized. (If that even makes any sense)
+    - Moved some existing tools to the `Tools` menu:
+      - `File` => `Tools`: Statistics (`CTRL + Shift + S`)
+      - `Song Context Menu` => `Tools`: ToxenScript Editor (`CTRL + E` for editing current song)
 
 ## 202010160227
 General
