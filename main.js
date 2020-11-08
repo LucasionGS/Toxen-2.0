@@ -160,34 +160,6 @@ function createWindow () {
       event.preventDefault();
       win.hide();
     });*/
-
-    var appIcon = null;
-    try {
-      appIcon = new Tray("./icon.ico");
-      var contextMenu = Menu.buildFromTemplate([
-        {
-          label: "Show",
-          type: "radio",
-          click(){
-            win.show();
-          }
-        },
-        {
-          label: "Quit",
-          type: "radio",
-          click(){
-            electronApp.quit();
-          }
-        }
-      ]);
-      appIcon.setToolTip("Toxen♫");
-      appIcon.setContextMenu(contextMenu);
-
-      appIcon.on("click", () => {
-        win.show();
-      });
-    } catch (error) {}
-
 }
 
 // This method will be called when Electron has finished

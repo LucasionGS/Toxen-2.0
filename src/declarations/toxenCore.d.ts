@@ -16,6 +16,8 @@ declare type AnalyserFftSizeIndex = 32 | 64 | 128 | 256 | 512 | 1024 | 2048 | 40
  */
 export declare class Toxen {
     static initialize(): void;
+    static resetThumbarButtons(): void;
+    static resetTray(): void;
     static User: typeof User;
     static zoomIn(): void;
     static zoomOut(): void;
@@ -503,10 +505,10 @@ export declare class Song {
     export(location?: string): void;
     createTxs(): Zip;
     refreshElement(): void;
-    songId: number;
     getListIndex(): number;
     getPlayableListIndex(): number;
     click: () => void;
+    songId: number;
     /**
      * Relative path for this song / Folder name
      */

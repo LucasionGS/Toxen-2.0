@@ -30,6 +30,7 @@ import * as __toxenVersion from "./version.json"
 import User from "./auth/models/user";
 Toxen.version = __toxenVersion;
 import { remote, ipcRenderer, webFrame } from "electron";
+import Remote = require("node-hue-api/lib/api/Remote");
 let devMode = !remote.app.isPackaged;
 let browserWindow = remote.getCurrentWindow();
 
@@ -77,7 +78,6 @@ Toxen.interactiveProgressBar.on("click", (_, value) => {
 });
 
 async function initialize() {
-  Sync.compare(JSON.parse(fs.readFileSync("test.json", "utf8")), JSON.parse(fs.readFileSync("test2.json", "utf8")));
   // Load settings
   settings.loadFromFile();
   if (settings.songFolder == null) {
@@ -165,6 +165,10 @@ async function initialize() {
       song.details.songLength = SongManager.player.duration;
       song.saveDetails();
     }
+
+    browserWindow.setOverlayIcon(remote.nativeImage.createFromPath(song.getFullPath("background")), "");
+    Toxen.resetTray();
+    Toxen.resetThumbarButtons();
   }
   
   // Applying everything
@@ -507,10 +511,14 @@ async function initialize() {
     spb.src = spb.getAttribute("svgplay");
   });
 
-  // Finish
+  //// Finish
   settings.reloadPlaylists();
   SongManager.playRandom();
+  Toxen.resetTray();
+
 }
+
+
 
 function addCustomInputs() {
   {

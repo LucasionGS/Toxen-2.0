@@ -21,7 +21,7 @@ exports.hueApi = null;
 const ionMarkDown_1 = require("./ionMarkDown");
 const Electron = require("electron");
 const { remote, shell, ipcRenderer, webFrame } = Electron;
-const { Menu, dialog, Notification: ElectronNotification, app } = remote;
+const { Menu, dialog, Notification: ElectronNotification, app, Tray } = remote;
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const ytdl = require("ytdl-core");
@@ -37,6 +37,7 @@ const rpc = require("discord-rpc");
 const child_process_1 = require("child_process");
 const tree = require("directory-tree");
 const user_1 = require("./auth/models/user");
+var appIcon = null;
 // import Git, {SimpleGit} from "simple-git";
 // Discord RPC
 var discordClient;
@@ -120,6 +121,113 @@ class Toxen {
                 btn.style.opacity = "0";
             }
         });
+        // ThumbarButtons
+        Toxen.resetThumbarButtons();
+    }
+    static resetThumbarButtons() {
+        remote.getCurrentWindow().setThumbarButtons([
+            {
+                icon: Electron.remote.nativeImage.createFromPath(SongManager.player.paused ? "./src/icons/play.png" : "./src/icons/pause.png"),
+                click() {
+                    SongManager.getCurrentlyPlayingSong().play();
+                }
+            }
+        ]);
+    }
+    static resetTray() {
+        // appIcon
+        if (appIcon)
+            appIcon.destroy();
+        try {
+            var contextMenu = remote.Menu.buildFromTemplate([
+                {
+                    label: "Songs",
+                    submenu: SongManager.songList.map(song => {
+                        return {
+                            label: Tools.stripHTML(song.parseName()),
+                            click() {
+                                song.play();
+                            }
+                        };
+                    })
+                },
+                {
+                    label: "Volume",
+                    submenu: (function () {
+                        let res = [];
+                        for (let i = 0; i <= 20; i++) {
+                            res.push({
+                                label: (i * 5) + "%",
+                                click() {
+                                    Settings.current.setVolume(i * 5);
+                                }
+                            });
+                        }
+                        return res;
+                    })()
+                },
+                {
+                    label: "Play/Pause",
+                    click() {
+                        SongManager.getCurrentlyPlayingSong().play();
+                    }
+                },
+                {
+                    label: "Next",
+                    click() {
+                        SongManager.playNext();
+                    }
+                },
+                {
+                    label: "Previous",
+                    click() {
+                        SongManager.playPrev();
+                    }
+                },
+                // {
+                //   label: "Show",
+                //   type: "radio",
+                //   checked: browserWindow.isVisible(),
+                //   click() {
+                //     browserWindow.show();
+                //   }
+                // },
+                // {
+                //   label: "Hide",
+                //   type: "radio",
+                //   checked: !browserWindow.isVisible(),
+                //   click() {
+                //     browserWindow.hide();
+                //   }
+                // },
+                {
+                    label: "Restart",
+                    click() {
+                        remote.app.relaunch();
+                        remote.app.quit();
+                    }
+                },
+                {
+                    label: "Quit",
+                    click() {
+                        remote.app.quit();
+                    }
+                }
+            ]);
+            appIcon = new Tray("./icon.ico");
+            appIcon.setToolTip("Toxen♫");
+            appIcon.setContextMenu(contextMenu);
+            appIcon.on("click", () => {
+                browserWindow.isVisible() ? browserWindow.hide() : browserWindow.show();
+                // Toxen.resetTray();
+            });
+        }
+        catch (error) {
+            console.error(error);
+        }
+        // setTimeout(() => {
+        //   Toxen.resetThumbarButtons();
+        // }, 100);
     }
     static zoomIn() {
         webFrame.setZoomFactor(Tools.clamp(webFrame.getZoomFactor() + 0.10, 0.20, 5));
@@ -1319,8 +1427,8 @@ var SettingsPanel;
 })(SettingsPanel = exports.SettingsPanel || (exports.SettingsPanel = {}));
 class Song {
     constructor() {
-        this.songId = 0;
         this.click = function () { };
+        this.songId = 0;
         /**
          * Relative path for this song / Folder name
          */
@@ -2618,6 +2726,7 @@ class SongManager {
         else {
             console.error("No div element applied to SongManager.songListElement", "SongManager.songListElement is " + typeof SongManager.songListElement);
         }
+        Toxen.resetTray();
     }
     /**
      * @param search Search for a string
@@ -4404,6 +4513,14 @@ function reloadMenu() {
         {
             label: "Window",
             submenu: [
+                {
+                    label: "Minimize to tray",
+                    click() {
+                        browserWindow.hide();
+                        Toxen.resetTray();
+                    },
+                    accelerator: "CTRL + SHIFT + H"
+                },
                 {
                     label: "Reload Window",
                     click() {

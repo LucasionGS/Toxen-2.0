@@ -10,7 +10,7 @@ export let hueApi: import("node-hue-api/lib/api/Api") = null;
 import { Imd } from "./ionMarkDown";
 import * as Electron from "electron";
 const { remote, shell, ipcRenderer, webFrame } = Electron;
-const { Menu, dialog, Notification: ElectronNotification, app } = remote;
+const { Menu, dialog, Notification: ElectronNotification, app, Tray } = remote;
 import * as ffmpeg from "fluent-ffmpeg";
 import * as path from "path";
 import * as ytdl from "ytdl-core";
@@ -27,6 +27,7 @@ import { fork } from "child_process";
 import * as tree from "directory-tree";
 import { Updator } from "./updator";
 import User from "./auth/models/user";
+var appIcon: Electron.Tray = null;
 // import Git, {SimpleGit} from "simple-git";
 // Discord RPC
 var discordClient: rpc.Client;
@@ -124,6 +125,118 @@ export class Toxen {
         btn.style.opacity = "0";
       }
     });
+
+    // ThumbarButtons
+    Toxen.resetThumbarButtons();
+  }
+
+  static resetThumbarButtons() {
+    remote.getCurrentWindow().setThumbarButtons([
+      {
+        icon: Electron.remote.nativeImage.createFromPath(
+          SongManager.player.paused ? "./src/icons/play.png" : "./src/icons/pause.png"
+        ),
+        click() {
+          SongManager.getCurrentlyPlayingSong().play();
+        }
+      }
+    ]);
+  }
+
+  static resetTray() {
+    // appIcon
+    if (appIcon) appIcon.destroy();
+    try {
+      var contextMenu = remote.Menu.buildFromTemplate([
+        {
+          label: "Songs",
+          submenu: SongManager.songList.map(song => {
+            return {
+              label: Tools.stripHTML(song.parseName()),
+              click() {
+                song.play();
+              }
+            };
+          })
+        },
+        {
+          label: "Volume",
+          submenu: (function() {
+            let res: {[key: string]: any}[] = [];
+            for (let i = 0; i <= 20; i++) {
+              res.push({
+                label: (i*5)+"%",
+                click() {
+                  Settings.current.setVolume(i*5);
+                }
+              });
+            }
+            return res;
+          })()
+        },
+        {
+          label: "Play/Pause",
+          click() {
+            SongManager.getCurrentlyPlayingSong().play();
+          }
+        },
+        {
+          label: "Next",
+          click() {
+            SongManager.playNext();
+          }
+        },
+        {
+          label: "Previous",
+          click() {
+            SongManager.playPrev();
+          }
+        },
+        // {
+        //   label: "Show",
+        //   type: "radio",
+        //   checked: browserWindow.isVisible(),
+        //   click() {
+        //     browserWindow.show();
+        //   }
+        // },
+        // {
+        //   label: "Hide",
+        //   type: "radio",
+        //   checked: !browserWindow.isVisible(),
+        //   click() {
+        //     browserWindow.hide();
+        //   }
+        // },
+        {
+          label: "Restart",
+          click() {
+            remote.app.relaunch();
+            remote.app.quit();
+          }
+        },
+        {
+          label: "Quit",
+          click() {
+            remote.app.quit();
+          }
+        }
+      ]);
+      appIcon = new Tray("./icon.ico");
+      appIcon.setToolTip("Toxen♫");
+      appIcon.setContextMenu(contextMenu);
+
+      appIcon.on("click", () => {
+        browserWindow.isVisible() ? browserWindow.hide() : browserWindow.show();
+        // Toxen.resetTray();
+      });
+    } catch (error) {
+      console.error(error);
+    }
+
+    // setTimeout(() => {
+    //   Toxen.resetThumbarButtons();
+    // }, 100);
   }
 
   public static User = User;
@@ -3034,6 +3147,7 @@ export class SongManager {
       console.error("No div element applied to SongManager.songListElement",
       "SongManager.songListElement is " + typeof SongManager.songListElement);
     }
+    Toxen.resetTray();
   }
   /**
    * @param search Search for a string
@@ -4938,7 +5052,15 @@ function reloadMenu() {
       label: "Window",
       submenu: [
         {
-          label:"Reload Window",
+          label: "Minimize to tray",
+          click() {
+            browserWindow.hide();
+            Toxen.resetTray();
+          },
+          accelerator: "CTRL + SHIFT + H"
+        },
+        {
+          label: "Reload Window",
           click() {
             browserWindow.reload();
           },
@@ -4986,7 +5108,7 @@ function reloadMenu() {
       submenu: [
         {
           label: "Statistics",
-          click(){
+          click() {
             Statistics.current.display();
           },
           accelerator: "CTRL + Shift + S"
@@ -5046,7 +5168,7 @@ function reloadMenu() {
         },
         {
           label: "ToxenScript Editor",
-          click(){
+          click() {
             ScriptEditor.open(SongManager.getCurrentlyPlayingSong());
           },
           accelerator: "CTRL + E"
