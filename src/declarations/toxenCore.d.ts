@@ -1073,6 +1073,13 @@ declare class ToxenEvent {
     get percent(): number;
 }
 export declare class Tools {
+    /**
+     * If the app is in development mode, it will return the string parsed through.
+     *
+     * If the app is in production mode, it will return the extended path.
+     * @param pathToFile Path to return.
+     */
+    static prodPath(pathToFile: string): string;
     static updateCSS(): void;
     static isNumber(value: any): boolean;
     static refreshOnChange(exceptions?: string[]): void;

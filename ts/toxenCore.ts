@@ -134,7 +134,7 @@ export class Toxen {
     remote.getCurrentWindow().setThumbarButtons([
       {
         icon: Electron.remote.nativeImage.createFromPath(
-          SongManager.player.paused ? "./src/icons/play.png" : "./src/icons/pause.png"
+          SongManager.player.paused ? Tools.prodPath("./src/icons/play.png") : Tools.prodPath("./src/icons/pause.png")
         ),
         click() {
           SongManager.getCurrentlyPlayingSong().play();
@@ -149,8 +149,8 @@ export class Toxen {
     try {
       var contextMenu = remote.Menu.buildFromTemplate([
         {
-          label: "Songs",
-          submenu: SongManager.songList.map(song => {
+          label: "Songs" + (Settings.current.playlist ? ` (${Settings.current.playlist})` : ""),
+          submenu: SongManager.playableSongs.map(song => {
             return {
               label: Tools.stripHTML(song.parseName()),
               click() {
@@ -158,6 +158,31 @@ export class Toxen {
               }
             };
           })
+        },
+        {
+          label: "Playlists",
+          submenu: (function() {
+            let pls = Settings.current.playlists.map(playlist => {
+              return {
+                label: playlist,
+                type: "radio",
+                checked: Settings.current.playlist == playlist,
+                click() {
+                  Settings.current.selectPlaylist(playlist);
+                }
+              };
+            });
+            pls.unshift({
+              label: "No playlist",
+              type: "radio",
+              checked: Settings.current.playlist == null,
+              click() {
+                Settings.current.selectPlaylist("%null%");
+              }
+            });
+
+            return pls;
+          })()
         },
         {
           label: "Volume",
@@ -222,7 +247,7 @@ export class Toxen {
           }
         }
       ]);
-      appIcon = new Tray("./icon.ico");
+      appIcon = new Tray(Tools.prodPath("./icon.ico"));
       appIcon.setToolTip("Toxen♫");
       appIcon.setContextMenu(contextMenu);
 
@@ -383,7 +408,7 @@ export class Toxen {
   static set title(value: string) {
     document.getElementById("toxen-title-text").innerHTML = value;
     let plain = Tools.stripHTML(value);
-    document.title = plain;
+    document.title = plain + " | Toxen";
   }
   
   /**
@@ -1137,6 +1162,7 @@ export class Settings {
 
     if (playlist == "%null%") document.querySelector<HTMLButtonElement>("#playlistRenameButton").disabled = true;
     else document.querySelector<HTMLButtonElement>("#playlistRenameButton").disabled = false;
+    Toxen.resetTray();
   }
 
   renamePlaylist(playlist: string = Settings.current.playlist) {
@@ -2122,6 +2148,7 @@ export class Song {
 
     if (cur == null || cur.songId != id) {
       Toxen.emit("play", this);
+      browserWindow.setOverlayIcon(remote.nativeImage.createFromPath(this.getFullPath("background")), "");
       SongManager.player.setAttribute("songid", id.toString());
       if (this.isVideo) {
         let source = SongManager.player.querySelector("source");
@@ -2139,7 +2166,6 @@ export class Song {
         }
         if (fp.toLowerCase().endsWith(".mp3")) {
           SongManager.player.src = fp + hash;
-          // GOHERE
         }
         else if (Toxen.audioExtensions.find(a => fp.toLowerCase().endsWith("."+a)) != null) {
           let newSrc: string;
@@ -5114,7 +5140,7 @@ function reloadMenu() {
           accelerator: "CTRL + Shift + S"
         },
         {
-          label: "Find BPM...",
+          label: "Find BPM... (Experimental)",
           click() {
             let bpmTally = document.createElement("h3");
             bpmTally.innerText = "0 BPM";
@@ -5149,7 +5175,7 @@ function reloadMenu() {
               if (endTime > startTime) bpmTally.innerText = bpm.toFixed(2) + " BPM";
             }
             let p = new Prompt("Find BPM", [
-              "Start tapping the \"Tap\" and press to the beat",
+              "Start tapping the \"Tap\" button and press to the beat",
               bpmTally,
               tap
             ]);
@@ -7220,6 +7246,21 @@ class ToxenEvent {
 }
 
 export class Tools {
+  /**
+   * If the app is in development mode, it will return the string parsed through.
+   * 
+   * If the app is in production mode, it will return the extended path.
+   * @param pathToFile Path to return.
+   */
+  static prodPath(pathToFile: string) {
+    if (app.isPackaged) {
+      return path.resolve("./resources/app", pathToFile);
+    }
+    else {
+      return path.resolve(pathToFile);
+    }
+  }
+  
   static updateCSS() {
     let links = document.querySelectorAll("link");
     for (let i = 0; i < links.length; i++) {

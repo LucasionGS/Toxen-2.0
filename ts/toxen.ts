@@ -118,7 +118,7 @@ async function initialize() {
       Toxen.emit("updated");
     }, 1000);
     settings.version = Toxen.version;
-    let declarationDir = path.resolve(devMode ? "./src/declarations/" : "./resources/app/src/declarations/");
+    let declarationDir = Tools.prodPath("./src/declarations/");
     let declarationTarget = Toxen.updatePlatform == "win" ? process.env.APPDATA + "\\ToxenData\\data\\declarations" : process.env.HOME + "/.toxendata/data/declarations";
     if (fs.existsSync(declarationTarget)) rimraf.sync(declarationTarget);
     copyFilesRecursively(declarationDir, declarationTarget);
@@ -166,8 +166,7 @@ async function initialize() {
       song.saveDetails();
     }
 
-    browserWindow.setOverlayIcon(remote.nativeImage.createFromPath(song.getFullPath("background")), "");
-    Toxen.resetTray();
+    // Toxen.resetTray();
     Toxen.resetThumbarButtons();
   }
   

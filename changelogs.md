@@ -37,6 +37,7 @@ Features I want to implement (This will be updated as I get more ideas and remem
     - `Temp fix`: Avoid using the debugger if you don't need to. If you're a dev and REALLY need to, make sure `Tools.updateCSS` isn't being used on an interval in the TS/JS code.
   - Visualizer intensity can exceed the window if set too high.
     - `Temp fix`: Don't set the intensity too high lmao
+  - YouTube downloader giving error: `Could not find player config`. The cause for this is still unknown. I assume it's a dependency error, and I need to wait until the dependency creator updates the files.
   - When downloading videos (specifically with video ticked) using the YouTube downloader, on download completion the song might not start properly.
     - `Temp fix`: Either selecting a different song and reselecting the new song or if that doesn't work, restart Toxen and it should be all good.
 
@@ -47,7 +48,11 @@ Features and changes that has already been made to Toxen.
 General
   - New
     - Added Tools menu under `Toxen > Tools`
-    - Added BPM Calculator under `Toxen > Tools > BPM Finder...`
+    - Added Experimental BPM Calculator under `Toxen > Tools > BPM Finder...`
+    - Added the ability to hide Toxen to the tray. Left-click on the tray icon to toggle show or hide Toxen to the tray. You can also hide Toxen in app by pressing on `Toxen > Window > Minimize to Tray` (`CTRL + SHIFT + H`)
+    - Added a useful features when right-clicking the Toxen tray icon, including a full song selection, playlist selection, song controls and volume changer. All of these works even when Toxen is minimized to the tray.
+    - Added a mini icon to the Toxen icon in the taskbar that displays the current background of the song playing. (Unsure about this one, but trying it for now, might be removed later)
+    - Added Taskbar button when hovering over Toxen in the taskbar to pause/play.
 
   - Changes/Fixed
     - Modified Audio Visualizer to be more equalized. (If that even makes any sense)
