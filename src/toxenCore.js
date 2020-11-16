@@ -25,6 +25,7 @@ const { Menu, dialog, Notification: ElectronNotification, app, Tray } = remote;
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const ytdl = require("ytdl-core");
+const yt_search_1 = require("yt-search");
 const ion = require("ionodelib");
 const Zip = require("adm-zip");
 const events_1 = require("events");
@@ -1951,7 +1952,7 @@ class Song {
      */
     getFullPath(itemToFind = "songPath") {
         if (typeof this[itemToFind] !== "string") {
-            console.error("Could not find \"" + itemToFind + "\"");
+            console.warn("Could not find \"" + itemToFind + "\"");
             return null;
         }
         if (!(Settings.current instanceof Settings)) {
@@ -3213,6 +3214,7 @@ class SongManager {
             main.style.position = "relative";
             main.style.width = "256px";
             main.style.height = "256px";
+            main.style.margin = "auto";
             // Text
             text.innerHTML = "Drag <code>" + Toxen.mediaExtensions.join("/") + "</code> files here or click to select";
             text.style.textAlign = "center";
@@ -3275,11 +3277,17 @@ class SongManager {
             return main;
         })());
         p.addContent("or other options:");
-        let youtubeBtn = document.createElement("button");
-        youtubeBtn.innerText = "Download YouTube Audio";
-        youtubeBtn.onclick = function () {
+        let youtubeDLBtn = document.createElement("button");
+        youtubeDLBtn.innerText = "Download YouTube Audio";
+        youtubeDLBtn.onclick = function () {
             p.close();
             SongManager.addSongYouTube();
+        };
+        let youtubeSearchBtn = document.createElement("button");
+        youtubeSearchBtn.innerText = "Search YouTube";
+        youtubeSearchBtn.onclick = function () {
+            p.close();
+            SongManager.searchYouTube();
         };
         let close = document.createElement("button");
         close.innerText = "Close";
@@ -3287,7 +3295,7 @@ class SongManager {
         close.onclick = function () {
             p.close();
         };
-        p.addButtons([youtubeBtn, close], "fancybutton");
+        p.addButtons([youtubeDLBtn, youtubeSearchBtn, close], "fancybutton");
     }
     static addSongLocal() {
         dialog.showOpenDialog(browserWindow, {
@@ -3301,7 +3309,8 @@ class SongManager {
             ]
         });
     }
-    static addSongYouTube() {
+    static addSongYouTube(autofill = {}) {
+        let asyncable = Tools.promiseCreate();
         function isValid(str) {
             let reg = /[\\\/\:\*\?\"\<\>\|]/g;
             if (reg.test(str)) {
@@ -3371,14 +3380,19 @@ class SongManager {
                 downloadYouTube.click();
             }
         });
-        ytInput.addEventListener("input", e => {
+        const tags = (autofill === null || autofill === void 0 ? void 0 : autofill.tags) || [];
+        ytInput.addEventListener("input", () => {
             let url = ytInput.value.trim();
             if (ytdl.validateURL(url)) {
                 ytdl.getBasicInfo(url).then(info => {
-                    console.log();
-                    ytInputArtist.value = info.videoDetails.media.artist ? info.videoDetails.media.artist : info.videoDetails.title.split(/-|~/).length > 1 ? info.videoDetails.title.split(/-|~/)[0].trim() : info.videoDetails.author.name;
-                    ytInputTitle.value = info.videoDetails.media.song ? info.videoDetails.media.song : info.videoDetails.title.split(/-|~/).length > 1 ? info.videoDetails.title.split(/-|~/).filter((v, i) => i > 0).join("-").trim() : info.videoDetails.title;
+                    ytInputArtist.value = info.videoDetails.media.artist ?
+                        info.videoDetails.media.artist : info.videoDetails.title.split(/-|~/).length > 1 ?
+                        info.videoDetails.title.split(/-|~/)[0].trim() : info.videoDetails.author.name;
+                    ytInputTitle.value = info.videoDetails.media.song ?
+                        info.videoDetails.media.song : info.videoDetails.title.split(/-|~/).length > 1 ?
+                        info.videoDetails.title.split(/-|~/).filter((v, i) => i > 0).join("-").trim() : info.videoDetails.title;
                     let artists = SongManager.getAllArtists();
+                    tags.push(info.videoDetails.author.name, info.videoDetails.title, ...info.videoDetails.keywords);
                     if (artists.includes(ytInputArtist.value.trim())) {
                         ytInputArtist.style.color = "lightgreen";
                     }
@@ -3504,6 +3518,7 @@ class SongManager {
                 });
                 const song = new Song();
                 song.songId = SongManager.songList.length;
+                song.details.tags = [];
                 song.path = isValid(artist) == "" ? isValid(title) : isValid(artist) + " - " + isValid(title);
                 let surfix = 0;
                 while (fs.existsSync(song.getFullPath("path"))) {
@@ -3564,6 +3579,7 @@ class SongManager {
                             "title": song.path + " finished downloading.",
                             "body": ""
                         }).show();
+                        asyncable.resolve(song);
                     }
                     else {
                         // Continue to download video
@@ -3607,6 +3623,7 @@ class SongManager {
                             }).show();
                             setTimeout(() => {
                                 song.play();
+                                asyncable.resolve(song);
                             }, 100);
                         })
                             .on("error", (err) => {
@@ -3618,6 +3635,7 @@ class SongManager {
                             ytInputTitle.disabled = false;
                             downloadYouTube.disabled = false;
                             p.headerText = "Download YouTube Audio";
+                            asyncable.reject(err.message);
                         })
                             .on("progress", (chunk, downloaded, total) => {
                             videoTotal = total;
@@ -3635,6 +3653,7 @@ class SongManager {
                             ytInputTitle.disabled = false;
                             downloadYouTube.disabled = false;
                             p.headerText = "Download YouTube Audio";
+                            asyncable.reject(err.message);
                         });
                         // console.log(fcmd._getArguments());
                         // console.log("ffmpeg " + fcmd._getArguments().map(v => {
@@ -3655,6 +3674,7 @@ class SongManager {
                     ytInputTitle.disabled = false;
                     downloadYouTube.disabled = false;
                     p.headerText = "Download YouTube Audio";
+                    asyncable.reject(err.message);
                 });
                 audio.on("progress", (chunk, downloaded, total) => {
                     audioTotal = total;
@@ -3672,6 +3692,7 @@ class SongManager {
                     ytInputTitle.disabled = false;
                     downloadYouTube.disabled = false;
                     p.headerText = "Download YouTube Audio";
+                    asyncable.reject(err.message);
                 });
                 ytProgressBar.min = 0;
                 if (p.buttonsElement.children.length < 3) {
@@ -3713,6 +3734,122 @@ class SongManager {
             sl.element.style.margin = "auto";
             sl.on("select", s => ytInputArtist.value = s.value);
         }, 0);
+        setTimeout(() => {
+            if (autofill === null || autofill === void 0 ? void 0 : autofill.url) {
+                ytInput.value = autofill === null || autofill === void 0 ? void 0 : autofill.url;
+                ytInput.disabled = true;
+            }
+            ytInputArtist.value = (autofill === null || autofill === void 0 ? void 0 : autofill.artist) || "";
+            ytInputTitle.value = (autofill === null || autofill === void 0 ? void 0 : autofill.title) || "";
+            if ((autofill === null || autofill === void 0 ? void 0 : autofill.autoRun) === true)
+                downloadYouTube.click();
+        }, 10);
+        return asyncable.promise;
+        // SongManager.addSongYouTube({
+        //   url: "https://www.youtube.com/watch?v=Ong7DOBF07U",
+        //   artist: "Miss Hentai Music",
+        //   title: "Dernière",
+        //   autoRun: true,
+        // })
+    }
+    static searchYouTube() {
+        class YouTubeEntry {
+            constructor(videoData) {
+                this.videoData = videoData;
+                this.element = document.createElement("div");
+                this.element.style.width = "100%";
+                this.element.style.height = "fit-content";
+                this.element.style.overflowY = "auto";
+                this.element.style.background = `url("${videoData.thumbnail}") no-repeat center center black`;
+                this.element.style.backgroundSize = "cover";
+                this.element.title = "Click to open download prompt or CTRL + Click to instantly start download";
+                this.artist = videoData.title.split(/-|~/).length > 1 ?
+                    videoData.title.split(/-|~/)[0].trim() : videoData.author.name;
+                this.title = videoData.title.split(/-|~/).length > 1 ?
+                    videoData.title.split(/-|~/).filter((v, i) => i > 0).join("-").trim() : videoData.title;
+                // let img = document.createElement("img");
+                // img.src = videoData.thumbnail;
+                // img.style.width = "25%";
+                // img.style.height = "inherit";
+                // img.style.display = "block";
+                // img.style.float = "left";
+                // this.element.appendChild(img);
+                let details = document.createElement("div");
+                // details.style.width = "75%";
+                // details.style.width = "100%";
+                // details.style.display = "block";
+                // details.style.padding = "4px";
+                // details.style.float = "left";
+                // details.style.boxSizing = "border-box";
+                // details.style.backgroundColor = "rgba(0, 0, 0, 1)";
+                // details.style.opacity = "0.75";
+                // details.style.transition = "opacity 0.2s ease-in-out";
+                details.classList.add("ytEntryDetails");
+                let title = document.createElement("h3");
+                title.innerText = videoData.title;
+                let info = document.createElement("p");
+                info.innerHTML = videoData.duration.timestamp + "<br>" +
+                    "<b>" + Tools.encodeHTML(videoData.author.name) + "</b><br>" +
+                    videoData.views + " Views";
+                details.appendChild(title);
+                details.appendChild(info);
+                this.element.appendChild(details);
+                this.element.addEventListener("click", (e) => {
+                    let opts = {
+                        artist: this.artist,
+                        title: this.title,
+                        url: videoData.url,
+                        autoRun: e.ctrlKey
+                    };
+                    SongManager.addSongYouTube(opts);
+                });
+            }
+            static search(search) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    let sr = yield yt_search_1.search({
+                        search: search,
+                        userAgent: "Toxen"
+                    });
+                    return sr.videos.map(vsr => new YouTubeEntry(vsr));
+                });
+            }
+        }
+        let videoContainer = document.createElement("div");
+        videoContainer.style.display = "flex";
+        videoContainer.style.width = "50vw";
+        videoContainer.style.maxHeight = "50vh";
+        videoContainer.style.overflowY = "auto";
+        let col1 = document.createElement("div");
+        col1.style.width = "100%";
+        videoContainer.appendChild(col1);
+        let col2 = document.createElement("div");
+        col2.style.width = "100%";
+        videoContainer.appendChild(col2);
+        let p = new Prompt("Search YouTube", [
+            Toxen.generate.input({
+                placeholder: "Search...",
+                modify(input) {
+                    input.type = "search";
+                    input.addEventListener("search", () => {
+                        if (input.value == "")
+                            return;
+                        col1.innerHTML = "Searching...";
+                        col2.innerHTML = "";
+                        YouTubeEntry.search(input.value).then(videos => {
+                            col1.innerHTML = "";
+                            videos.forEach((v, i) => {
+                                if (i % 2 == 0)
+                                    col1.appendChild(v.element);
+                                else
+                                    col2.appendChild(v.element);
+                            });
+                        });
+                    });
+                }
+            }),
+            videoContainer
+        ]);
+        p.addButtons("Close", "fancybutton", true);
     }
     static importCurrentMetadata() {
         let song = SongManager.getCurrentlyPlayingSong();
@@ -3769,10 +3906,30 @@ class SongManager {
                     p.return(url.value);
                 }
             });
-            let p = new Prompt("Download Background", [
-                url
-            ]);
+            let p = new Prompt("Download Background", [url]);
             p.addButtons([dlBg, "Close"], "fancybutton", true);
+            if (ytdl.validateURL(song.details.sourceLink)) {
+                let quickPics = document.createElement("div");
+                quickPics.style.maxWidth = "25vw";
+                quickPics.style.maxHeight = "20vh";
+                quickPics.style.overflowY = "auto";
+                p.addContent(quickPics);
+                let ytid = ytdl.getURLVideoID(song.details.sourceLink);
+                [
+                    "maxresdefault.jpg",
+                    "hqdefault.jpg",
+                ].map(picName => {
+                    let img = document.createElement("img");
+                    img.src = "https://i.ytimg.com/vi/" + ytid + "/" + picName;
+                    img.classList.add("suggestionImage");
+                    img.title = "Click to quick-set image to this";
+                    img.addEventListener("click", () => {
+                        url.value = img.src;
+                        dlBg.click();
+                    });
+                    return img;
+                }).forEach(img => quickPics.appendChild(img));
+            }
             let imageUrl = yield p.promise;
             if (imageUrl == null) {
                 return;
@@ -6619,6 +6776,16 @@ class Tools {
         else {
             return path.resolve(pathToFile);
         }
+    }
+    static promiseCreate() {
+        let resolve;
+        let reject;
+        let promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+        return {
+            promise,
+            resolve,
+            reject,
+        };
     }
     static updateCSS() {
         let links = document.querySelectorAll("link");

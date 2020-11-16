@@ -801,6 +801,35 @@ div.selectlist select {
   cursor: pointer;
 }
 
+.ytEntryDetails {
+  width: 100%;
+  display: block;
+  padding: 4px;
+  float: left;
+  box-sizing: border-box;
+  background-color: rgba(0, 0, 0, 0.75);
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+}
+
+.ytEntryDetails:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.suggestionImage {
+  float: left;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+  width: 50%;
+  float: left;
+}
+
+.suggestionImage:hover {
+  cursor: pointer;
+  transform: translateY(-8px);
+}
+
 /* ToxenScript Values */
 .toxenscript_number {
   color: #78ff4a;

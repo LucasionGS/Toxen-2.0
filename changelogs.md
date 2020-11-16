@@ -37,7 +37,6 @@ Features I want to implement (This will be updated as I get more ideas and remem
     - `Temp fix`: Avoid using the debugger if you don't need to. If you're a dev and REALLY need to, make sure `Tools.updateCSS` isn't being used on an interval in the TS/JS code.
   - Visualizer intensity can exceed the window if set too high.
     - `Temp fix`: Don't set the intensity too high lmao
-  - YouTube downloader giving error: `Could not find player config`. The cause for this is still unknown. I assume it's a dependency error, and I need to wait until the dependency creator updates the files.
   - When downloading videos (specifically with video ticked) using the YouTube downloader, on download completion the song might not start properly.
     - `Temp fix`: Either selecting a different song and reselecting the new song or if that doesn't work, restart Toxen and it should be all good.
 
@@ -45,7 +44,10 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
-
+General
+  - New
+    - YouTube Search! You can now search within Toxen for youtube audios and download directly.
+    - If you just downloaded an audio from the YouTube Downloader and the background is an ugly "missing thumbnail" picture, right-click on the song in the song panel and press `Select Background from URL...` and click on the picture you want instead.
 ## 202011161503
 General
   - New

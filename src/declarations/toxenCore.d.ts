@@ -768,7 +768,23 @@ export declare class SongManager {
     static toggleOnlyVisible(force?: boolean): boolean;
     static addSong(): void;
     static addSongLocal(): void;
-    static addSongYouTube(): void;
+    static addSongYouTube(): Promise<Song>;
+    static addSongYouTube(autofill: {
+        url?: string;
+        artist?: string;
+        title?: string;
+        video?: boolean;
+        tags?: string[];
+    }): Promise<Song>;
+    static addSongYouTube(autofill: {
+        url: string;
+        artist?: string;
+        title: string;
+        video?: boolean;
+        tags?: string[];
+        autoRun: boolean;
+    }): Promise<Song>;
+    static searchYouTube(): void;
     static importCurrentMetadata(): void;
     static selectBackground(song?: Song): void;
     static selectBackgroundFromURL(song?: Song): Promise<void>;
@@ -1080,6 +1096,11 @@ export declare class Tools {
      * @param pathToFile Path to return.
      */
     static prodPath(pathToFile: string): string;
+    static promiseCreate<T>(): {
+        promise: Promise<T>;
+        resolve: (value?: T | PromiseLike<T>) => void;
+        reject: (reason?: any) => void;
+    };
     static updateCSS(): void;
     static isNumber(value: any): boolean;
     static refreshOnChange(exceptions?: string[]): void;
