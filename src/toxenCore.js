@@ -3374,12 +3374,10 @@ class SongManager {
         ytInput.addEventListener("input", e => {
             let url = ytInput.value.trim();
             if (ytdl.validateURL(url)) {
-                ytdl.getBasicInfo(url, (err, info) => {
-                    if (err)
-                        return console.error(err);
-                    // console.log(info);
-                    ytInputArtist.value = info.media.artist ? info.media.artist : info.title.split(/-|~/).length > 1 ? info.title.split(/-|~/)[0].trim() : info.author.name;
-                    ytInputTitle.value = info.media.song ? info.media.song : info.title.split(/-|~/).length > 1 ? info.title.split(/-|~/).filter((v, i) => i > 0).join("-").trim() : info.title;
+                ytdl.getBasicInfo(url).then(info => {
+                    console.log();
+                    ytInputArtist.value = info.videoDetails.media.artist ? info.videoDetails.media.artist : info.videoDetails.title.split(/-|~/).length > 1 ? info.videoDetails.title.split(/-|~/)[0].trim() : info.videoDetails.author.name;
+                    ytInputTitle.value = info.videoDetails.media.song ? info.videoDetails.media.song : info.videoDetails.title.split(/-|~/).length > 1 ? info.videoDetails.title.split(/-|~/).filter((v, i) => i > 0).join("-").trim() : info.videoDetails.title;
                     let artists = SongManager.getAllArtists();
                     if (artists.includes(ytInputArtist.value.trim())) {
                         ytInputArtist.style.color = "lightgreen";
@@ -3412,7 +3410,8 @@ class SongManager {
                         ytInputSubs.disabled = true;
                         ytInputSubs.appendChild(_emptyOption);
                     }
-                });
+                })
+                    .catch(err => Toxen.errorPrompt(err, "Something went wrong when trying to fetch youtube data.", "YTDL.getBasicInfo"));
             }
             else {
                 ytInputSubs.innerHTML = "";

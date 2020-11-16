@@ -45,6 +45,8 @@ Features I want to implement (This will be updated as I get more ideas and remem
 Features and changes that has already been made to Toxen.
 
 ## Current WIP Update
+
+## 202011161503
 General
   - New
     - Added Tools menu under `Toxen > Tools`
@@ -55,6 +57,7 @@ General
     - Added Taskbar button when hovering over Toxen in the taskbar to pause/play.
 
   - Changes/Fixed
+    - Fixed YouTube Downloader, you can now download again.
     - Modified Audio Visualizer to be more equalized. (If that even makes any sense)
     - Moved some existing tools to the `Tools` menu:
       - `File` => `Tools`: Statistics (`CTRL + Shift + S`)

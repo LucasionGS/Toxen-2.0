@@ -39,7 +39,7 @@
     "rimraf": "^3.0.2",
     "simple-git": "^2.21.0",
     "update-electron-app": "^1.5.0",
-    "ytdl-core": "^2.1.7"
+    "ytdl-core": "^4.0.5"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.4.33",
