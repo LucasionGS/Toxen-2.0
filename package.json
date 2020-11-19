@@ -47,6 +47,6 @@
   "devDependencies": {
     "@types/adm-zip": "^0.4.33",
     "@types/rimraf": "^3.0.0",
-    "electron": "^8.3.1"
+    "electron": "^8.5.2"
   }
 }
