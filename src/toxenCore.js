@@ -24,6 +24,7 @@ const { remote, shell, ipcRenderer, webFrame } = Electron;
 const { Menu, dialog, Notification: ElectronNotification, app, Tray } = remote;
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
+const ytpl = require("ytpl");
 const ytdl = require("ytdl-core");
 const yt_search_1 = require("yt-search");
 const ion = require("ionodelib");
@@ -3312,7 +3313,7 @@ class SongManager {
     static addSongYouTube(autofill = {}) {
         let asyncable = Tools.promiseCreate();
         function isValid(str) {
-            let reg = /[\\\/\:\*\?\"\<\>\|]/g;
+            let reg = /[\\\/\:\*\?\"\<\>\|\#]/g;
             if (reg.test(str)) {
                 str = str.replace(reg, "");
             }
@@ -3790,7 +3791,7 @@ class SongManager {
                 let info = document.createElement("p");
                 info.innerHTML = videoData.duration.timestamp + "<br>" +
                     "<b>" + Tools.encodeHTML(videoData.author.name) + "</b><br>" +
-                    videoData.views + " Views";
+                    (videoData.views >= 0 ? videoData.views.toLocaleString() : "Could not determined") + " views";
                 details.appendChild(title);
                 details.appendChild(info);
                 this.element.appendChild(details);
@@ -3799,6 +3800,10 @@ class SongManager {
                         artist: this.artist,
                         title: this.title,
                         url: videoData.url,
+                        tags: [
+                            videoData.author.name,
+                            videoData.title
+                        ],
                         autoRun: e.ctrlKey
                     };
                     SongManager.addSongYouTube(opts);
@@ -3808,9 +3813,41 @@ class SongManager {
                 return __awaiter(this, void 0, void 0, function* () {
                     let sr = yield yt_search_1.search({
                         search: search,
-                        userAgent: "Toxen"
+                        userAgent: "Toxen",
+                        pages: 5,
                     });
-                    return sr.videos.map(vsr => new YouTubeEntry(vsr));
+                    let plId = null;
+                    if (sr.videos.length > 0)
+                        return sr.videos.map(vsr => new YouTubeEntry(vsr));
+                    else if (ytpl.validateID(plId = yield ytpl.getPlaylistID(search))) {
+                        return (yield ytpl(plId, { limit: Infinity })).items.map(v => new YouTubeEntry(mapYTPLResultToVideoSearchResult(v)));
+                    }
+                    function mapYTPLResultToVideoSearchResult(data) {
+                        return {
+                            ago: "0",
+                            author: {
+                                name: data.author.name,
+                                url: data.author.ref
+                            },
+                            description: "",
+                            duration: {
+                                seconds: 0,
+                                timestamp: data.duration,
+                                toString() {
+                                    return data.duration;
+                                }
+                            },
+                            image: data.thumbnail,
+                            seconds: 0,
+                            thumbnail: data.thumbnail,
+                            timestamp: "",
+                            title: data.title,
+                            type: "video",
+                            url: data.url,
+                            videoId: data.id,
+                            views: -1
+                        };
+                    }
                 });
             }
         }
@@ -3845,6 +3882,9 @@ class SongManager {
                             });
                         });
                     });
+                    setTimeout(() => {
+                        input.focus();
+                    }, 10);
                 }
             }),
             videoContainer
@@ -3889,6 +3929,7 @@ class SongManager {
                 "placeholder": "https://example.com/image.jpg",
                 modify(obj) {
                     obj.style.width = "100%";
+                    obj.style.boxSizing = "border-box";
                     obj.addEventListener("input", () => {
                         if (/https?:\/\/.*/g.test(obj.value)) {
                             dlBg.disabled = false;
@@ -3896,9 +3937,15 @@ class SongManager {
                         else {
                             dlBg.disabled = true;
                         }
+                        previewImage.src = obj.value;
                     });
                 }
             });
+            let previewImage = document.createElement("img");
+            previewImage.style.display = "block";
+            previewImage.style.margin = "auto";
+            previewImage.style.maxWidth = "25vw";
+            previewImage.style.maxHeight = "20vh";
             let dlBg = Toxen.generate.button({
                 "text": "Download Background",
                 "backgroundColor": "green",
@@ -3906,7 +3953,7 @@ class SongManager {
                     p.return(url.value);
                 }
             });
-            let p = new Prompt("Download Background", [url]);
+            let p = new Prompt("Download Background", [url, previewImage]);
             p.addButtons([dlBg, "Close"], "fancybutton", true);
             if (ytdl.validateURL(song.details.sourceLink)) {
                 let quickPics = document.createElement("div");
@@ -4755,6 +4802,13 @@ function reloadMenu() {
                         Statistics.current.display();
                     },
                     accelerator: "CTRL + Shift + S"
+                },
+                {
+                    label: "YouTube Search (Experimental)",
+                    click() {
+                        SongManager.searchYouTube();
+                    },
+                    accelerator: "CTRL + Shift + Y"
                 },
                 {
                     label: "Find BPM... (Experimental)",

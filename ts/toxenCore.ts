@@ -13,6 +13,7 @@ const { remote, shell, ipcRenderer, webFrame } = Electron;
 const { Menu, dialog, Notification: ElectronNotification, app, Tray } = remote;
 import * as ffmpeg from "fluent-ffmpeg";
 import * as path from "path";
+import * as ytpl from "ytpl";
 import * as ytdl from "ytdl-core";
 import {search as ytSearch, SearchResult, VideoSearchResult} from "yt-search";
 import ion = require("ionodelib");
@@ -3828,7 +3829,7 @@ export class SongManager {
   } = {}): Promise<Song> {
     let asyncable = Tools.promiseCreate<Song>();
     function isValid(str: string) {
-      let reg = /[\\\/\:\*\?\"\<\>\|]/g;
+      let reg = /[\\\/\:\*\?\"\<\>\|\#]/g;
       if (reg.test(str)) {
         str = str.replace(reg, "");
       }
@@ -4366,7 +4367,7 @@ export class SongManager {
         let info = document.createElement("p");
         info.innerHTML =  videoData.duration.timestamp + "<br>" +
         "<b>" + Tools.encodeHTML(videoData.author.name) + "</b><br>" +
-        videoData.views + " Views"
+        (videoData.views >= 0 ? videoData.views.toLocaleString() : "Could not determined") + " views"
         
         details.appendChild(title);
         details.appendChild(info);
@@ -4378,6 +4379,10 @@ export class SongManager {
             artist: this.artist,
             title: this.title,
             url: videoData.url,
+            tags: [
+              videoData.author.name,
+              videoData.title
+            ],
             autoRun: e.ctrlKey
           };
           SongManager.addSongYouTube(opts);
@@ -4389,9 +4394,54 @@ export class SongManager {
       static async search(search: string) {
         let sr = await ytSearch({
           search: search,
-          userAgent: "Toxen"
+          userAgent: "Toxen",
+          pages: 5,
+
         });
-        return sr.videos.map(vsr => new YouTubeEntry(vsr));
+        let plId: string = null;
+        if (sr.videos.length > 0)
+          return sr.videos.map(vsr => new YouTubeEntry(vsr));
+        else if (ytpl.validateID(plId = await ytpl.getPlaylistID(search))) {
+          return (await ytpl(plId, {limit: Infinity})).items.map(v => new YouTubeEntry(mapYTPLResultToVideoSearchResult(v) as any));
+        }
+
+        function mapYTPLResultToVideoSearchResult(data: {
+          id: string;
+          url: string;
+          url_simple: string;
+          title: string;
+          thumbnail: string;
+          duration: string;
+          author: {
+            name: string;
+            ref: string;
+          };
+        }) {
+          return {
+            ago: "0",
+            author: {
+              name: data.author.name,
+              url: data.author.ref
+            },
+            description: "",
+            duration: {
+              seconds: 0,
+              timestamp: data.duration,
+              toString() {
+                return data.duration;
+              }
+            },
+            image: data.thumbnail,
+            seconds: 0,
+            thumbnail: data.thumbnail,
+            timestamp: "",
+            title: data.title,
+            type: "video",
+            url: data.url,
+            videoId: data.id,
+            views: -1
+          }
+        }
       }
     }
 
@@ -4425,6 +4475,9 @@ export class SongManager {
               });
             });
           });
+          setTimeout(() => {
+            input.focus();
+          }, 10);
         }
       }),
       videoContainer
@@ -4474,6 +4527,7 @@ export class SongManager {
         "placeholder": "https://example.com/image.jpg",
         modify(obj) {
           obj.style.width = "100%";
+          obj.style.boxSizing = "border-box";
           obj.addEventListener("input", () => {
             if (/https?:\/\/.*/g.test(obj.value)) {
               dlBg.disabled = false;
@@ -4481,10 +4535,17 @@ export class SongManager {
             else {
               dlBg.disabled = true;
             }
+            previewImage.src = obj.value;
           });
         }
       }
     );
+
+    let previewImage = document.createElement("img");
+    previewImage.style.display = "block";
+    previewImage.style.margin = "auto";
+    previewImage.style.maxWidth = "25vw";
+    previewImage.style.maxHeight = "20vh";
 
     let dlBg = Toxen.generate.button({
       "text": "Download Background",
@@ -4494,7 +4555,7 @@ export class SongManager {
       }
     });
 
-    let p = new Prompt("Download Background", [url]);
+    let p = new Prompt("Download Background", [url, previewImage]);
     
     p.addButtons([dlBg, "Close"], "fancybutton", true);
     
@@ -5340,6 +5401,13 @@ function reloadMenu() {
             Statistics.current.display();
           },
           accelerator: "CTRL + Shift + S"
+        },
+        {
+          label: "YouTube Search (Experimental)",
+          click() {
+            SongManager.searchYouTube();
+          },
+          accelerator: "CTRL + Shift + Y"
         },
         {
           label: "Find BPM... (Experimental)",
