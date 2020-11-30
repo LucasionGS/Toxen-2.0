@@ -4308,7 +4308,10 @@ export class SongManager {
 
       ytInputArtist.value = autofill?.artist || "";
       ytInputTitle.value = autofill?.title || "";
-      if (autofill?.autoRun === true) downloadYouTube.click();
+      if (autofill?.autoRun === true) {
+        downloadYouTube.click();
+        p.setInteractive(false);
+      }
     }, 10);
 
     return asyncable.promise;

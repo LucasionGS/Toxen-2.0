@@ -3742,8 +3742,10 @@ class SongManager {
             }
             ytInputArtist.value = (autofill === null || autofill === void 0 ? void 0 : autofill.artist) || "";
             ytInputTitle.value = (autofill === null || autofill === void 0 ? void 0 : autofill.title) || "";
-            if ((autofill === null || autofill === void 0 ? void 0 : autofill.autoRun) === true)
+            if ((autofill === null || autofill === void 0 ? void 0 : autofill.autoRun) === true) {
                 downloadYouTube.click();
+                p.setInteractive(false);
+            }
         }, 10);
         return asyncable.promise;
         // SongManager.addSongYouTube({
