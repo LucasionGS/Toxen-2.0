@@ -5,7 +5,7 @@
   --txtcolor: black;
   --songTextColor: white;
   --songTextShadowColor: 1px 1px 5px black;
-  --playingSong: #00c843;
+  --playingSong: rgba(0, 200, 67, 0.7);
   --songSelected: #008cff;
   --scrollbarColor: #eeeeee;
   --scrollbarThumbColor: #757575;

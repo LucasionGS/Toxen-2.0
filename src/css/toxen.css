@@ -5,7 +5,7 @@
   --panelcolor: #2b2b2b;
   --innerpanelcolor: #4b4b4b;
   --txtcolor: white;
-  --playingSong: #00c843;
+  --playingSong: rgb(0, 200, 67, 0.5);
   --songTextColor: white;
   --songTextShadowColor: 0px 0px 5px black;
   --songSelected: #008cff;
@@ -124,6 +124,11 @@ body {
   overflow: hidden;
   -webkit-app-region: drag;
   user-select: none;
+}
+
+#window-title #title-container #toxen-title-text {
+  width: 70vw;
+  overflow: ellipsis;
 }
 
 #titlebar > img {

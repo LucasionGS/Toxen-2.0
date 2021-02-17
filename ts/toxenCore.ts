@@ -384,17 +384,21 @@ export class Toxen {
     Menu.setApplicationMenu(menu);
     let sm = document.getElementById("system-menu");
     sm.innerHTML = "";
-    `<div class="button" id="smb-file">File</div>`
+    // `<div class="button" id="smb-file">File</div>`
     let div = document.createElement("div");
     div.classList.add("button");
     div.innerText = "Toxen";
     div.addEventListener("click", () => {
+      let divRect = div.getBoundingClientRect();
       menu.popup({
-        x: div.getBoundingClientRect().x,
-        y: div.getBoundingClientRect().bottom
+        x: divRect.x,
+        y: divRect.bottom
       })
     });
     sm.appendChild(div);
+
+    // let ttt = document.getElementById("toxen-title-text");
+    // ttt.style.width = "";
   }
 
   /**
@@ -6228,19 +6232,20 @@ export class ToxenScriptManager {
       // Updates only when required.
       ToxenScriptManager.isRunning = true;
       let _gl = function() {
-        // if (Settings.current.storyboard && ToxenScriptManager.events.length > 0) {
-        //   for (let i = 0; i < ToxenScriptManager.events.length; i++) {
-        //     const e = ToxenScriptManager.events[i];
-        //     if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
-        //       e.fn();
-        //     }
-        //   }
-        // }
         if (Settings.current.storyboard && ToxenScriptManager.events.length > 0) {
-          ToxenScriptManager.events
-          .filter(e => SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint)
-          .forEach(e => e.fn());
+          for (let i = 0; i < ToxenScriptManager.events.length; i++) {
+            const e = ToxenScriptManager.events[i];
+            if (SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint) {
+              e.fn();
+            }
+            // else if (SongManager.player.currentTime < e.startPoint && i > 0) break;
+          }
         }
+        // if (Settings.current.storyboard && ToxenScriptManager.events.length > 0) {
+        //   ToxenScriptManager.events
+        //   .filter(e => SongManager.player.currentTime >= e.startPoint && SongManager.player.currentTime <= e.endPoint)
+        //   .forEach(e => e.fn());
+        // }
         requestAnimationFrame(_gl);
       }
       requestAnimationFrame(_gl);
