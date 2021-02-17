@@ -34,7 +34,7 @@
     "jquery": "^3.5.0",
     "mime-types": "^2.1.27",
     "music-metadata": "^7.0.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "node-hue-api": "^4.0.5",
     "npm": "^6.14.6",
     "owncloud-sdk": "^1.0.0-1195",
